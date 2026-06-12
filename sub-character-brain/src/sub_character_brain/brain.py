@@ -18,6 +18,7 @@ from pkg_safety import SafetyFilter
 from sub_character_brain.config import CharacterConfig
 from sub_character_brain.llm import CharacterLlm, MemoryTurn
 
+
 class CharacterBrain:
     def __init__(
         self,
