@@ -21,8 +21,7 @@ from pkg_safety import BlocklistSafetyFilter
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
 from sub_llm.handler import LlmSubscriber
-from sub_llm.knowledge import EmptyKnowledgeStore
-from sub_llm.llm import TemplateLlmClient
+from sub_llm.factory import create_knowledge_store, create_llm_client
 
 PROCESS_NAME = "sub-llm"
 DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
@@ -43,6 +42,17 @@ def main(argv: list[str] | None = None) -> int:
         "--config",
         default=os.environ.get("LLM_SUBSCRIBER_CONFIG", DEFAULT_CONFIG_PATH),
         help="觸發詞與安全設定 JSON 路徑（可選，缺省讀環境變數）",
+    )
+    parser.add_argument(
+        "--llm-backend",
+        default=os.environ.get("LLM_BACKEND", "template"),
+        choices=["template", "openai", "gemini"],
+        help="LLM 後端：template（佔位）、openai、gemini",
+    )
+    parser.add_argument(
+        "--knowledge-path",
+        default=os.environ.get("LLM_KNOWLEDGE_PATH", ""),
+        help="知識庫檔案或目錄路徑（可選）",
     )
     args = parser.parse_args(argv)
 
@@ -75,18 +85,25 @@ def main(argv: list[str] | None = None) -> int:
         correlation = payload.get("correlation_id", "")[:8]
         print(f"published {topic} correlation={correlation}", file=sys.stderr, flush=True)
 
+    try:
+        llm = create_llm_client(args.llm_backend)
+        knowledge = create_knowledge_store(args.knowledge_path or None)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
     subscriber = LlmSubscriber(
         config=config,
-        llm=TemplateLlmClient(),
+        llm=llm,
         safety=safety,
-        knowledge=EmptyKnowledgeStore(),
+        knowledge=knowledge,
         context_buffer=SttContextBuffer(window_minutes=config.context_window_minutes),
         publish=publish,
     )
 
     print(
         f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT} "
-        f"(triggers={config.trigger_prefixes!r})",
+        f"(backend={args.llm_backend!r}, triggers={config.trigger_prefixes!r})",
         file=sys.stderr,
         flush=True,
     )

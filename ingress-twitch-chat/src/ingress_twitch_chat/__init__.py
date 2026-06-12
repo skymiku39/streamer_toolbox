@@ -1,1 +1,0 @@
-"""Twitch IRC ingress publisher."""
