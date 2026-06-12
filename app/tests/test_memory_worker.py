@@ -85,7 +85,7 @@ def test_memory_worker_summarizes_stt(tmp_path: Path) -> None:
     store.close()
 
 
-def test_memory_worker_merged_both_qa(tmp_path: Path) -> None:
+def test_memory_worker_both_separate_aligned_period(tmp_path: Path) -> None:
     db_path = tmp_path / "stream.db"
     store = StreamTextStore(db_path)
     session_id = "sess-both"
@@ -122,11 +122,13 @@ def test_memory_worker_merged_both_qa(tmp_path: Path) -> None:
     assert processed == 2
     assert not store.fetch_unsummarized_chat(session_id)
     assert not store.fetch_unsummarized_stt(session_id)
-    summaries = store.list_summaries(session_id)
-    assert len(summaries) == 1
-    assert summaries[0].source == "both"
-    content = summaries[0].content
-    assert "今天玩什麼" in content
-    assert "Boss" in content
-    assert "問答對照" in content
+    summaries = store.list_summaries(session_id, limit=10)
+    assert len(summaries) == 2
+    by_source = {summary.source: summary for summary in summaries}
+    assert "chat" in by_source and "stt" in by_source
+    assert by_source["chat"].period_start == by_source["stt"].period_start
+    assert by_source["chat"].period_end == by_source["stt"].period_end
+    assert "今天玩什麼" in by_source["chat"].content
+    assert "Boss" in by_source["stt"].content
+    assert "[2026-06-12T10:00:00+00:00]" in by_source["chat"].content
     store.close()
