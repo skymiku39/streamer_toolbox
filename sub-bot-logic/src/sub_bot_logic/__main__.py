@@ -1,0 +1,138 @@
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+import threading
+from pathlib import Path
+from dotenv import load_dotenv
+import pika
+
+from pkg_bus.config import rabbitmq_url, stream_exchange
+from pkg_bus.rabbitmq import (
+    connect_blocking,
+    consume_messages,
+    publish_topic_blocking,
+    setup_subscriber_queue_multi,
+)
+from pkg_bus.topology import QUEUE_BOT_LOGIC_INBOX
+from pkg_events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_EVENTSUB_PREFIX
+
+from sub_bot_logic.redemption_map import RedemptionResponseMap
+from sub_bot_logic.response_map import BotResponseMap
+from sub_bot_logic.rules_engine import BotRulesEngine
+
+PROCESS_NAME = "sub-bot-logic"
+DEFAULT_RESPONSES = Path(__file__).resolve().parents[2] / "config" / "examples" / "bot_responses.example.json"
+DEFAULT_REDEMPTIONS = (
+    Path(__file__).resolve().parents[2] / "config" / "examples" / "redemption_responses.example.json"
+)
+
+
+class BotLogicSubscriber:
+    def __init__(
+        self,
+        engine: BotRulesEngine,
+        *,
+        exchange_name: str,
+        channel: pika.adapters.blocking_connection.BlockingChannel,
+    ) -> None:
+        self._engine = engine
+        self._exchange_name = exchange_name
+        self._channel = channel
+        self._reply_count = 0
+        self._lock = threading.Lock()
+
+    def handle(self, payload: dict) -> None:
+        reply = self._engine.process_payload(payload)
+        if reply is None:
+            return
+        publish_topic_blocking(
+            self._channel,
+            exchange_name=self._exchange_name,
+            routing_key=TOPIC_CHAT_REPLY,
+            payload=reply.to_dict(),
+        )
+        with self._lock:
+            self._reply_count += 1
+        print(
+            f"[reply] [{reply.source}] #{reply.channel}: {reply.content[:80]}",
+            flush=True,
+        )
+
+    def stats_loop(self, stop: threading.Event) -> None:
+        while not stop.wait(30):
+            with self._lock:
+                count = self._reply_count
+            print(f"[stats] replies_published={count}", file=sys.stderr, flush=True)
+
+
+def main(argv: list[str] | None = None) -> int:
+    load_dotenv()
+    parser = argparse.ArgumentParser(
+        description="Subscribe chat.message + eventsub.* → publish chat.reply"
+    )
+    parser.add_argument(
+        "--responses",
+        default=os.environ.get("BOT_RESPONSES_PATH", str(DEFAULT_RESPONSES)),
+        help="bot_responses.json 路徑",
+    )
+    parser.add_argument(
+        "--redemptions",
+        default=os.environ.get("BOT_REDEMPTIONS_PATH", str(DEFAULT_REDEMPTIONS)),
+        help="redemption_responses.json 路徑",
+    )
+    parser.add_argument(
+        "--command-prefix",
+        default=os.environ.get("BOT_COMMAND_PREFIX", "!"),
+    )
+    parser.add_argument(
+        "--bot-identity",
+        default=os.environ.get("BOT_IDENTITY", "Streamer Toolbox Bot"),
+    )
+    args = parser.parse_args(argv)
+
+    engine = BotRulesEngine(
+        BotResponseMap(args.responses),
+        RedemptionResponseMap(args.redemptions),
+        command_prefix=args.command_prefix,
+        bot_identity=args.bot_identity,
+    )
+
+    connection = connect_blocking(rabbitmq_url())
+    channel = connection.channel()
+    exchange = stream_exchange()
+    setup_subscriber_queue_multi(
+        channel,
+        exchange_name=exchange,
+        queue_name=QUEUE_BOT_LOGIC_INBOX,
+        routing_keys=[TOPIC_CHAT_MESSAGE, f"{TOPIC_EVENTSUB_PREFIX}#"],
+    )
+
+    subscriber = BotLogicSubscriber(engine, exchange_name=exchange, channel=channel)
+    stop_stats = threading.Event()
+    stats_thread = threading.Thread(
+        target=subscriber.stats_loop,
+        args=(stop_stats,),
+        daemon=True,
+    )
+    stats_thread.start()
+
+    print(
+        f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE} + {TOPIC_EVENTSUB_PREFIX}#",
+        file=sys.stderr,
+        flush=True,
+    )
+    try:
+        consume_messages(channel, QUEUE_BOT_LOGIC_INBOX, subscriber.handle)
+    except KeyboardInterrupt:
+        print("Shutting down...", file=sys.stderr)
+    finally:
+        stop_stats.set()
+        if connection.is_open:
+            connection.close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

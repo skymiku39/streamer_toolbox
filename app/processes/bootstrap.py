@@ -2,6 +2,7 @@ from app.processes.base import PublisherSpec, SubscriberSpec
 from app.processes.registry import registry
 from pkg_bus.topology import (
     DEFAULT_EXCHANGE,
+    QUEUE_BOT_LOGIC_INBOX,
     QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE,
     QUEUE_CHARACTER_FACE_CHARACTER_TURN,
     QUEUE_CHARACTER_STAGE,
@@ -108,6 +109,16 @@ def register_builtin_processes() -> None:
             kind="subscriber",
             exchange=DEFAULT_EXCHANGE,
             queue=QUEUE_VISUAL_CHAT_MESSAGE,
+        )
+    )
+    registry.register_subscriber(
+        SubscriberSpec(
+            name="sub-bot-logic",
+            module="sub_bot_logic",
+            description="chat.message + eventsub.* → chat.reply",
+            kind="subscriber",
+            exchange=DEFAULT_EXCHANGE,
+            queue=QUEUE_BOT_LOGIC_INBOX,
         )
     )
     registry.register_subscriber(

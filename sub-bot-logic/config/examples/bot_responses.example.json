@@ -1,0 +1,59 @@
+{
+  "_comment": "BOT 回應 full_v2 範例：schema_version=2，分類為 command/keyword/event/moderation/system。",
+  "schema_version": 2,
+  "event": {
+    "follow": "🎉 感謝 {follower_name} 追隨！",
+    "raid": "⚔️ 歡迎 {raider_name} 帶著 {viewer_count} 位觀眾 Raid！",
+    "subscribe": "💜 感謝 {subscriber_name} 訂閱 {tier}！{gift_suffix}",
+    "subscription_gift": "🎁 感謝 {gifter_name} 贈送 {total} 份 {tier} 訂閱！",
+    "subscription_message": "💎 感謝 {subscriber_name} 已訂閱 {months}（{tier}）！",
+    "bits": "💎 {user_name} 使用了 {bits} Bits（{type}）{text}",
+    "first_chat": "🎉 恭喜 {user} 成為今天第一位發言的觀眾！成功搶到頭香啦！"
+  },
+  "moderation": {
+    "message_delete": "🗑️ {target_user} 的訊息已被刪除",
+    "ban": "🔨 {moderator} 對 {banned_user} 執行{action}{reason_suffix}",
+    "unban": "✅ {moderator} 解除了 {unbanned_user} 的封鎖",
+    "automod_hold": "🤖 AutoMod 攔截了 {user_name} 的訊息：{text}",
+    "automod_update": "🤖 {moderator} 已 {status} AutoMod 攔截訊息"
+  },
+  "system": {
+    "poll_begin": "📊 投票開始：{title}（選項：{choices}）",
+    "poll_end": "📊 投票結束：{title}（{status}）",
+    "prediction_begin": "🔮 預測開始：{title}（{outcomes}）",
+    "prediction_lock": "🔮 預測已鎖定：{title}",
+    "prediction_end": "🔮 預測結束：{title}（{status}）",
+    "hype_train_begin": "🚂 Hype Train 啟動！等級 {level}，累計 {total} 點",
+    "hype_train_end": "🚂 Hype Train 結束！最終等級 {level}，累計 {total} 點"
+  },
+  "command": {
+    "templates": {
+      "ping": "🏓 Pong! Bot 運行中，{author}！",
+      "hello": "👋 你好，{author}！歡迎來到 {channel} 的頻道！",
+      "info": "🤖 我是 {identity}，一個 Twitch 聊天機器人！使用 !commands 查看可用指令。",
+      "echo": "💬 {message}",
+      "uptime": "⏱️ Bot 正常運行中！",
+      "announce": "📢 公告：{message}"
+    },
+    "permissions": {
+      "commands": { "enabled": true, "min_role": "viewer" },
+      "ping": { "enabled": true, "min_role": "viewer" },
+      "hello": { "enabled": true, "min_role": "viewer" },
+      "info": { "enabled": true, "min_role": "viewer" },
+      "echo": { "enabled": true, "min_role": "subscriber" },
+      "uptime": { "enabled": true, "min_role": "viewer" },
+      "announce": { "enabled": true, "min_role": "mod" }
+    }
+  },
+  "keyword": [
+    {
+      "id": "hello_keyword",
+      "enabled": true,
+      "trigger": "安安",
+      "response": "哈囉 {author}，歡迎來到 {channel}！",
+      "match_mode": "contains",
+      "case_sensitive": false,
+      "cooldown_sec": 10
+    }
+  ]
+}

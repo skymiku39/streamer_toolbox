@@ -21,6 +21,7 @@ dependencies = [
     "sub-character-face",
     "sub-character-stage",
     "sub-character-voice",
+    "sub-bot-logic",
     "sub-io-log",
     "sub-llm",
     "sub-tts",
@@ -50,6 +51,7 @@ members = [
     "sub-character-face",
     "sub-character-stage",
     "sub-character-voice",
+    "sub-bot-logic",
     "sub-io-log",
     "sub-llm",
     "sub-tts",
@@ -74,6 +76,7 @@ sub-character-brain = { workspace = true }
 sub-character-face = { workspace = true }
 sub-character-stage = { workspace = true }
 sub-character-voice = { workspace = true }
+sub-bot-logic = { workspace = true }
 sub-io-log = { workspace = true }
 sub-llm = { workspace = true }
 sub-tts = { workspace = true }
@@ -103,6 +106,7 @@ testpaths = [
     "sub-character-brain/tests",
     "sub-character-face/tests",
     "sub-character-stage/tests",
+    "sub-bot-logic/tests",
     "sub-llm/tests",
     "sub-tts/tests",
     "sub-show-overlay/tests",
@@ -125,6 +129,7 @@ pythonpath = [
     "sub-character-face/src",
     "sub-character-stage/src",
     "sub-character-voice/src",
+    "sub-bot-logic/src",
     "sub-io-log/src",
     "sub-llm/src",
     "sub-tts/src",
@@ -158,6 +163,7 @@ known-first-party = [
     "sub_character_voice",
     "sub_character_face",
     "sub_character_stage",
+    "sub_bot_logic",
     "sub_io_log",
     "sub_llm",
     "sub_tts",
