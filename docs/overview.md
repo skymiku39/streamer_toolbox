@@ -67,7 +67,7 @@ flowchart LR
 
 | 專案 | 類型 | 角色 |
 |------|------|------|
-| `streamer-toolkit` | **姊妹專案** | Phase 01 可執行範本（RabbitMQ Pub/Sub POC） |
+| `streamer-toolkit` | **姊妹專案** | 早期 Phase 01 架構參考（RabbitMQ Pub/Sub POC） |
 | `twitch_api` | 參考程式碼 | 產品 B As-is（OAuth、EventSub、規則 BOT；IRC fallback 依賴 `ttv_chat`） |
 | `yt_chat` | 參考程式碼 | `ingress-yt-read` 模板（YouTube 唯讀、`tubechat_lens`） |
 | `ttv_chat` | 參考程式碼 | `ingress-ttv-read` 模板（Twitch IRC 匿名、`ttvchat_lens`） |
@@ -81,7 +81,7 @@ flowchart LR
 |------|------|
 | Phase 01 | [plans/phase-01-rabbitmq-io-poc.md](plans/phase-01-rabbitmq-io-poc.md) — RabbitMQ 1 Pub + 1 Sub（Twitch → I/O Log） |
 
-Phase 01 可執行參考位於姊妹專案 [`streamer-toolkit`](../streamer-toolkit)，詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。本 repo 的 `pkg-events`、`pkg-bus` 等 workspace package 為正式實作起點。
+Phase 01 已於本專案實作（見 [development.md](development.md)）。姊妹專案 [`streamer-toolkit`](../streamer-toolkit) 為早期架構參考，詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。
 
 ## 實作範圍
 

@@ -90,7 +90,7 @@ streamer_toolbox/
 └── ...
 ```
 
-Phase 01 可執行參考位於姊妹專案 [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）。可參考其 `app/` 目錄結構孵化，schema 與拓撲對齊後併入本專案 `pkg-events`、`pkg-bus` 等 package。
+Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）為早期架構參考，其 `app/` 目錄結構曾作為 `app/`、`pkg-events`、`pkg-bus` 孵化的對照來源。
 
 ## 目錄結構（長期全景）
 

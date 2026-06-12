@@ -7,7 +7,7 @@
 | 術語 | 含義 |
 |------|------|
 | **本專案** | `streamer_toolbox`：設計文件（`docs/`）與 stream-core 實作（`pkg-*` 等 workspace package） |
-| **姊妹專案** | 僅 [`streamer-toolkit`](../streamer-toolkit)：Phase 01 可執行 Pub/Sub 參考，與本專案並行演進 |
+| **姊妹專案** | 僅 [`streamer-toolkit`](../streamer-toolkit)：早期 Phase 01 Pub/Sub 架構參考 |
 | **參考程式碼** | `twitch_api`、`yt_chat`、`ttv_chat`、`llm_twitchat` 等：既有 As-is 實作，供拆分模組或對照邏輯，**不是**姊妹專案 |
 | **Sub** | Pub/Sub 架構中的 **Subscriber package**（`sub-io-log`、`sub-llm` 等），非 Git submodule |
 
@@ -15,7 +15,7 @@
 
 | 專案 | 路徑 | 用途 |
 |------|------|------|
-| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | Phase 01 RabbitMQ Pub/Sub POC；對應 `pkg-events`、`pkg-bus`、`ingress-*`、`sub-io-log` 的可執行範本 |
+| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | 早期 Phase 01 RabbitMQ Pub/Sub 架構參考；本專案已實作對齊設計的版本 |
 
 詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。
 
@@ -72,11 +72,11 @@ flowchart TB
 | `twitch_api` → `ttv_chat` | `pyproject.toml` path 依賴 `ttvchat-lens`；EventSub 不可用時**降級**為匿名 IRC 唯讀 |
 | `llm_twitchat` ⊥ `twitch_api` | **分離運行**；LLM / STT 已自 `twitch_api` 拆出，不共用 EventBus 或 Python 套件 |
 | 參考程式 → streamer-toolbox | 作為各層 As-is 對照；目標態經 MQ + `pkg-events` 解耦 |
-| streamer-toolkit → streamer-toolbox | 姊妹專案；示範完整 Pub/Sub 管線，schema / 拓撲對齊後併入本專案 |
+| streamer-toolkit → streamer-toolbox | 姊妹專案；早期 Pub/Sub 架構參考，本專案已實作對齊設計的 Phase 01 |
 
 ### streamer-toolkit（姊妹專案）
 
-Phase 01 可執行範本：Twitch IRC（匿名）→ RabbitMQ fanout → 多 Sub（檔案 log、web UI）。與 `ttv_chat` 同為 IRC 匿名讀取，但 toolkit 為自包含實作，示範完整 Pub/Sub 管線與 process registry 擴充模式。
+早期 Phase 01 架構參考：Twitch IRC（匿名）→ RabbitMQ fanout → 多 Sub（檔案 log、web UI）。與 `ttv_chat` 同為 IRC 匿名讀取，但 toolkit 為自包含實作，曾示範 Pub/Sub 管線與 process registry 擴充模式；**正式實作已移至本專案**。
 
 詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。
 
