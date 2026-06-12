@@ -44,16 +44,18 @@ L2 記憶層的作法：
 - **period 對齊**：同一 worker 批次共用 `period_start`/`period_end`，方便下游（L3/L4）依時段並列兩份摘要，由 LLM 自行推理語意關聯
 - **不做配對**：不在 L2 寫死 Q↔A 規則；若未來要問答分析，應在 L4 用語意理解或更長上下文，而非 timestamp 鄰近配對
 
-## 替代方案：主播本機擷取音訊（未實作）
+## 替代方案：主播本機擷取音訊
 
-若 STT 改在**主播開台電腦**擷取本機音訊，而非從 Twitch HLS 拉流（現行 `ingress-twitch-audio`），則 chat 與語音可共用**同一台機器的 wall-clock**，配對準確度會高很多。
+> **狀態：僅技術規劃，目前不實作。** 現行 STT 仍使用 `ingress-twitch-audio`（Twitch HLS 拉流）。
+
+若 STT 改在**主播開台電腦**擷取本機音訊，而非從 Twitch HLS 拉流，則 chat 與語音可共用**同一台機器的 wall-clock**，配對準確度會高很多。
 
 ### 延遲對比
 
 | 路徑 | chat 時間戳 | STT 時間戳 | 中間延遲 |
 |------|-------------|------------|----------|
-| **現行（遠端拉流）** | IRC 本機收到 | Twitch CDN → streamlink → chunk → Whisper | 常達 **十～数十秒**（編碼、CDN、chunk 邊界） |
-| **本機擷取（提案）** | IRC 本機收到 | 本機麥克風／環境音 chunk → Whisper |  mainly **主播反應時間 + chunk 長度**（通常數秒） |
+| **現行（遠端拉流）** | IRC 本機收到 | Twitch CDN → streamlink → chunk → Whisper | 常達 **十～數十秒**（編碼、CDN、chunk 邊界） |
+| **本機擷取（提案）** | IRC 本機收到 | 本機麥克風／環境音 chunk → Whisper | 主要為 **主播反應時間 + chunk 長度**（通常數秒） |
 
 觀眾發言 → 主播看到（IRC）→ 開口回覆（麥克風）→ STT，若後三段都在同一台 PC 上打 timestamp，「這則 chat 之後、下一個 stt 之前」的啟發式配對才有意義。
 
