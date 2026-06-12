@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "訂閱 chat.reply → Twitch Helix 發話（唯一 Egress）"
 requires-python = ">=3.11"
 dependencies = [
+  "identity-oauth",
   "pika>=1.3.0",
   "pkg-bus",
   "pkg-events",
@@ -21,5 +22,6 @@ build-backend = "hatchling.build"
 packages = ["src/twitch_connector"]
 
 [tool.uv.sources]
+identity-oauth = { workspace = true }
 pkg-bus = { workspace = true }
 pkg-events = { workspace = true }
