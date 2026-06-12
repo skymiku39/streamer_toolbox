@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+import time
+
+from dotenv import load_dotenv
+
+from pkg_stream_store import StreamTextStore
+
+from sub_memory_worker.config import MemoryWorkerConfig
+from sub_memory_worker.summarizer import create_summarizer
+from sub_memory_worker.worker import MemoryWorker
+
+PROCESS_NAME = "sub-memory-worker"
+
+
+def main(argv: list[str] | None = None) -> int:
+    load_dotenv()
+    parser = argparse.ArgumentParser(
+        description="Periodic chat summarization → summaries table (Phase 1)",
+    )
+    parser.add_argument(
+        "--db-path",
+        default=os.environ.get("STREAM_DB_PATH", "data/stream_text.db"),
+    )
+    parser.add_argument(
+        "--interval-minutes",
+        type=int,
+        default=int(os.environ.get("MEMORY_INTERVAL_MINUTES", "5")),
+    )
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Run one summarization cycle and exit",
+    )
+    parser.add_argument(
+        "--llm-backend",
+        default=os.environ.get("MEMORY_LLM_BACKEND", "template"),
+        choices=["template", "openai", "gemini"],
+    )
+    args = parser.parse_args(argv)
+
+    config = MemoryWorkerConfig.from_env()
+    config = MemoryWorkerConfig(
+        db_path=args.db_path,
+        session_id=config.session_id,
+        interval_minutes=args.interval_minutes,
+        llm_backend=args.llm_backend,
+        batch_limit=config.batch_limit,
+    )
+
+    try:
+        summarizer = create_summarizer(config.llm_backend)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    store = StreamTextStore(config.db_path)
+    worker = MemoryWorker(store, config, summarizer)
+
+    print(
+        f"{PROCESS_NAME} db={config.db_path} interval={config.interval_minutes}m "
+        f"backend={config.llm_backend}",
+        file=sys.stderr,
+        flush=True,
+    )
+
+    try:
+        if args.once:
+            worker.run_once()
+            return 0
+
+        interval_sec = max(1, config.interval_minutes) * 60
+        while True:
+            worker.run_once()
+            time.sleep(interval_sec)
+    except KeyboardInterrupt:
+        print("Shutting down...", file=sys.stderr)
+    finally:
+        store.close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

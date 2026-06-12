@@ -1,0 +1,13 @@
+[project]
+name = "pkg-stream-store"
+version = "0.1.0"
+description = "直播文字記錄 SQLite 儲存（記錄層 / 記憶層共用）"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pkg_stream_store"]

@@ -15,6 +15,7 @@ dependencies = [
     "pkg-events",
     "pkg-safety",
     "pkg-tts",
+    "pkg-stream-store",
     "python-dotenv>=1.0.0",
     "sub-character-brain",
     "sub-character-face",
@@ -22,9 +23,11 @@ dependencies = [
     "sub-character-voice",
     "sub-bot-logic",
     "sub-io-log",
+    "sub-memory-worker",
     "sub-llm",
     "sub-tts",
     "sub-show-overlay",
+    "sub-stream-record",
     "sub-visual",
     "twitch-connector",
 ]
@@ -39,6 +42,7 @@ members = [
     "pkg-bus",
     "pkg-safety",
     "pkg-tts",
+    "pkg-stream-store",
     "identity-oauth",
     "ingress-twitch-audio",
     "ingress-twitch-eventsub",
@@ -51,14 +55,17 @@ members = [
     "sub-character-voice",
     "sub-bot-logic",
     "sub-io-log",
+    "sub-memory-worker",
     "sub-llm",
     "sub-tts",
     "sub-show-overlay",
+    "sub-stream-record",
     "sub-visual",
     "twitch-connector",
 ]
 
 [tool.uv.sources]
+pkg-stream-store = { workspace = true }
 pkg-events = { workspace = true }
 pkg-bus = { workspace = true }
 identity-oauth = { workspace = true }
@@ -75,9 +82,11 @@ sub-character-stage = { workspace = true }
 sub-character-voice = { workspace = true }
 sub-bot-logic = { workspace = true }
 sub-io-log = { workspace = true }
+sub-memory-worker = { workspace = true }
 sub-llm = { workspace = true }
 sub-tts = { workspace = true }
 sub-show-overlay = { workspace = true }
+sub-stream-record = { workspace = true }
 sub-visual = { workspace = true }
 twitch-connector = { workspace = true }
 
@@ -94,6 +103,7 @@ testpaths = [
     "pkg-safety/tests",
     "pkg-tts/tests",
     "app/tests",
+    "pkg-stream-store/tests",
     "identity-oauth/tests",
     "ingress-twitch-eventsub/tests",
     "ingress-twitch-audio/tests",
@@ -106,9 +116,11 @@ testpaths = [
     "sub-character-stage/tests",
     "sub-bot-logic/tests",
     "sub-io-log/tests",
+    "sub-memory-worker/tests",
     "sub-llm/tests",
     "sub-tts/tests",
     "sub-show-overlay/tests",
+    "sub-stream-record/tests",
     "sub-visual/tests",
     "twitch-connector/tests",
 ]
@@ -118,6 +130,7 @@ pythonpath = [
     "pkg-bus/src",
     "pkg-safety/src",
     "pkg-tts/src",
+    "pkg-stream-store/src",
     "identity-oauth/src",
     "ingress-twitch-eventsub/src",
     "ingress-twitch-audio/src",
@@ -130,9 +143,11 @@ pythonpath = [
     "sub-character-voice/src",
     "sub-bot-logic/src",
     "sub-io-log/src",
+    "sub-memory-worker/src",
     "sub-llm/src",
     "sub-tts/src",
     "sub-show-overlay/src",
+    "sub-stream-record/src",
     "sub-visual/src",
     "twitch-connector/src",
 ]
@@ -156,6 +171,7 @@ known-first-party = [
     "pkg_bus",
     "pkg_events",
     "pkg_safety",
+    "pkg_stream_store",
     "pkg_tts",
     "sub_character_brain",
     "sub_character_voice",
@@ -163,7 +179,9 @@ known-first-party = [
     "sub_character_stage",
     "sub_bot_logic",
     "sub_io_log",
+    "sub_memory_worker",
     "sub_llm",
+    "sub_stream_record",
     "sub_tts",
     "sub_show_overlay",
     "sub_visual",
