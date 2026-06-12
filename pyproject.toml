@@ -9,7 +9,6 @@ dependencies = [
     "ingress-discord",
     "ingress-ttv-read",
     "ingress-twitch-audio",
-    "ingress-twitch-chat",
     "ingress-twitch-eventsub",
     "ingress-yt-read",
     "pkg-bus",
@@ -41,7 +40,6 @@ members = [
     "pkg-safety",
     "pkg-tts",
     "identity-oauth",
-    "ingress-twitch-chat",
     "ingress-twitch-audio",
     "ingress-twitch-eventsub",
     "ingress-ttv-read",
@@ -64,7 +62,6 @@ members = [
 pkg-events = { workspace = true }
 pkg-bus = { workspace = true }
 identity-oauth = { workspace = true }
-ingress-twitch-chat = { workspace = true }
 ingress-twitch-eventsub = { workspace = true }
 ingress-twitch-audio = { workspace = true }
 ingress-ttv-read = { workspace = true }
@@ -98,7 +95,6 @@ testpaths = [
     "pkg-tts/tests",
     "app/tests",
     "identity-oauth/tests",
-    "ingress-twitch-chat/tests",
     "ingress-twitch-eventsub/tests",
     "ingress-twitch-audio/tests",
     "ingress-ttv-read/tests",
@@ -123,7 +119,6 @@ pythonpath = [
     "pkg-safety/src",
     "pkg-tts/src",
     "identity-oauth/src",
-    "ingress-twitch-chat/src",
     "ingress-twitch-eventsub/src",
     "ingress-twitch-audio/src",
     "ingress-ttv-read/src",
@@ -156,7 +151,6 @@ known-first-party = [
     "ingress_discord",
     "ingress_ttv_read",
     "ingress_twitch_audio",
-    "ingress_twitch_chat",
     "ingress_twitch_eventsub",
     "ingress_yt_read",
     "pkg_bus",

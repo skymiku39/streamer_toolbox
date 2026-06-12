@@ -19,15 +19,6 @@ from pkg_bus.topology import (
 def register_builtin_processes() -> None:
     registry.register_publisher(
         PublisherSpec(
-            name="ingress-twitch-chat",
-            module="ingress_twitch_chat",
-            description="Twitch IRC → RabbitMQ chat.message（已棄用，請用 ingress-ttv-read）",
-            kind="publisher",
-            exchange=DEFAULT_EXCHANGE,
-        )
-    )
-    registry.register_publisher(
-        PublisherSpec(
             name="ingress-ttv-read",
             module="ingress_ttv_read",
             description="ttvchat_lens IRC → RabbitMQ chat.message",

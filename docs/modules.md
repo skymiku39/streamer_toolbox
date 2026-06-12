@@ -8,7 +8,7 @@
 |---------|-----|------|---------|----------|
 | `ingress-twitch-eventsub` | Ingress | 已有 | `ingress-twitch-eventsub` | `twitch_api` `bot/` |
 | `ingress-yt-read` | Ingress | 已有 | `ingress-yt-read` | `yt_chat` |
-| `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat`；本專案過渡實作 `ingress-twitch-chat` |
+| `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat` |
 | `ingress-twitch-audio` | Ingress | 已有 | `ingress-twitch-audio` | `llm_twitchat` `ingest/` |
 | `ingress-discord` | Ingress | 已有 | `ingress-discord` | — |
 | `io-log` | Core | 已有 | `sub-io-log` | `streamer-toolkit` `sub1` |
@@ -20,9 +20,9 @@
 | `logic-llm` | Logic | 已有（As-is） | `sub-llm` | `llm_twitchat` |
 | `safety-filter` | Logic | 部分 | `pkg-safety` | `tts/message_filter.py` |
 | `character-brain` | Logic | 已有 | `sub-character-brain` | — |
-| `character-voice` | Egress | 部分 | `sub-character-voice` | TTS 合成已有；待接實際播放管線 |
-| `character-face` | Egress | 部分 | `sub-character-face` | 骨架已有；VTS driver 為 stub |
-| `character-stage` | LocalPC | 部分 | `sub-character-stage` | coordinator 已有；OBS driver 為 stub |
+| `character-voice` | Egress | 已有 | `sub-character-voice` | — |
+| `character-face` | Egress | 已有 | `sub-character-face` | VTS WebSocket |
+| `character-stage` | LocalPC | 已有 | `sub-character-stage` | OBS WebSocket |
 | `egress-chat-send` | Egress | 已有 | `twitch-connector` | `send_message` |
 | `egress-tts` | Egress | 已有 | `sub-tts` | `tts/` |
 | `egress-subtitle` | Egress | 已有 | `sub-visual` | `subtitle.py` |

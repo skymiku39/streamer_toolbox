@@ -59,13 +59,13 @@ uv run python -m app.main run
 uv run python -m app.main run sub-io-log
 
 # 終端 2
-uv run python -m app.main run ingress-twitch-chat
+uv run python -m app.main run ingress-ttv-read
 ```
 
 也可直接呼叫各 package：
 
 ```powershell
-uv run ingress-twitch-chat --channel your_channel
+uv run ingress-ttv-read --channel your_channel
 uv run sub-io-log
 ```
 
@@ -86,7 +86,7 @@ streamer_toolbox/
 ├── docs/                   # 設計文件
 ├── pkg-events/             # 事件 schema
 ├── pkg-bus/                # RabbitMQ helpers
-├── ingress-twitch-chat/    # Pub
+├── ingress-ttv-read/       # Pub
 ├── sub-io-log/             # Sub
 ├── docker-compose.yml
 └── pyproject.toml
@@ -108,4 +108,4 @@ streamer_toolbox/
 
 ### `TWITCH_CHANNEL must be set`
 
-在 `.env` 設定 `TWITCH_CHANNEL`，或 `uv run ingress-twitch-chat --channel 頻道名`。
+在 `.env` 設定 `TWITCH_CHANNEL`，或 `uv run ingress-ttv-read --channel 頻道名`。

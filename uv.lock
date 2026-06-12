@@ -12,7 +12,6 @@ members = [
     "ingress-discord",
     "ingress-ttv-read",
     "ingress-twitch-audio",
-    "ingress-twitch-chat",
     "ingress-twitch-eventsub",
     "ingress-yt-read",
     "pkg-bus",
@@ -871,27 +870,6 @@ requires-dist = [
     { name = "pkg-safety", editable = "pkg-safety" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "streamlink", specifier = ">=7.0.0" },
-]
-
-[[package]]
-name = "ingress-twitch-chat"
-version = "0.1.0"
-source = { editable = "ingress-twitch-chat" }
-dependencies = [
-    { name = "aio-pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-    { name = "websockets" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "websockets", specifier = ">=14.0" },
 ]
 
 [[package]]
@@ -1822,7 +1800,6 @@ dependencies = [
     { name = "ingress-discord" },
     { name = "ingress-ttv-read" },
     { name = "ingress-twitch-audio" },
-    { name = "ingress-twitch-chat" },
     { name = "ingress-twitch-eventsub" },
     { name = "ingress-yt-read" },
     { name = "pkg-bus" },
@@ -1855,7 +1832,6 @@ requires-dist = [
     { name = "ingress-discord", editable = "ingress-discord" },
     { name = "ingress-ttv-read", editable = "ingress-ttv-read" },
     { name = "ingress-twitch-audio", editable = "ingress-twitch-audio" },
-    { name = "ingress-twitch-chat", editable = "ingress-twitch-chat" },
     { name = "ingress-twitch-eventsub", editable = "ingress-twitch-eventsub" },
     { name = "ingress-yt-read", editable = "ingress-yt-read" },
     { name = "pkg-bus", editable = "pkg-bus" },
@@ -1955,6 +1931,7 @@ dependencies = [
     { name = "pkg-bus" },
     { name = "pkg-events" },
     { name = "python-dotenv" },
+    { name = "websockets" },
 ]
 
 [package.metadata]
@@ -1963,6 +1940,7 @@ requires-dist = [
     { name = "pkg-bus", editable = "pkg-bus" },
     { name = "pkg-events", editable = "pkg-events" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "websockets", specifier = ">=12.0" },
 ]
 
 [[package]]
@@ -2217,6 +2195,7 @@ name = "twitch-connector"
 version = "0.1.0"
 source = { editable = "twitch-connector" }
 dependencies = [
+    { name = "identity-oauth" },
     { name = "pika" },
     { name = "pkg-bus" },
     { name = "pkg-events" },
@@ -2225,6 +2204,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "identity-oauth", editable = "identity-oauth" },
     { name = "pika", specifier = ">=1.3.0" },
     { name = "pkg-bus", editable = "pkg-bus" },
     { name = "pkg-events", editable = "pkg-events" },
