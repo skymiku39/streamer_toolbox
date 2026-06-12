@@ -28,7 +28,9 @@ async def run(channel: str) -> None:
         message_id = payload.get("message_id", "")[:8]
         author = payload.get("author_name", "")
         ch = payload.get("channel", "")
-        print(f"published {message_id} #{ch} {author}", flush=True)
+        content = str(payload.get("content", "")).strip()
+        preview = content if len(content) <= 60 else f"{content[:57]}..."
+        print(f"published {message_id} #{ch} {author}: {preview}", flush=True)
 
     print(
         f"Listening to #{channel.lstrip('#')} via ttvchat_lens (anonymous IRC)",
