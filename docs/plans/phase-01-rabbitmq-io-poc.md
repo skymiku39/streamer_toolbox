@@ -299,14 +299,14 @@ uv run ingress-twitch-chat --channel <正在直播的頻道>
 | JSON 過大 | 本階段不附 `raw` 巨大物件 |
 | Windows 路徑 | `IO_LOG_PATH` 用相對路徑 `logs/` |
 
-## 11. 何時從主 repo 拆出獨立 repo
+## 11. 何時從本專案拆出獨立 repo
 
 | 里程碑 | 動作 |
 |--------|------|
-| Phase 01 完成 | `pkg-events`、`pkg-bus`、`sub-io-log` **留在主 repo** |
+| Phase 01 完成 | `pkg-events`、`pkg-bus`、`sub-io-log` **留在本專案** |
 | `events.md` schema v1 凍結 | 允許新 Sub 以 git 依賴 `pkg-events` 在獨立 repo 開發 |
 | Phase 02+ 加 `sub-show-overlay` | 新建獨立 repo，只依賴 pkg，經 MQ 連通 |
-| Ingress 多實作並存 | `ingress-twitch-eventsub` 等拆出，主 repo 只留最小 IRC ingress 或全拆 |
+| Ingress 多實作並存 | `ingress-twitch-eventsub` 等拆出，本專案只留最小 IRC ingress 或全拆 |
 
 **`sub-io-log` 不拆**——作為管線健康檢查工具，與 `stream-app` 一同維護。
 
