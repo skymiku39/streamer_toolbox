@@ -6,6 +6,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 
+from app.console_encoding import configure_utf8_stdio, utf8_subprocess_env
 from app.module_paths import legacy_pythonpath_env
 from app.processes.base import ProcessSpec
 from app.processes.chat_ingress import (
@@ -50,8 +51,10 @@ def _start_process(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         bufsize=1,
-        env=legacy_pythonpath_env(),
+        env=utf8_subprocess_env(legacy_pythonpath_env()),
     )
     thread = threading.Thread(
         target=_prefix_stream,
@@ -160,6 +163,7 @@ def run_processes(
     *,
     chat_fallback: bool = False,
 ) -> int:
+    configure_utf8_stdio()
     specs = list(specs)
     if not specs:
         print("No processes to run.", file=sys.stderr)

@@ -3,9 +3,11 @@ import sys
 
 from dotenv import load_dotenv
 
+from app.console_encoding import configure_utf8_stdio
 from app.module_paths import ensure_legacy_module_paths
 
 ensure_legacy_module_paths()
+configure_utf8_stdio()
 
 from app.processes.registry import registry
 from app.processes.runner import run_processes

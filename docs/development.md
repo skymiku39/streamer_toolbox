@@ -10,6 +10,16 @@
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Docker Desktop（RabbitMQ 本地開發用）
 
+### Windows 終端機中文亂碼
+
+`app.main` 與子程序已預設 **UTF-8** I/O。若仍見亂碼，請確認：
+
+1. 使用 **Windows Terminal** 或 VS Code / Cursor 內建終端（比舊版 `cmd` 相容性佳）
+2. 可選：啟動前執行 `chcp 65001`（切換 code page 為 UTF-8）
+3. 可選：PowerShell profile 加入 `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::UTF8`
+
+直接跑單一模組時同樣建議透過 `uv run python -m app.main run ...`，以套用 runner 的 UTF-8 子程序設定。
+
 ## 初次設定
 
 ```powershell
