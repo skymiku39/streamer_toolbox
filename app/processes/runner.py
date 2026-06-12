@@ -6,6 +6,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 
+from app.module_paths import legacy_pythonpath_env
 from app.processes.base import ProcessSpec
 from app.processes.chat_ingress import (
     CHAT_FALLBACK_EXIT_CODE,
@@ -50,6 +51,7 @@ def _start_process(
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
+        env=legacy_pythonpath_env(),
     )
     thread = threading.Thread(
         target=_prefix_stream,

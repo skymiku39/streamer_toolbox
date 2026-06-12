@@ -9,28 +9,12 @@ resolution-markers = [
 [manifest]
 members = [
     "identity-oauth",
-    "ingress-discord",
-    "ingress-ttv-read",
-    "ingress-twitch-audio",
-    "ingress-twitch-eventsub",
-    "ingress-yt-read",
     "pkg-bus",
     "pkg-events",
     "pkg-safety",
     "pkg-stream-store",
     "pkg-tts",
     "streamer-toolbox",
-    "sub-bot-logic",
-    "sub-character-brain",
-    "sub-character-face",
-    "sub-character-stage",
-    "sub-character-voice",
-    "sub-io-log",
-    "sub-llm",
-    "sub-show-overlay",
-    "sub-tts",
-    "sub-visual",
-    "twitch-connector",
 ]
 
 [[package]]
@@ -804,117 +788,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz", hash = "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848", size = 196711, upload-time = "2026-06-02T14:34:07.794Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl", hash = "sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2", size = 65455, upload-time = "2026-06-02T14:34:06.319Z" },
-]
-
-[[package]]
-name = "ingress-discord"
-version = "0.1.0"
-source = { editable = "ingress-discord" }
-dependencies = [
-    { name = "discord-py" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "discord-py", specifier = ">=2.4.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "ingress-ttv-read"
-version = "0.1.0"
-source = { editable = "ingress-ttv-read" }
-dependencies = [
-    { name = "aio-pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-    { name = "ttvchat-lens" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "ttvchat-lens", directory = "../ttv_chat" },
-]
-
-[[package]]
-name = "ingress-twitch-audio"
-version = "0.1.0"
-source = { editable = "ingress-twitch-audio" }
-dependencies = [
-    { name = "aio-pika" },
-    { name = "faster-whisper" },
-    { name = "numpy" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-safety" },
-    { name = "python-dotenv" },
-    { name = "streamlink" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "faster-whisper", specifier = ">=1.1.0" },
-    { name = "numpy", specifier = ">=1.24.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-safety", editable = "pkg-safety" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "streamlink", specifier = ">=7.0.0" },
-]
-
-[[package]]
-name = "ingress-twitch-eventsub"
-version = "0.1.0"
-source = { editable = "ingress-twitch-eventsub" }
-dependencies = [
-    { name = "aio-pika" },
-    { name = "identity-oauth" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-    { name = "twitchio" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "identity-oauth", editable = "identity-oauth" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "twitchio", specifier = ">=3.0" },
-]
-
-[[package]]
-name = "ingress-yt-read"
-version = "0.1.0"
-source = { editable = "ingress-yt-read" }
-dependencies = [
-    { name = "aio-pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-    { name = "tubechat-lens" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "tubechat-lens", directory = "../yt_chat" },
 ]
 
 [[package]]
@@ -1802,29 +1675,24 @@ name = "streamer-toolbox"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aio-pika" },
+    { name = "discord-py" },
+    { name = "faster-whisper" },
     { name = "identity-oauth" },
-    { name = "ingress-discord" },
-    { name = "ingress-ttv-read" },
-    { name = "ingress-twitch-audio" },
-    { name = "ingress-twitch-eventsub" },
-    { name = "ingress-yt-read" },
+    { name = "numpy" },
+    { name = "obsws-python" },
+    { name = "pika" },
     { name = "pkg-bus" },
     { name = "pkg-events" },
     { name = "pkg-safety" },
     { name = "pkg-stream-store" },
     { name = "pkg-tts" },
     { name = "python-dotenv" },
-    { name = "sub-bot-logic" },
-    { name = "sub-character-brain" },
-    { name = "sub-character-face" },
-    { name = "sub-character-stage" },
-    { name = "sub-character-voice" },
-    { name = "sub-io-log" },
-    { name = "sub-llm" },
-    { name = "sub-show-overlay" },
-    { name = "sub-tts" },
-    { name = "sub-visual" },
-    { name = "twitch-connector" },
+    { name = "streamlink" },
+    { name = "ttvchat-lens" },
+    { name = "tubechat-lens" },
+    { name = "twitchio" },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -1835,29 +1703,24 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aio-pika", specifier = ">=9.4.0" },
+    { name = "discord-py" },
+    { name = "faster-whisper", specifier = ">=1.1.0" },
     { name = "identity-oauth", editable = "identity-oauth" },
-    { name = "ingress-discord", editable = "ingress-discord" },
-    { name = "ingress-ttv-read", editable = "ingress-ttv-read" },
-    { name = "ingress-twitch-audio", editable = "ingress-twitch-audio" },
-    { name = "ingress-twitch-eventsub", editable = "ingress-twitch-eventsub" },
-    { name = "ingress-yt-read", editable = "ingress-yt-read" },
+    { name = "numpy", specifier = ">=1.24.0" },
+    { name = "obsws-python" },
+    { name = "pika", specifier = ">=1.3.0" },
     { name = "pkg-bus", editable = "pkg-bus" },
     { name = "pkg-events", editable = "pkg-events" },
     { name = "pkg-safety", editable = "pkg-safety" },
     { name = "pkg-stream-store", editable = "pkg-stream-store" },
     { name = "pkg-tts", editable = "pkg-tts" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "sub-bot-logic", editable = "sub-bot-logic" },
-    { name = "sub-character-brain", editable = "sub-character-brain" },
-    { name = "sub-character-face", editable = "sub-character-face" },
-    { name = "sub-character-stage", editable = "sub-character-stage" },
-    { name = "sub-character-voice", editable = "sub-character-voice" },
-    { name = "sub-io-log", editable = "sub-io-log" },
-    { name = "sub-llm", editable = "sub-llm" },
-    { name = "sub-show-overlay", editable = "sub-show-overlay" },
-    { name = "sub-tts", editable = "sub-tts" },
-    { name = "sub-visual", editable = "sub-visual" },
-    { name = "twitch-connector", editable = "twitch-connector" },
+    { name = "streamlink", specifier = ">=7.0.0" },
+    { name = "ttvchat-lens", directory = "../ttv_chat" },
+    { name = "tubechat-lens", directory = "../yt_chat" },
+    { name = "twitchio" },
+    { name = "websockets" },
 ]
 
 [package.metadata.requires-dev]
@@ -1888,208 +1751,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/7f/30293ee4d1dfb5c5713645bae8ba19b1e55fb0f5af385f9ce1fc85d6c9cc/streamlink-8.4.0-py3-none-any.whl", hash = "sha256:eb261a5c4b7330b3a0b4576f994b6b315ad21c2b0273130ad94544c4c29b3842", size = 565095, upload-time = "2026-05-06T18:15:02.313Z" },
     { url = "https://files.pythonhosted.org/packages/00/87/73f7bed91d286e21b876444c00e3bab20512158b8d794b703240d3d5b59b/streamlink-8.4.0-py3-none-win32.whl", hash = "sha256:51aadbaaf4fac1102434938e286912e3640ac21820fffd7d7da84bd40741dfc0", size = 565107, upload-time = "2026-05-06T18:15:04.027Z" },
     { url = "https://files.pythonhosted.org/packages/c7/0e/c3a402c7eede387bcf15c114c7aea6570ad212f77f716cd59619d8d30197/streamlink-8.4.0-py3-none-win_amd64.whl", hash = "sha256:02133a168c4bd8961549a0bdeff38a17bdd1b77b809b25e80891c33c1c78a1d1", size = 565112, upload-time = "2026-05-06T18:15:05.457Z" },
-]
-
-[[package]]
-name = "sub-bot-logic"
-version = "0.1.0"
-source = { editable = "sub-bot-logic" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-character-brain"
-version = "0.1.0"
-source = { editable = "sub-character-brain" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-safety" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-safety", editable = "pkg-safety" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-character-face"
-version = "0.1.0"
-source = { editable = "sub-character-face" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-    { name = "websockets" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "websockets", specifier = ">=12.0" },
-]
-
-[[package]]
-name = "sub-character-stage"
-version = "0.1.0"
-source = { editable = "sub-character-stage" }
-dependencies = [
-    { name = "obsws-python" },
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "obsws-python", specifier = ">=1.7.0" },
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-character-voice"
-version = "0.1.0"
-source = { editable = "sub-character-voice" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-tts" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-tts", editable = "pkg-tts" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-io-log"
-version = "0.1.0"
-source = { editable = "sub-io-log" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-llm"
-version = "0.1.0"
-source = { editable = "sub-llm" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-safety" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-safety", editable = "pkg-safety" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-show-overlay"
-version = "0.1.0"
-source = { editable = "sub-show-overlay" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-tts"
-version = "0.1.0"
-source = { editable = "sub-tts" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-tts" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-tts", editable = "pkg-tts" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-visual"
-version = "0.1.0"
-source = { editable = "sub-visual" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
 
 [[package]]
@@ -2196,27 +1857,6 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "websockets", specifier = ">=16.0" },
-]
-
-[[package]]
-name = "twitch-connector"
-version = "0.1.0"
-source = { editable = "twitch-connector" }
-dependencies = [
-    { name = "identity-oauth" },
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "identity-oauth", editable = "identity-oauth" },
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
 
 [[package]]

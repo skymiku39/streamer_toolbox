@@ -62,11 +62,19 @@ uv run python -m app.main run sub-io-log
 uv run python -m app.main run ingress-ttv-read
 ```
 
-也可直接呼叫各 package：
+也可直接呼叫各模組：
 
 ```powershell
-uv run ingress-ttv-read --channel your_channel
-uv run sub-io-log
+uv run python -m app.publishers.ingress_ttv_read --channel your_channel
+uv run python -m app.subscribers.sub_io_log
+uv run python -m app.workers --once --llm-backend gemini
+```
+
+### 記錄層 + 記憶層（Phase 1）
+
+```powershell
+uv run python -m app.main run ingress-ttv-read sub-stream-record
+uv run python -m app.workers --once --llm-backend gemini
 ```
 
 ### 預期結果
@@ -82,12 +90,17 @@ uv run sub-io-log
 
 ```
 streamer_toolbox/
-├── app/                    # CLI 編排（app.main）
-├── docs/                   # 設計文件
-├── pkg-events/             # 事件 schema
-├── pkg-bus/                # RabbitMQ helpers
-├── ingress-ttv-read/       # Pub
-├── sub-io-log/             # Sub
+├── app/
+│   ├── main.py              # CLI 編排
+│   ├── publishers/          # Ingress（ingress_*）
+│   ├── subscribers/         # Sub（sub_*、twitch_connector）
+│   └── workers/             # 定時 worker（記憶層等）
+├── config/                  # 各 Sub 設定 JSON
+├── docs/
+├── pkg-events/              # 事件 schema
+├── pkg-bus/                 # RabbitMQ helpers
+├── pkg-stream-store/        # SQLite 記錄/記憶
+├── identity-oauth/
 ├── docker-compose.yml
 └── pyproject.toml
 ```
@@ -108,4 +121,4 @@ streamer_toolbox/
 
 ### `TWITCH_CHANNEL must be set`
 
-在 `.env` 設定 `TWITCH_CHANNEL`，或 `uv run ingress-ttv-read --channel 頻道名`。
+在 `.env` 設定 `TWITCH_CHANNEL`，或 `uv run python -m app.publishers.ingress_ttv_read --channel 頻道名`。

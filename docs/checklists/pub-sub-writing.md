@@ -58,8 +58,8 @@
 
 ### 1. Package 初始化
 
-- [ ] 建立 `{package}/pyproject.toml`，加入 uv workspace（根 `pyproject.toml` `members`）
-- [ ] 套件名與 import 路徑一致（如 `ingress_twitch_chat`、`sub_io_log`）
+- [ ] 實作於 `app/subscribers/` 或 `app/publishers/`（對齊 streamer-toolkit）
+- [ ] 使用 `@register_subscriber` / `@register_publisher` 自動註冊
 - [ ] 僅依賴 `pkg-events`、`pkg-bus`（及該模組必要的第三方 lib）
 - [ ] **禁止** import 其他 Sub / Ingress 的業務模組
 
@@ -71,10 +71,9 @@
 
 ### 3. 執行入口
 
-- [ ] 提供 CLI：`uv run {package-name}` 或 `python -m {module}`
+- [ ] 提供 CLI：`uv run python -m app.subscribers.{module}` 或 `app.main run {name}`
 - [ ] 支援環境變數 + `--help`（頻道、MQ URL 等）
-- [ ] 註冊至 `app/processes/`（`@register_publisher` / `@register_subscriber`）
-- [ ] `uv run python -m app.main list` 可列出
+- [ ] `uv run python -m app.main list` 可列出（discover 自動註冊）
 
 ### 4. 執行期行為
 

@@ -6,6 +6,12 @@ from app.processes.base import ProcessSpec, PublisherSpec, SubscriberSpec
 F = TypeVar("F", bound=Callable[..., object])
 
 
+def _runner_module(module: str) -> str:
+    if module.endswith(".__main__"):
+        return module.rsplit(".", 1)[0]
+    return module
+
+
 class ProcessRegistry:
     def __init__(self) -> None:
         self._publishers: dict[str, PublisherSpec] = {}
@@ -13,12 +19,12 @@ class ProcessRegistry:
 
     def register_publisher(self, spec: PublisherSpec) -> None:
         if spec.name in self._publishers:
-            raise ValueError(f"Publisher already registered: {spec.name}")
+            return
         self._publishers[spec.name] = spec
 
     def register_subscriber(self, spec: SubscriberSpec) -> None:
         if spec.name in self._subscribers:
-            raise ValueError(f"Subscriber already registered: {spec.name}")
+            return
         self._subscribers[spec.name] = spec
 
     def get(self, name: str) -> ProcessSpec:
@@ -56,7 +62,7 @@ def register_publisher(
         registry.register_publisher(
             PublisherSpec(
                 name=name,
-                module=func.__module__,
+                module=_runner_module(func.__module__),
                 description=description,
                 kind="publisher",
                 exchange=exchange,
@@ -77,7 +83,7 @@ def register_subscriber(
         registry.register_subscriber(
             SubscriberSpec(
                 name=name,
-                module=func.__module__,
+                module=_runner_module(func.__module__),
                 description=description,
                 kind="subscriber",
                 exchange=exchange,

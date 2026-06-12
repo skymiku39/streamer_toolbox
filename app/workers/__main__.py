@@ -7,6 +7,10 @@ import time
 
 from dotenv import load_dotenv
 
+from app.module_paths import ensure_legacy_module_paths
+
+ensure_legacy_module_paths()
+
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import create_summarizer
 from app.workers.memory_worker import MemoryWorker

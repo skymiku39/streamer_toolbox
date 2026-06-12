@@ -1,10 +1,16 @@
 import importlib
 import pkgutil
 
+_SKIP_MODULES = frozenset({"stream_record_config", "stream_record_writer"})
+
 
 def discover_subscribers() -> None:
     package = __name__
     for module_info in pkgutil.iter_modules(__path__):
-        if module_info.ispkg or module_info.name.startswith("_"):
+        name = module_info.name
+        if name.startswith("_") or name in _SKIP_MODULES:
             continue
-        importlib.import_module(f"{package}.{module_info.name}")
+        if module_info.ispkg:
+            importlib.import_module(f"{package}.{name}.__main__")
+        else:
+            importlib.import_module(f"{package}.{name}")

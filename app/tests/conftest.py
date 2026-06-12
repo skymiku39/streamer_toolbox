@@ -1,3 +1,9 @@
-from app.processes.bootstrap import register_builtin_processes
+from app.module_paths import ensure_legacy_module_paths
 
-register_builtin_processes()
+ensure_legacy_module_paths()
+
+from app.publishers import discover_publishers
+from app.subscribers import discover_subscribers
+
+discover_publishers()
+discover_subscribers()

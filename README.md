@@ -5,7 +5,7 @@
 | 區塊 | 路徑 | 說明 |
 |------|------|------|
 | 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
-| 實作 | `app/`、`pkg-*`、`ingress-*`、`sub-*` | Phase 01 可執行（見 [development.md](docs/development.md)） |
+| 實作 | `app/`、`pkg-*`、`identity-oauth` | Pub/Sub 可執行程式（見 [development.md](docs/development.md)） |
 
 ## 快速開始（開發）
 

@@ -3,12 +3,16 @@ import sys
 
 from dotenv import load_dotenv
 
-from app.processes.bootstrap import register_builtin_processes
+from app.module_paths import ensure_legacy_module_paths
+
+ensure_legacy_module_paths()
+
 from app.processes.registry import registry
 from app.processes.runner import run_processes
+from app.publishers import discover_publishers
 from app.subscribers import discover_subscribers
 
-register_builtin_processes()
+discover_publishers()
 discover_subscribers()
 
 
