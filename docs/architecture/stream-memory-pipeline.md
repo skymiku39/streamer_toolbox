@@ -34,6 +34,16 @@ flowchart LR
 | `stt` | 只記 `stt.segment` |
 | `both` | 聊天室 + 實況語音 STT；記憶層 **chat / stt 分開摘要**，同一批次共用 `period_start`/`period_end` |
 
+## 為何不做 chat ↔ STT 問答配對
+
+觀眾發聊天 → 主播看到 → 開口回覆 → STT 擷取語音，中間有多段延遲（IRC 傳遞、主播閱讀、反應時間、chunk 切割、Whisper 推論）。因此**無法**用「時間上相鄰的 chat 與 stt 列」可靠推斷誰在回誰。
+
+L2 記憶層的作法：
+
+- **分開摘要**：chat 與 stt 各自摘要，保留各自時間軸敘述
+- **period 對齊**：同一 worker 批次共用 `period_start`/`period_end`，方便下游（L3/L4）依時段並列兩份摘要，由 LLM 自行推理語意關聯
+- **不做配對**：不在 L2 寫死 Q↔A 規則；若未來要問答分析，應在 L4 用語意理解或更長上下文，而非 timestamp 鄰近配對
+
 ## SQLite 表
 
 - `stream_sessions` — 場次
