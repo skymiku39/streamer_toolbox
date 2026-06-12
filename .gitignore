@@ -25,3 +25,6 @@ htmlcov/
 
 # Runtime logs
 logs/
+
+# Runtime data (SQLite, exports)
+data/
