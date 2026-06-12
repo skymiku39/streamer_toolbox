@@ -50,7 +50,11 @@ graph LR
 | Backend | Ingress、MQ、Logic Sub、Egress、Identity | 可與 LocalPC **同機** |
 | LocalPC | overlay、stage、OBS、Dashboard | Windows 實況機 |
 
-`twitch_api` 現況為單機：`RuntimeEventBus` + Bot thread + UI + overlay 子進程。
+| 應用 | 現況執行期 |
+|------|------------|
+| `twitch_api` | 單機：`RuntimeEventBus` + Bot thread + UI + overlay 子進程 |
+| `llm_twitchat` | 單機：in-process `EventBus` + STT worker + Web UI（**未**接入 MQ） |
+| `yt_chat` / `ttv_chat` | 單機：reader / WebSocket server；可作 ingress 模板 |
 
 ## 通訊規則
 

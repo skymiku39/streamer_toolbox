@@ -20,12 +20,15 @@ uv run pytest
 
 ## 姊妹專案
 
-| 專案 | 路徑 |
-|------|------|
-| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) |
-| twitch-oauth-bot | [`../twitch_api`](../twitch_api) |
-| TubeChat Lens | [`../yt_chat`](../yt_chat) |
-| ttvchat-lens | [`../ttv_chat`](../ttv_chat) |
+| 專案 | 路徑 | 角色 |
+|------|------|------|
+| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | Phase 01 MQ Pub/Sub 參考 |
+| twitch-oauth-bot | [`../twitch_api`](../twitch_api) | 產品 B：OAuth、EventSub、規則 BOT、TTS、Overlay |
+| TubeChat Lens | [`../yt_chat`](../yt_chat) | `ingress-yt-read`：YouTube 唯讀 |
+| ttvchat-lens | [`../ttv_chat`](../ttv_chat) | `ingress-ttv-read`：Twitch IRC 匿名唯讀 |
+| llm-twitchat | [`../llm_twitchat`](../llm_twitchat) | 產品 C As-is：STT + IRC + Gemini 問答 |
+
+詳見 [docs/references.md](docs/references.md)。
 
 ## 文件索引
 
@@ -39,8 +42,9 @@ uv run pytest
 | [docs/modules.md](docs/modules.md) | 模組目錄、產品 A～D、App 啟用表 |
 | [docs/packages.md](docs/packages.md) | repo/package 規劃與依賴規則 |
 | [docs/deployment.md](docs/deployment.md) | Pub/Sub 部署、MQ、可觀測性 |
-| [docs/references.md](docs/references.md) | 姊妹專案、twitch_api 遷移 |
+| [docs/references.md](docs/references.md) | 姊妹專案、Sub/Ingress 對照、twitch_api 遷移 |
 | [docs/references/streamer-toolkit.md](docs/references/streamer-toolkit.md) | Phase 01 參考實作（streamer-toolkit） |
+| [docs/references/llm-twitchat.md](docs/references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
 | [docs/development.md](docs/development.md) | 開發環境、測試、workspace 結構 |
 
 ### 使用案例（時序圖）

@@ -98,9 +98,10 @@ skymiku/
 ├── sub-character-stage/
 ├── twitch-connector/
 ├── stream-app/             # core-orchestrator 實作
-├── twitch_api/             # 現有，逐步拆出上述
-├── yt_chat/
-└── ttv_chat/
+├── twitch_api/             # 產品 B As-is，逐步拆出上述
+├── llm_twitchat/           # 產品 C As-is，演進為 sub-llm
+├── yt_chat/                # ingress-yt-read 模板
+└── ttv_chat/               # ingress-ttv-read 模板；twitch_api IRC fallback
 ```
 
 不必一次建齊；**產品 A 可僅 2～3 個 package**。
@@ -118,14 +119,16 @@ skymiku/
 
 ## Subscriber Package
 
-| Package | 模組 ID | 訂閱 topic | 發布 topic | Repo |
-|---------|---------|------------|------------|------|
-| `sub-io-log` | （診斷） | `chat.message` | — | **主 repo** |
-| `sub-show-overlay` | `local-show` | `chat.message` | — | 獨立 |
-| `sub-visual` | `egress-subtitle` | `chat.message` | — | 獨立 |
-| `sub-tts` | `egress-tts` | `chat.message` | — | 獨立 |
-| `sub-bot-logic` | `logic-*` | `chat.message`, `eventsub.*`, `sa.message` | `chat.reply` | 獨立 |
-| `sub-llm` | `logic-llm` | `chat.message` | `chat.reply` | 獨立 |
+**Sub** = Pub/Sub 架構中的 Subscriber process/package（`sub-*`），與 Git submodule 無關。As-is 參考實作見 [references.md](references.md#sub--ingress-與姊妹專案對照)。
+
+| Package | 模組 ID | 訂閱 topic | 發布 topic | Repo | As-is 參考 |
+|---------|---------|------------|------------|------|------------|
+| `sub-io-log` | （診斷） | `chat.message` | — | **主 repo** | streamer-toolkit `sub1` |
+| `sub-show-overlay` | `local-show` | `chat.message` | — | 獨立 | `twitch_api` `ui/chat_overlay_*` |
+| `sub-visual` | `egress-subtitle` | `chat.message` | — | 獨立 | `twitch_api` `runtime/subtitle.py` |
+| `sub-tts` | `egress-tts` | `chat.message` | — | 獨立 | `twitch_api` `tts/` |
+| `sub-bot-logic` | `logic-*` | `chat.message`, `eventsub.*`, `sa.message` | `chat.reply` | 獨立 | `twitch_api` `chat_commands.py` 等 |
+| `sub-llm` | `logic-llm` | `chat.message` | `chat.reply` | 獨立 | [`llm_twitchat`](../llm_twitchat)（待 MQ 化） |
 | `sub-character-brain` | character brain | `chat.message` | `character.turn`, `chat.reply` | 獨立 |
 | `sub-character-voice` | character voice | `character.turn` | `character.audio.ready` | 獨立 |
 | `sub-character-face` | character face | `character.turn` | `character.expression.ready` | 獨立 |
@@ -134,12 +137,12 @@ skymiku/
 
 ## Publisher / Ingress Package
 
-| Package | 發布 topic |
-|---------|------------|
-| `ingress-yt-read` | `chat.message` |
-| `ingress-ttv-read` | `chat.message` |
-| `ingress-twitch-eventsub` | `chat.message`, `eventsub.*` |
-| `ingress-sa-bridge` | `sa.message` |
+| Package | 發布 topic | As-is 參考 |
+|---------|------------|------------|
+| `ingress-yt-read` | `chat.message` | [`yt_chat`](../yt_chat)（`tubechat_lens`） |
+| `ingress-ttv-read` | `chat.message` | [`ttv_chat`](../ttv_chat)（`ttvchat_lens`） |
+| `ingress-twitch-eventsub` | `chat.message`, `eventsub.*` | [`twitch_api`](../twitch_api) `bot/` |
+| `ingress-sa-bridge` | `sa.message` | `twitch_api` `bridge/` |
 
 Ingress **只做**：連線 → normalize → `pkg-events` 驗證 → publish。
 

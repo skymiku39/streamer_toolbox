@@ -16,7 +16,7 @@
 | `core-orchestrator` | Core | 已有 | `stream-app` | `runtime/controller.py` |
 | `logic-commands` | Logic | 已有 | `sub-bot-logic` | `chat_commands.py` |
 | `logic-keywords` | Logic | 已有 | `sub-bot-logic` | `bot_responses.py` |
-| `logic-llm` | Logic | Future | `sub-llm` | — |
+| `logic-llm` | Logic | 已有（As-is） | `sub-llm` | `llm_twitchat` |
 | `safety-filter` | Logic | 部分 | `pkg-safety` | `tts/message_filter.py` |
 | `character-brain` | Logic | Future | `sub-character-brain` | — |
 | `character-voice` | Egress | Future | `sub-character-voice` | — |

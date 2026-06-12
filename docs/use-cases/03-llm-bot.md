@@ -1,11 +1,22 @@
-# 產品 C：LLM BOT（Future）
+# 產品 C：LLM BOT
 
 | 項目 | 連結 |
 |------|------|
 | 模組 / 啟用 | [modules.md#產品-c--llm-bot](../modules.md#產品-c--llm-bot) |
 | 安全層 | [solid.md](../solid.md)、`pkg-safety` |
+| As-is 參考 | [`llm_twitchat`](../../../llm_twitchat)、[references/llm-twitchat.md](../references/llm-twitchat.md) |
 
-產品 B 基礎上增加 `sub-llm`。預設僅 `!ask` 或 redemption 觸發 LLM。
+產品 B 基礎上增加 `sub-llm`。預設僅觸發詞（如 `!ask`）或 redemption 觸發 LLM。
+
+## As-is：`llm_twitchat`
+
+[`llm_twitchat`](../../../llm_twitchat) 為**獨立 Web App**（`uv run llm-twitchat`），與 `twitch_api` 分離運行：
+
+- 直播音訊 STT + Twitch IRC 聊天（匿名）→ 瀏覽器問答 / 摘要 / 高光
+- **不**經 MQ、**不**發布 `chat.reply`（IRC 唯讀）
+- 目標態：LLM 邏輯抽成 `sub-llm`，訂閱 `chat.message` 並經 `twitch-connector` 回覆
+
+若需同時具備規則 BOT 發話與 LLM 問答，現階段需分別啟動 `twitch_api` 與 `llm_twitchat`；遷移完成後由 `stream-app` 依 [modules.md](../modules.md) 啟用表編排。
 
 ## 時序
 

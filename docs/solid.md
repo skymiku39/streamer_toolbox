@@ -149,6 +149,7 @@ flowchart TB
 |------|------------|----------|
 | `twitch_api` | `TwitchBot` + Mixin 違反 S、D | 拆 ingress / logic / egress Sub |
 | `yt_chat` / `ttv_chat` | 結構較乾淨 | 作為 ingress 模板，加 `pkg-events` 對齊 schema |
+| `llm_twitchat` | 單機 EventBus，未 MQ 化 | 演進為 `sub-llm`；不反向 import 進 `sub-bot-logic` |
 | 未來新 repo | — | 從一開始依本文件與 [modules.md](modules.md) 模組 ID 命名 |
 
 ## 相關文件

@@ -29,7 +29,8 @@ flowchart LR
 | [events.md](events.md) | Topic 與 payload 契約（**唯一 schema 來源**） |
 | [packages.md](packages.md) | 規劃中的 repo/package 與依賴 |
 | [deployment.md](deployment.md) | Pub/Sub 部署、MQ、fan-out |
-| [references.md](references.md) | 姊妹專案、twitch_api 遷移（含 streamer-toolkit 專章） |
+| [references.md](references.md) | 姊妹專案、Sub/Ingress 對照、twitch_api 遷移 |
+| [references/llm-twitchat.md](references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
 | [use-cases/](use-cases/) | 各產品時序圖 |
 
 ## 三種圖表
@@ -67,11 +68,12 @@ flowchart LR
 | 專案 | 角色 |
 |------|------|
 | `streamer-toolkit` | Phase 01 可執行範本（RabbitMQ Pub/Sub POC） |
-| `twitch_api` | As-is 基準（半模組化，有 SOLID 債務） |
-| `yt_chat` / `ttv_chat` | Ingress 模板（唯讀、`ChatMessage`） |
-| `stream_helper` | To-be 規劃 |
+| `twitch_api` | 產品 B As-is（OAuth、EventSub、規則 BOT；IRC fallback 依賴 `ttv_chat`） |
+| `yt_chat` | `ingress-yt-read` 模板（YouTube 唯讀、`tubechat_lens`） |
+| `ttv_chat` | `ingress-ttv-read` 模板（Twitch IRC 匿名、`ttvchat_lens`） |
+| `llm_twitchat` | 產品 C As-is（STT + IRC + Gemini；演進目標 `sub-llm`） |
 
-詳見 [references.md](references.md)。
+詳見 [references.md](references.md)、[references/llm-twitchat.md](references/llm-twitchat.md)。
 
 ## 實作計畫
 
