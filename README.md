@@ -12,9 +12,10 @@
 ```powershell
 uv sync
 copy .env.example .env
-docker compose up -d
 uv run pytest
 ```
+
+端對端實測（Twitch → RabbitMQ）請用姊妹專案 [`../streamer-toolkit`](../streamer-toolkit)，本 repo 尚無 `app.main`。
 
 詳見 [docs/development.md](docs/development.md)。
 
