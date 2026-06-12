@@ -2,10 +2,24 @@
 
 | 項目 | 內容 |
 |------|------|
-| 狀態 | 計畫（未實作） |
+| 狀態 | **參考實作已有**（見 [streamer-toolkit](../references/streamer-toolkit.md)） |
 | 目標 | 驗證 **外部 RabbitMQ** 可承載 `chat.message`，打通最小 Pub/Sub 管線 |
 | 對應產品 | 產品 A 的子集（僅 ingress + I/O 檢查，尚無 overlay） |
 | 依據文件 | [events.md](../events.md)、[solid.md](../solid.md)、[packages.md](../packages.md) |
+
+## 0. 參考實作
+
+姊妹 repo [`streamer-toolkit`](../../streamer-toolkit)（[GitHub](https://github.com/pomodorozhong/streamer-toolkit)）已實作可執行的 Pub/Sub 管線。詳見 [references/streamer-toolkit.md](../references/streamer-toolkit.md)。
+
+| 面向 | 計畫目標 | toolkit 現況 |
+|------|----------|-------------|
+| Pub / Sub 解耦 | 獨立 process | 已達成（`pub1`、`sub1`、`sub2`） |
+| RabbitMQ fan-out | 多 Sub 訂閱同一來源 | 已達成（fanout `twitch.chat`） |
+| Twitch IRC 匿名讀取 | 零 OAuth | 已達成（內建 `twitch_irc.py`） |
+| Exchange / routing | topic `stream_helper` / `chat.message` | **未對齊**（fanout `twitch.chat`） |
+| JSON schema | 完整 `events.md#chatmessage` | **未對齊**（精簡 4 欄位） |
+| I/O log 格式 | JSONL | **未對齊**（`sub1` 文字行） |
+| `pkg-events` / `pkg-bus` | 獨立 package | **未拆**（合併於 `app/messaging/`） |
 
 ## 1. 要做什麼
 
@@ -214,39 +228,48 @@ class EventBus(Protocol):
 
 ### Step 6：文件回寫
 
-- [ ] 本計畫狀態改為「已完成」
-- [ ] [deployment.md](../deployment.md) 補一句：Phase 01 已驗證 RabbitMQ
-- [ ] [packages.md](../packages.md) 標註已實作 package 路徑
+- [x] 本計畫狀態改為「參考實作已有」（由 streamer-toolkit 涵蓋）
+- [x] [deployment.md](../deployment.md) 補一句：Phase 01 fan-out 已於 streamer-toolkit 驗證
+- [x] [packages.md](../packages.md) 標註參考實作路徑（streamer-toolkit）
+- [x] 新增 [references/streamer-toolkit.md](../references/streamer-toolkit.md) 專章
 
 ## 6. 驗收標準
 
-| # | 條件 |
-|---|------|
-| 1 | RabbitMQ 管理介面可見 exchange `stream_helper`、queue `sub.io_log.chat_message` |
-| 2 | 開 Pub 連線**正在直播**的 Twitch 頻道 |
-| 3 | Sub 終端機**即時**印出觀眾聊天內容 |
-| 4 | `logs/chat_io.jsonl` 每行為合法 JSON，欄位符合 `events.md` |
-| 5 | Pub / Sub **各獨立 process**；重啟 Sub 不影響 Pub 繼續 publish |
-| 6 | 重啟 Sub 後（queue durable）可繼續收到**新**訊息（不要求歷史重播，除非刻意設 persistent） |
+| # | 條件 | 參考實作狀態 |
+|---|------|-------------|
+| 1 | RabbitMQ 管理介面可見 exchange `stream_helper`、queue `sub.io_log.chat_message` | 未對齊（toolkit 用 `twitch.chat` / `twitch.chat.log`） |
+| 2 | 開 Pub 連線**正在直播**的 Twitch 頻道 | 已達成 |
+| 3 | Sub 終端機**即時**印出觀眾聊天內容 | 已達成（`sub1` 寫檔；`sub2` web UI） |
+| 4 | `logs/chat_io.jsonl` 每行為合法 JSON，欄位符合 `events.md` | 未對齊（文字行 log，精簡 schema） |
+| 5 | Pub / Sub **各獨立 process**；重啟 Sub 不影響 Pub 繼續 publish | 已達成 |
+| 6 | 重啟 Sub 後（queue durable）可繼續收到**新**訊息（不要求歷史重播，除非刻意設 persistent） | 已達成 |
 
 ## 7. 手動驗收流程
 
+使用 [streamer-toolkit](../../streamer-toolkit)：
+
 ```powershell
 # 終端 1：MQ
-cd implementations/phase-01
-docker compose up
+cd ../streamer-toolkit
+docker compose up -d
 
-# 終端 2：Sub（先啟動，避免漏訊息）
-cd implementations/phase-01
+# 終端 2：全棧（或分別啟動 pub1 sub1 sub2）
+cd ../streamer-toolkit
 uv sync
-uv run sub-io-log
-
-# 終端 3：Pub
-cd implementations/phase-01
-uv run ingress-twitch-chat --channel <正在直播的頻道>
+# 設定 .env 中的 TWITCH_CHANNEL
+uv run python -m app.main run
 ```
 
-預期：終端 2 持續輸出聊天內容；JSONL 同步增長。
+預期：`sub1` 持續寫入 `logs/chat.log`；`sub2` 於 http://127.0.0.1:8080 顯示即時聊天。
+
+對齊設計後的目標流程（尚未實作）：
+
+```powershell
+cd stream-core
+docker compose up
+uv run sub-io-log
+uv run ingress-twitch-chat --channel <正在直播的頻道>
+```
 
 ## 8. SOLID 自檢（本階段）
 
@@ -299,6 +322,7 @@ uv run ingress-twitch-chat --channel <正在直播的頻道>
 
 ## 13. 相關文件
 
+- [references/streamer-toolkit.md](../references/streamer-toolkit.md) — 參考實作對照與演進路徑
 - [modules.md#產品-a](../modules.md) — 模組對應
 - [use-cases/01-show.md](../use-cases/01-show.md) — 完整產品 A 時序
 - [deployment.md](../deployment.md) — MQ 選型

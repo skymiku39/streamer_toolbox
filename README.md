@@ -6,6 +6,7 @@
 
 | 專案 | 路徑 |
 |------|------|
+| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) |
 | twitch-oauth-bot | [`../twitch_api`](../twitch_api) |
 | TubeChat Lens | [`../yt_chat`](../yt_chat) |
 | ttvchat-lens | [`../ttv_chat`](../ttv_chat) |
@@ -23,6 +24,7 @@
 | [docs/packages.md](docs/packages.md) | repo/package 規劃與依賴規則 |
 | [docs/deployment.md](docs/deployment.md) | Pub/Sub 部署、MQ、可觀測性 |
 | [docs/references.md](docs/references.md) | 姊妹專案、twitch_api 遷移 |
+| [docs/references/streamer-toolkit.md](docs/references/streamer-toolkit.md) | Phase 01 參考實作（streamer-toolkit） |
 
 ### 使用案例（時序圖）
 

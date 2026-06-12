@@ -4,9 +4,16 @@
 
 | 專案 | 路徑 | 用途 | 目標 package |
 |------|------|------|----------------|
+| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | Phase 01 參考實作（RabbitMQ Pub/Sub POC） | 孵化 `pkg-events`、`pkg-bus`、`ingress-*`、`sub-io-log` |
 | twitch-oauth-bot | [`../twitch_api`](../twitch_api) | 全功能 Twitch BOT | 多數 `sub-*` / `ingress-twitch-eventsub` |
 | TubeChat Lens | [`../yt_chat`](../yt_chat) | YT 唯讀 | `ingress-yt-read` |
 | ttvchat-lens | [`../ttv_chat`](../ttv_chat) | Twitch IRC 唯讀 | `ingress-ttv-read` |
+
+### streamer-toolkit
+
+Phase 01 可執行範本：Twitch IRC（匿名）→ RabbitMQ fanout → 多 Sub（檔案 log、web UI）。與 `ttv_chat` 同為 IRC 匿名讀取，但 toolkit 為自包含實作，示範完整 Pub/Sub 管線與 process registry 擴充模式。
+
+詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。
 
 ### yt_chat / ttv_chat
 
@@ -71,6 +78,7 @@
 
 ```
 stream_helper/docs/     ← 規範（本 repo）
+streamer-toolkit/       ← Phase 01 參考實作（姊妹 repo）
 pkg-events/             ← 實作 events.md
 sub-*/ingress-*/       ← 實作 modules.md + use-cases
 stream-app/             ← 實作 App 啟用表

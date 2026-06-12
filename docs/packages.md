@@ -75,7 +75,7 @@ skymiku/
 └── ...
 ```
 
-Phase 01 實作可先在 `stream_helper/implementations/phase-01/` 孵化，穩定後整包遷入 `stream-core/`，或直接把 `stream-core` 當實作根目錄。
+Phase 01 參考實作位於姊妹 repo [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）。可參考其 `app/` 目錄結構孵化，schema 與拓撲對齊後再拆出 `pkg-events`、`pkg-bus`，整包遷入 `stream-core/`。
 
 ## 目錄結構（長期 skymiku 全景）
 

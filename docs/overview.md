@@ -29,7 +29,7 @@ flowchart LR
 | [events.md](events.md) | Topic 與 payload 契約（**唯一 schema 來源**） |
 | [packages.md](packages.md) | 規劃中的 repo/package 與依賴 |
 | [deployment.md](deployment.md) | Pub/Sub 部署、MQ、fan-out |
-| [references.md](references.md) | 姊妹專案、twitch_api 遷移 |
+| [references.md](references.md) | 姊妹專案、twitch_api 遷移（含 streamer-toolkit 專章） |
 | [use-cases/](use-cases/) | 各產品時序圖 |
 
 ## 三種圖表
@@ -66,6 +66,7 @@ flowchart LR
 
 | 專案 | 角色 |
 |------|------|
+| `streamer-toolkit` | Phase 01 可執行範本（RabbitMQ Pub/Sub POC） |
 | `twitch_api` | As-is 基準（半模組化，有 SOLID 債務） |
 | `yt_chat` / `ttv_chat` | Ingress 模板（唯讀、`ChatMessage`） |
 | `stream_helper` | To-be 規劃 |
@@ -78,7 +79,7 @@ flowchart LR
 |------|------|
 | Phase 01 | [plans/phase-01-rabbitmq-io-poc.md](plans/phase-01-rabbitmq-io-poc.md) — RabbitMQ 1 Pub + 1 Sub（Twitch → I/O Log） |
 
-設計文件完成後，程式碼自 Phase 01 起置於 `implementations/phase-01/`（見計畫書）。
+參考實作位於姊妹 repo [`streamer-toolkit`](../streamer-toolkit)，詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。計畫書中的 `implementations/phase-01/` 為設計時暫定路徑，以 toolkit 為準。
 
 ## 範圍外（設計 repo 本身）
 
