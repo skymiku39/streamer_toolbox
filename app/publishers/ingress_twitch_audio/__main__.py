@@ -22,6 +22,11 @@ from pkg_events import TOPIC_STT_SEGMENT
 PROCESS_NAME = "ingress-twitch-audio"
 
 
+def _console_safe(text: str, *, stream: object = sys.stdout) -> str:
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    return text.encode(encoding, errors="replace").decode(encoding)
+
+
 async def run(channel: str, config: SttConfig) -> None:
     connection = await connect_async(rabbitmq_url())
     mq_channel = await connection.channel()
@@ -85,7 +90,8 @@ async def run(channel: str, config: SttConfig) -> None:
             short_id = event.segment_id[:8]
             preview = event.text if len(event.text) <= 60 else f"{event.text[:57]}..."
             print(
-                f"published {short_id} [{event.start_sec:.1f}-{event.end_sec:.1f}s] {preview}",
+                f"published {short_id} [{event.start_sec:.1f}-{event.end_sec:.1f}s] "
+                f"{_console_safe(preview)}",
                 flush=True,
             )
     finally:
