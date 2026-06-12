@@ -69,8 +69,8 @@ L2 記憶層的作法：
 
 - 仍 publish 同一 topic：`stt.segment`（payload 可加 `capture_origin=local_mic` 等欄位區分來源）
 - 新 Publisher 候選名：`ingress-local-audio`（或 `ingress-host-audio`）
-- **部署約束**：必須在主播本機跑 `ingress-ttv-read` + `ingress-local-audio` + `sub-stream-record`；�純雲端／旁路監看無法取代
-- **L2 記憶層**：即使本機 STT，仍建議 **分開摘要 + period 對齊**；配對若要做，可選在 L2 加「本機模式」启发式，或留 L4 LLM 處理
+- **部署約束**：必須在主播本機跑 `ingress-ttv-read` + `ingress-local-audio` + `sub-stream-record`；純雲端／旁路監看無法取代
+- **L2 記憶層**：即使本機 STT，仍建議 **分開摘要 + period 對齊**；配對若要做，可選在 L2 加「本機模式」啟發式，或留 L4 LLM 處理
 
 ### 待釐清（實作前）
 
