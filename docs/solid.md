@@ -1,6 +1,6 @@
 # SOLID 設計準則
 
-**本文件為 stream_helper 及未來所有相關 repo/package 的強制設計約束。** 新模組、重構、從 `twitch_api` 抽離程式時，須滿足下列原則與檢查清單。
+**本文件為 streamer-toolbox 及未來所有相關 package 的強制設計約束。** 新模組、重構、從參考程式碼（如 `twitch_api`）抽離邏輯時，須滿足下列原則與檢查清單。
 
 ## 與 Pub/Sub 的關係
 
@@ -143,14 +143,15 @@ flowchart TB
 | C LLM | safety 獨立 pkg；LLM Sub 不內嵌發話 API |
 | D 虛擬角色 | 新 topic `character.turn`；見 [modules.md#擴展範例](modules.md#擴展範例虛擬角色neuro-sama-類型) |
 
-## 姊妹專案遷移時
+## 參考程式碼遷移時
 
-| 專案 | SOLID 債務 | 遷移方向 |
+| 來源 | SOLID 債務 | 遷移方向 |
 |------|------------|----------|
 | `twitch_api` | `TwitchBot` + Mixin 違反 S、D | 拆 ingress / logic / egress Sub |
 | `yt_chat` / `ttv_chat` | 結構較乾淨 | 作為 ingress 模板，加 `pkg-events` 對齊 schema |
 | `llm_twitchat` | 單機 EventBus，未 MQ 化 | 演進為 `sub-llm`；不反向 import 進 `sub-bot-logic` |
-| 未來新 repo | — | 從一開始依本文件與 [modules.md](modules.md) 模組 ID 命名 |
+| `streamer-toolkit` | schema / bus 未拆 pkg | 對齊 `events.md` 後併入本專案 `pkg-events`、`pkg-bus` |
+| 未來新 package | — | 從一開始依本文件與 [modules.md](modules.md) 模組 ID 命名 |
 
 ## 相關文件
 

@@ -4,13 +4,26 @@ version = "0.1.0"
 description = "直播互動助手：設計文件與 stream-core 實作（Pub/Sub 模組）"
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = [
+    "ingress-twitch-chat",
+    "pkg-bus",
+    "pkg-events",
+    "python-dotenv>=1.0.0",
+    "sub-io-log",
+]
 
 [tool.uv]
 managed = true
 package = false
 
 [tool.uv.workspace]
-members = ["pkg-events", "pkg-bus"]
+members = ["pkg-events", "pkg-bus", "ingress-twitch-chat", "sub-io-log"]
+
+[tool.uv.sources]
+pkg-events = { workspace = true }
+pkg-bus = { workspace = true }
+ingress-twitch-chat = { workspace = true }
+sub-io-log = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -19,8 +32,17 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["pkg-events/tests", "pkg-bus/tests"]
-pythonpath = ["pkg-events/src", "pkg-bus/src"]
+testpaths = [
+    "pkg-events/tests",
+    "pkg-bus/tests",
+    "ingress-twitch-chat/tests",
+]
+pythonpath = [
+    "pkg-events/src",
+    "pkg-bus/src",
+    "ingress-twitch-chat/src",
+    "sub-io-log/src",
+]
 
 [tool.ruff]
 line-length = 100
@@ -30,4 +52,4 @@ target-version = "py311"
 select = ["E", "F", "W", "I", "UP"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["pkg_events", "pkg_bus"]
+known-first-party = ["app", "ingress_twitch_chat", "pkg_bus", "pkg_events", "sub_io_log"]

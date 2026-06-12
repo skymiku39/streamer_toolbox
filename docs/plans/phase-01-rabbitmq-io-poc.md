@@ -9,7 +9,7 @@
 
 ## 0. 參考實作
 
-姊妹 repo [`streamer-toolkit`](../../streamer-toolkit)（[GitHub](https://github.com/pomodorozhong/streamer-toolkit)）已實作可執行的 Pub/Sub 管線。詳見 [references/streamer-toolkit.md](../references/streamer-toolkit.md)。
+姊妹專案 [`streamer-toolkit`](../../streamer-toolkit)（[GitHub](https://github.com/pomodorozhong/streamer-toolkit)）已實作可執行的 Pub/Sub 管線。詳見 [references/streamer-toolkit.md](../references/streamer-toolkit.md)。
 
 | 面向 | 計畫目標 | toolkit 現況 |
 |------|----------|-------------|
@@ -111,29 +111,28 @@ IO_LOG_CONSOLE=true
 
 | Package | Phase 01 位置 | 長期歸屬 |
 |---------|---------------|----------|
-| `pkg-events`, `pkg-bus` | 主 repo | **主 repo `stream-core`**（永久） |
-| `sub-io-log` | 主 repo | **主 repo**（簡單、維運必用，不拆） |
-| `ingress-twitch-chat` | 主 repo 內目錄 | 介面穩定後可拆成獨立 `ingress-ttv-read` repo |
+| `pkg-events`, `pkg-bus` | 本專案 | **本專案 `streamer_toolbox`**（永久） |
+| `sub-io-log` | 本專案 | **本專案**（簡單、維運必用，不拆） |
+| `ingress-twitch-chat` | 本專案內目錄 | 介面穩定後可拆成獨立 `ingress-ttv-read` repo |
 
-原則見 [packages.md#主-repo-vs-獨立-repo](../packages.md#主-repo-vs-獨立-repo)：
+原則見 [packages.md#本專案-vs-獨立-repo](../packages.md#本專案-vs-獨立-repo)：
 
-- **介面未穩定前**：全部在主 repo 目錄內開發，不急着拆 Git remote。
-- **`sub-io-log`**：屬診斷/基礎設施，**即使介面穩定也留在主 repo**。
+- **介面未穩定前**：全部在本專案目錄內開發，不急着拆 Git remote。
+- **`sub-io-log`**：屬診斷/基礎設施，**即使介面穩定也留在本專案**。
 - **複雜或可選 Sub**（bot、llm、overlay、character）：`events.md` + `pkg-bus` 凍結後再拆獨立 repo。
 
 ### 4.1 目錄（Phase 01 孵化）
 
 ```
-stream-core/                       # 主 repo（或暫名 implementations/phase-01/）
+streamer_toolbox/                  # 本專案
+├── docs/                          # 設計文件
 ├── docker-compose.yml             # RabbitMQ
 ├── pyproject.toml                 # uv workspace
 ├── pkg-events/
 ├── pkg-bus/
 ├── ingress-twitch-chat/           # Pub（日後可拆）
-└── sub-io-log/                    # Sub，永久留主 repo
+└── sub-io-log/                    # Sub，永久留本專案
 ```
-
-`stream_helper/docs/` 仍僅放設計文件，與程式 repo 分離。
 
 ### 4.2 `pkg-events`
 
@@ -174,7 +173,7 @@ class EventBus(Protocol):
 | 頻道參數 | `channel` |
 | — | `platform: "twitch"` |
 
-### 4.5 `sub-io-log`（Sub，常駐主 repo）
+### 4.5 `sub-io-log`（Sub，常駐本專案）
 
 專門檢查 **I/O 是否正確收到 Pub 內容** 的診斷用 Sub。
 
@@ -194,7 +193,7 @@ class EventBus(Protocol):
 ### Step 0：環境
 
 - [ ] 安裝 Docker Desktop（或本機 RabbitMQ）
-- [ ] `implementations/phase-01/docker-compose.yml` 啟動 RabbitMQ（port 5672、15672 管理介面）
+- [ ] `docker-compose.yml` 啟動 RabbitMQ（port 5672、15672 管理介面）
 - [ ] 確認 `http://localhost:15672` 可登入（guest/guest）
 
 ### Step 1：`pkg-events`
@@ -265,7 +264,7 @@ uv run python -m app.main run
 對齊設計後的目標流程（尚未實作）：
 
 ```powershell
-cd stream-core
+cd streamer_toolbox
 docker compose up
 uv run sub-io-log
 uv run ingress-twitch-chat --channel <正在直播的頻道>
@@ -288,7 +287,7 @@ uv run ingress-twitch-chat --channel <正在直播的頻道>
 | Python | >= 3.11 |
 | 套件管理 | uv workspace |
 | RabbitMQ 客戶端 | `pika`（同步，簡單）或 `aio-pika`（若 Pub 已 asyncio） |
-| Twitch 讀取 | 依賴姊妹專案 `ttv_chat` |
+| Twitch 讀取 | 參考程式碼 `ttv_chat`（`ttvchat_lens`） |
 | Log | stdlib `logging` + JSONL 檔 |
 
 ## 10. 風險與對策

@@ -1,12 +1,30 @@
 # 參考專案與遷移
 
-本文件描述**姊妹 repo**（As-is 實作）與 streamer-toolbox 設計態（To-be：`ingress-*` / `sub-*`）的對照。術語 **Sub** 指 Pub/Sub 架構中的 **Subscriber package**（`sub-io-log`、`sub-llm` 等），非 Git submodule。
+本文件描述 **streamer-toolbox**（本專案，To-be：`ingress-*` / `sub-*`）與外部程式碼的對照關係。
 
-## 姊妹專案總覽
+## 術語
+
+| 術語 | 含義 |
+|------|------|
+| **本專案** | `streamer_toolbox`：設計文件（`docs/`）與 stream-core 實作（`pkg-*` 等 workspace package） |
+| **姊妹專案** | 僅 [`streamer-toolkit`](../streamer-toolkit)：Phase 01 可執行 Pub/Sub 參考，與本專案並行演進 |
+| **參考程式碼** | `twitch_api`、`yt_chat`、`ttv_chat`、`llm_twitchat` 等：既有 As-is 實作，供拆分模組或對照邏輯，**不是**姊妹專案 |
+| **Sub** | Pub/Sub 架構中的 **Subscriber package**（`sub-io-log`、`sub-llm` 等），非 Git submodule |
+
+## 姊妹專案
+
+| 專案 | 路徑 | 用途 |
+|------|------|------|
+| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | Phase 01 RabbitMQ Pub/Sub POC；對應 `pkg-events`、`pkg-bus`、`ingress-*`、`sub-io-log` 的可執行範本 |
+
+詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。
+
+## 參考程式碼總覽
+
+下列 repo 為**參考用程式**，方便拆分或建立本專案各模組與邏輯；目標是演進為本專案內的 `ingress-*` / `sub-*` package，而非與本專案並列的姊妹專案。
 
 | 專案 | 路徑 | PyPI / 套件名 | 用途 | 目標 package |
 |------|------|---------------|------|----------------|
-| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | — | Phase 01 RabbitMQ Pub/Sub POC | `pkg-events`、`pkg-bus`、`ingress-*`、`sub-io-log` |
 | twitch-oauth-bot | [`../twitch_api`](../twitch_api) | `twitch-oauth-bot` | 全功能 Twitch BOT（OAuth、EventSub、發話、TTS、Desktop） | 多數 `sub-*` / `ingress-twitch-eventsub` |
 | TubeChat Lens | [`../yt_chat`](../yt_chat) | `tubechat-lens` | YouTube 直播聊天唯讀 | `ingress-yt-read` |
 | ttvchat-lens | [`../ttv_chat`](../ttv_chat) | `ttvchat-lens` | Twitch IRC 匿名唯讀 | `ingress-ttv-read` |
@@ -16,20 +34,24 @@
 
 ```mermaid
 flowchart TB
-    subgraph read [唯讀 Ingress 模板]
+    subgraph read [唯讀 Ingress 參考]
         YT[yt_chat / tubechat_lens]
         TTV[ttv_chat / ttvchat_lens]
     end
 
-    subgraph full [全功能 Twitch]
+    subgraph full [全功能 Twitch 參考]
         API[twitch_api]
     end
 
-    subgraph llm [LLM 獨立應用]
+    subgraph llm [LLM 參考應用]
         LLM[llm_twitchat]
     end
 
-  subgraph design [streamer-toolbox To-be]
+    subgraph sibling [姊妹專案]
+        TK[streamer-toolkit]
+    end
+
+    subgraph design [streamer-toolbox 本專案 To-be]
         MQ[(MQ)]
         Ingress[ingress-*]
         Sub[sub-*]
@@ -40,17 +62,19 @@ flowchart TB
     API -->|path 依賴 IRC fallback| TTV
     API -.->|EventSub 主路徑| Ingress
     LLM -.->|內建 IRC + STT，待 MQ 化| Sub
+    TK -.->|Phase 01 可執行範本| Ingress
     Ingress --> MQ --> Sub
 ```
 
 | 關係 | 說明 |
 |------|------|
-| `yt_chat` ↔ `ttv_chat` | 姊妹專案；`ChatMessage.to_dict()` schema 對齊，方便同一下游 pipeline |
+| `yt_chat` ↔ `ttv_chat` | 同類參考程式；`ChatMessage.to_dict()` schema 對齊，方便同一下游 pipeline |
 | `twitch_api` → `ttv_chat` | `pyproject.toml` path 依賴 `ttvchat-lens`；EventSub 不可用時**降級**為匿名 IRC 唯讀 |
 | `llm_twitchat` ⊥ `twitch_api` | **分離運行**；LLM / STT 已自 `twitch_api` 拆出，不共用 EventBus 或 Python 套件 |
-| 四者 → streamer-toolbox | 作為各層 As-is 參考；目標態經 MQ + `pkg-events` 解耦 |
+| 參考程式 → streamer-toolbox | 作為各層 As-is 對照；目標態經 MQ + `pkg-events` 解耦 |
+| streamer-toolkit → streamer-toolbox | 姊妹專案；示範完整 Pub/Sub 管線，schema / 拓撲對齊後併入本專案 |
 
-### streamer-toolkit
+### streamer-toolkit（姊妹專案）
 
 Phase 01 可執行範本：Twitch IRC（匿名）→ RabbitMQ fanout → 多 Sub（檔案 log、web UI）。與 `ttv_chat` 同為 IRC 匿名讀取，但 toolkit 為自包含實作，示範完整 Pub/Sub 管線與 process registry 擴充模式。
 
@@ -111,11 +135,11 @@ Phase 01 可執行範本：Twitch IRC（匿名）→ RabbitMQ fanout → 多 Sub
 
 詳見 [references/llm-twitchat.md](references/llm-twitchat.md)、[use-cases/03-llm-bot.md](use-cases/03-llm-bot.md)。
 
-## Sub / Ingress 與姊妹專案對照
+## Sub / Ingress 與參考程式對照
 
 Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packages.md#subscriber-package](packages.md#subscriber-package)。
 
-| To-be package | 姊妹 As-is | 備註 |
+| To-be package | 參考 As-is | 備註 |
 |---------------|------------|------|
 | `ingress-yt-read` | `yt_chat` | 可直接包 `tubechat_lens.LiveChatReader` |
 | `ingress-ttv-read` | `ttv_chat` | Phase 01 建議 path 依賴 `../../ttv_chat` |
@@ -127,7 +151,7 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 | `twitch-connector` | `twitch_api` `send_message`、`throttle.py` | |
 | `identity-oauth` | `twitch_api` `auth/` | |
 | `sub-llm` | `llm_twitchat` | 待拆出 LLM 邏輯並改訂閱 MQ `chat.message` |
-| `sub-io-log` | streamer-toolkit `sub1` | 診斷 Sub，留主 repo |
+| `sub-io-log` | streamer-toolkit `sub1` | 診斷 Sub，留本專案 |
 
 ## twitch_api 路徑索引
 
@@ -147,7 +171,7 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 
 入口：`main.py`、`scripts/first_time_auth.py`。
 
-**缺口（尚未有姊妹 repo）：** Discord ingress、Web Dashboard、EventSub Webhook、虛擬角色管線（`sub-character-*`）、MQ 化後的 `sub-llm`、輸出安全層（`pkg-safety` 輸出閘門）。
+**缺口（尚未有參考程式）：** Discord ingress、Web Dashboard、EventSub Webhook、虛擬角色管線（`sub-character-*`）、MQ 化後的 `sub-llm`、輸出安全層（`pkg-safety` 輸出閘門）。
 
 ## 遷移對照
 
@@ -177,17 +201,14 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 
 → [use-cases/04-oauth.md](use-cases/04-oauth.md)；權威來源 [`twitch_api/README.md`](../twitch_api/README.md)。
 
-## 設計文件與實作 repo 關係
+## 本專案與外部程式關係
 
 ```
-streamer_toolbox/docs/   ← 規範（本 repo）
-streamer-toolkit/        ← Phase 01 MQ 參考
-yt_chat / ttv_chat       ← ingress 讀取模板
-twitch_api/              ← 產品 B As-is，逐步拆 sub-*
-llm_twitchat/            ← 產品 C As-is，演進為 sub-llm
-pkg-events/              ← 實作 events.md
-sub-*/ingress-*/         ← 實作 modules.md + use-cases
-stream-app/              ← 實作 App 啟用表
+streamer_toolbox/          ← 本專案：docs/ + pkg-* 實作
+streamer-toolkit/          ← 姊妹專案：Phase 01 MQ 可執行參考
+yt_chat / ttv_chat         ← 參考程式碼：ingress 讀取模板
+twitch_api/                ← 參考程式碼：產品 B As-is，逐步拆 sub-*
+llm_twitchat/              ← 參考程式碼：產品 C As-is，演進為 sub-llm
 ```
 
 實作不得與設計文件衝突；契約變更須先改 `events.md` 再改程式。

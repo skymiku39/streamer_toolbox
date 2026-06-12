@@ -1,20 +1,25 @@
 [project]
-name = "pkg-bus"
+name = "sub-io-log"
 version = "0.1.0"
-description = "EventBus Protocol 與 MQ adapter（對齊 docs/events.md）"
+description = "訂閱 chat.message → 終端機與 JSONL 診斷 log"
 requires-python = ">=3.11"
 dependencies = [
-  "aio-pika>=9.4.0",
   "pika>=1.3.0",
+  "pkg-bus",
   "pkg-events",
+  "python-dotenv>=1.0.0",
 ]
+
+[project.scripts]
+sub-io-log = "sub_io_log.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pkg_bus"]
+packages = ["src/sub_io_log"]
 
 [tool.uv.sources]
+pkg-bus = { workspace = true }
 pkg-events = { workspace = true }

@@ -2,22 +2,24 @@
 
 每個黃框為獨立 repo 或 monorepo 子 package。依 [SOLID](solid.md)：**Sub 不互相 import，只經 MQ + `pkg-*` 介面**。
 
-**拆 repo 與否不影響執行期架構**——只要遵守 `events.md` 與 `pkg-bus` 契約，放主 repo 或獨立 repo 行為相同。
+**拆 repo 與否不影響執行期架構**——只要遵守 `events.md` 與 `pkg-bus` 契約，留本專案或拆獨立 repo 行為相同。
 
-## 主 repo vs 獨立 repo
+## 本專案 vs 獨立 repo
 
-### 主 repo（`stream-core`）
+**本專案** = `streamer_toolbox`（`docs/` 設計文件 + stream-core 實作 package）。下列「留本專案」指不另外開 Git remote。
+
+### 留本專案（stream-core 層）
 
 承載**簡單、基礎、幾乎一定會用到**的程式；與 App 同生命週期、同版號發布。
 
-| 歸主 repo | 理由 |
+| 留本專案 | 理由 |
 |-----------|------|
 | `pkg-events`, `pkg-bus` | 全體契約，變更需全專案對齊 |
 | `stream-app` | 編排核心 |
 | `sub-io-log` | Phase 01 診斷用；開發/維運必備，邏輯極簡 |
 | `identity-oauth`（未來） | 橫切基礎設施，多產品共用 |
 
-主 repo 內仍用 **package 目錄分離**（SOLID **S**），只是不另外開 Git remote。
+本專案內仍用 **package 目錄分離**（SOLID **S**），只是不另外開 Git remote。
 
 ### 獨立 repo
 
@@ -39,9 +41,9 @@ flowchart TD
     Q1{介面已凍結?}
     Q2{簡單且幾乎必用?}
     Q3{獨立依賴或產品可選?}
-    Main[放主 repo stream-core]
+    Main[留本專案 streamer_toolbox]
     Split[獨立 repo]
-    Wait[先放主 repo 目錄 介面穩定後再拆]
+    Wait[先放本專案目錄 介面穩定後再拆]
 
     Start --> Q1
     Q1 -->|否| Wait
@@ -54,39 +56,52 @@ flowchart TD
 
 | 問題 | 是 → | 否 → |
 |------|------|------|
-| `events.md` / `pkg-bus` 已穩定？ | 可考慮拆 | 先留主 repo |
-| 少於 ~200 行、無重型依賴？ | 傾向主 repo | 傾向獨立 |
-| 只有部分產品需要？ | 獨立 repo | 主 repo |
+| `events.md` / `pkg-bus` 已穩定？ | 可考慮拆 | 先留本專案 |
+| 少於 ~200 行、無重型依賴？ | 傾向本專案 | 傾向獨立 |
+| 只有部分產品需要？ | 獨立 repo | 本專案 |
 
 **拆 repo 的必要條件：** 僅依賴 `pkg-events`、`pkg-bus`（及已發布的 pkg PyPI/git 依賴），**禁止**依賴其他 Sub 的原始碼。
 
 ### 目錄對照（規劃）
 
 ```
-skymiku/
-├── stream_helper/              # 設計文件（本 repo）
-├── stream-core/                # 主 repo：pkg-*、app、基礎 sub
-│   ├── pkg-events/
-│   ├── pkg-bus/
-│   ├── stream-app/
-│   └── sub-io-log/
-├── sub-bot-logic/              # 獨立 repo（介面穩定後）
-├── sub-show-overlay/
+# 本專案（streamer_toolbox）
+streamer_toolbox/
+├── docs/                   # 設計文件
+├── pkg-events/             # 事件 schema
+├── pkg-bus/                # EventBus Protocol + adapters
+├── stream-app/             # （規劃）core-orchestrator
+├── sub-io-log/             # （規劃）診斷 Sub
+├── ingress-twitch-chat/    # （規劃）Phase 01 Pub
+└── ...
+
+# 姊妹專案
+../streamer-toolkit/        # Phase 01 可執行參考
+
+# 參考程式碼（拆分來源，非姊妹專案）
+../twitch_api/
+../yt_chat/
+../ttv_chat/
+../llm_twitchat/
+
+# 獨立 repo（介面穩定後，可選）
+../sub-bot-logic/
+../sub-show-overlay/
 └── ...
 ```
 
-Phase 01 參考實作位於姊妹 repo [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）。可參考其 `app/` 目錄結構孵化，schema 與拓撲對齊後再拆出 `pkg-events`、`pkg-bus`，整包遷入 `stream-core/`。
+Phase 01 可執行參考位於姊妹專案 [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）。可參考其 `app/` 目錄結構孵化，schema 與拓撲對齊後併入本專案 `pkg-events`、`pkg-bus` 等 package。
 
-## 目錄結構（長期 skymiku 全景）
+## 目錄結構（長期全景）
 
 ```
-skymiku/
-├── stream_helper/          # 本文件庫（設計 only）
-├── pkg-events/             # 事件 schema
-├── pkg-bus/                # EventBus Protocol + adapters
-├── pkg-tts/                # TtsEngine 抽象
-├── pkg-safety/             # SafetyFilter 抽象
-├── ingress-yt-read/        # 或維持 yt_chat 演進
+streamer_toolbox/           # 本專案：設計 + stream-core 實作
+├── docs/
+├── pkg-events/
+├── pkg-bus/
+├── pkg-tts/                # （規劃）
+├── pkg-safety/             # （規劃）
+├── ingress-yt-read/        # （規劃）
 ├── ingress-ttv-read/
 ├── ingress-twitch-eventsub/
 ├── sub-show-overlay/
@@ -97,11 +112,13 @@ skymiku/
 ├── sub-character-face/
 ├── sub-character-stage/
 ├── twitch-connector/
-├── stream-app/             # core-orchestrator 實作
-├── twitch_api/             # 產品 B As-is，逐步拆出上述
-├── llm_twitchat/           # 產品 C As-is，演進為 sub-llm
-├── yt_chat/                # ingress-yt-read 模板
-└── ttv_chat/               # ingress-ttv-read 模板；twitch_api IRC fallback
+└── stream-app/
+
+streamer-toolkit/           # 姊妹專案：Phase 01 可執行參考
+twitch_api/                 # 參考程式碼：產品 B As-is
+llm_twitchat/               # 參考程式碼：產品 C As-is
+yt_chat/                    # 參考程式碼：ingress-yt-read 模板
+ttv_chat/                   # 參考程式碼：ingress-ttv-read 模板
 ```
 
 不必一次建齊；**產品 A 可僅 2～3 個 package**。
@@ -119,11 +136,11 @@ skymiku/
 
 ## Subscriber Package
 
-**Sub** = Pub/Sub 架構中的 Subscriber process/package（`sub-*`），與 Git submodule 無關。As-is 參考實作見 [references.md](references.md#sub--ingress-與姊妹專案對照)。
+**Sub** = Pub/Sub 架構中的 Subscriber process/package（`sub-*`），與 Git submodule 無關。As-is 參考實作見 [references.md](references.md#sub--ingress-與參考程式對照)。
 
 | Package | 模組 ID | 訂閱 topic | 發布 topic | Repo | As-is 參考 |
 |---------|---------|------------|------------|------|------------|
-| `sub-io-log` | （診斷） | `chat.message` | — | **主 repo** | streamer-toolkit `sub1` |
+| `sub-io-log` | （診斷） | `chat.message` | — | **本專案** | streamer-toolkit `sub1` |
 | `sub-show-overlay` | `local-show` | `chat.message` | — | 獨立 | `twitch_api` `ui/chat_overlay_*` |
 | `sub-visual` | `egress-subtitle` | `chat.message` | — | 獨立 | `twitch_api` `runtime/subtitle.py` |
 | `sub-tts` | `egress-tts` | `chat.message` | — | 獨立 | `twitch_api` `tts/` |
@@ -195,7 +212,7 @@ flowchart TB
 
 ## Python 技術約定（實作階段）
 
-- 套件管理：**uv**（與姊妹專案一致）
+- 套件管理：**uv**（與姊妹專案 `streamer-toolkit` 及參考程式碼一致）
 - Python：**>= 3.11**
 - 介面：`typing.Protocol` 或抽象 base class
 - 設定：環境變數 + YAML；secrets 不進 repo

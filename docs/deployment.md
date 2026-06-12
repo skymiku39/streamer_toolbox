@@ -92,7 +92,7 @@ sequenceDiagram
 | 多 process / 多 repo | RabbitMQ 或 Redis Streams | `pkg-bus` 外部 adapter |
 | 產品 A 極簡 | ingress 直連 show（可跳過 MQ） | — |
 
-Phase 01 的 RabbitMQ fan-out 已於姊妹專案 [streamer-toolkit](references/streamer-toolkit.md) 驗證（`pub1` → fanout `twitch.chat` → `sub1` / `sub2`）。
+Phase 01 的 RabbitMQ fan-out 已於姊妹專案 [streamer-toolkit](references/streamer-toolkit.md) 驗證（`pub1` → fanout `twitch.chat` → `sub1` / `sub2`）；對齊設計後的實作目標在本專案 `streamer_toolbox`。
 
 介面：`publish(topic, dict)` / `subscribe(topic, handler)`。
 

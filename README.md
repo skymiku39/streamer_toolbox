@@ -5,25 +5,32 @@
 | 區塊 | 路徑 | 說明 |
 |------|------|------|
 | 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
-| 實作 | `pkg-events/`、`pkg-bus/`… | uv workspace package（見 [development.md](docs/development.md)） |
+| 實作 | `app/`、`pkg-*`、`ingress-*`、`sub-*` | Phase 01 可執行（見 [development.md](docs/development.md)） |
 
 ## 快速開始（開發）
 
 ```powershell
 uv sync
 copy .env.example .env
+docker compose up -d
 uv run pytest
+uv run python -m app.main run
 ```
 
-端對端實測（Twitch → RabbitMQ）請用姊妹專案 [`../streamer-toolkit`](../streamer-toolkit)，本 repo 尚無 `app.main`。
-
-詳見 [docs/development.md](docs/development.md)。
+詳見 [docs/development.md](docs/development.md)。架構參考見姊妹專案 [`../streamer-toolkit`](../streamer-toolkit)（非正式執行環境）。
 
 ## 姊妹專案
 
 | 專案 | 路徑 | 角色 |
 |------|------|------|
-| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | Phase 01 MQ Pub/Sub 參考 |
+| streamer-toolkit | [`../streamer-toolkit`](../streamer-toolkit) | Phase 01 MQ Pub/Sub 可執行參考 |
+
+## 參考程式碼
+
+下列為既有 As-is 實作，供拆分模組或對照邏輯，**不是**姊妹專案：
+
+| 專案 | 路徑 | 角色 |
+|------|------|------|
 | twitch-oauth-bot | [`../twitch_api`](../twitch_api) | 產品 B：OAuth、EventSub、規則 BOT、TTS、Overlay |
 | TubeChat Lens | [`../yt_chat`](../yt_chat) | `ingress-yt-read`：YouTube 唯讀 |
 | ttvchat-lens | [`../ttv_chat`](../ttv_chat) | `ingress-ttv-read`：Twitch IRC 匿名唯讀 |
@@ -43,7 +50,7 @@ uv run pytest
 | [docs/modules.md](docs/modules.md) | 模組目錄、產品 A～D、App 啟用表 |
 | [docs/packages.md](docs/packages.md) | repo/package 規劃與依賴規則 |
 | [docs/deployment.md](docs/deployment.md) | Pub/Sub 部署、MQ、可觀測性 |
-| [docs/references.md](docs/references.md) | 姊妹專案、Sub/Ingress 對照、twitch_api 遷移 |
+| [docs/references.md](docs/references.md) | 姊妹專案、參考程式碼、Sub/Ingress 對照、twitch_api 遷移 |
 | [docs/references/streamer-toolkit.md](docs/references/streamer-toolkit.md) | Phase 01 參考實作（streamer-toolkit） |
 | [docs/references/llm-twitchat.md](docs/references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
 | [docs/development.md](docs/development.md) | 開發環境、測試、workspace 結構 |

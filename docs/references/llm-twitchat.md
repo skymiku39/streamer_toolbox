@@ -63,7 +63,7 @@ flowchart LR
 | `pkg-bus` | in-process `EventBus` | `core/event_bus.py` |
 | `knowledge/<channel>.md` | RAG 知識庫 | `knowledge/`、`memory/` |
 
-## 與其他姊妹專案的關係
+## 與其他參考程式碼的關係
 
 | | llm_twitchat | ttv_chat | twitch_api |
 |---|--------------|----------|------------|
@@ -85,6 +85,6 @@ flowchart LR
 
 ## 相關文件
 
-- [references.md](../references.md) — 姊妹專案總覽
+- [references.md](../references.md) — 姊妹專案與參考程式碼總覽
 - [03-llm-bot.md](../use-cases/03-llm-bot.md) — 產品 C 時序（To-be）
 - [packages.md](../packages.md) — `sub-llm` 規劃
