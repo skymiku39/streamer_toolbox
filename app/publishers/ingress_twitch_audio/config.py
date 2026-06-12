@@ -37,7 +37,7 @@ class SttConfig:
     @classmethod
     def from_env(cls) -> SttConfig:
         return cls(
-            model_size=os.environ.get("STT_MODEL_SIZE", "small"),
+            model_size=os.environ.get("STT_MODEL_SIZE", "medium"),
             chunk_seconds=_env_float("STT_CHUNK_SECONDS", 5.0),
             language=os.environ.get("STT_LANGUAGE", "zh"),
             device=os.environ.get("STT_DEVICE", "auto"),
