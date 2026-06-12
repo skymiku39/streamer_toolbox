@@ -6,7 +6,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 
-from app.console_encoding import configure_utf8_stdio, utf8_subprocess_env
+from app.console_encoding import configure_utf8_stdio, utf8_subprocess_env, write_stdio
 from app.module_paths import legacy_pythonpath_env
 from app.processes.base import ProcessSpec
 from app.processes.chat_ingress import (
@@ -36,8 +36,7 @@ def _prefix_stream(
     for line in iter(stream.readline, ""):
         if on_line is not None:
             on_line(prefix, line)
-        output.write(f"[{prefix}] {line}")
-        output.flush()
+        write_stdio(f"[{prefix}] {line}", stream=output)
     stream.close()
 
 

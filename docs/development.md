@@ -12,7 +12,7 @@
 
 ### Windows 終端機中文亂碼
 
-`app.main` 與子程序已預設 **UTF-8** I/O。若仍見亂碼，請確認：
+`app.main` 會將主控台設為 **UTF-8**（含 Windows `SetConsoleOutputCP(65001)`），runner 亦以 UTF-8 讀寫子程序輸出。若仍見亂碼：
 
 1. 使用 **Windows Terminal** 或 VS Code / Cursor 內建終端（比舊版 `cmd` 相容性佳）
 2. 可選：啟動前執行 `chcp 65001`（切換 code page 為 UTF-8）
