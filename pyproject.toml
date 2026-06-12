@@ -5,11 +5,14 @@ description = "直播互動助手：設計文件與 stream-core 實作（Pub/Sub
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "ingress-discord",
     "ingress-ttv-read",
     "ingress-twitch-chat",
     "pkg-bus",
     "pkg-events",
+    "pkg-safety",
     "python-dotenv>=1.0.0",
+    "sub-character-brain",
     "sub-io-log",
 ]
 
@@ -18,13 +21,25 @@ managed = true
 package = false
 
 [tool.uv.workspace]
-members = ["pkg-events", "pkg-bus", "ingress-twitch-chat", "ingress-ttv-read", "sub-io-log"]
+members = [
+    "pkg-events",
+    "pkg-bus",
+    "pkg-safety",
+    "ingress-twitch-chat",
+    "ingress-ttv-read",
+    "ingress-discord",
+    "sub-character-brain",
+    "sub-io-log",
+]
 
 [tool.uv.sources]
 pkg-events = { workspace = true }
 pkg-bus = { workspace = true }
 ingress-twitch-chat = { workspace = true }
 ingress-ttv-read = { workspace = true }
+ingress-discord = { workspace = true }
+pkg-safety = { workspace = true }
+sub-character-brain = { workspace = true }
 sub-io-log = { workspace = true }
 
 [dependency-groups]
@@ -37,14 +52,20 @@ dev = [
 testpaths = [
     "pkg-events/tests",
     "pkg-bus/tests",
+    "pkg-safety/tests",
     "ingress-twitch-chat/tests",
     "ingress-ttv-read/tests",
+    "ingress-discord/tests",
+    "sub-character-brain/tests",
 ]
 pythonpath = [
     "pkg-events/src",
     "pkg-bus/src",
+    "pkg-safety/src",
     "ingress-twitch-chat/src",
     "ingress-ttv-read/src",
+    "ingress-discord/src",
+    "sub-character-brain/src",
     "sub-io-log/src",
 ]
 
@@ -58,9 +79,12 @@ select = ["E", "F", "W", "I", "UP"]
 [tool.ruff.lint.isort]
 known-first-party = [
     "app",
+    "ingress_discord",
     "ingress_ttv_read",
     "ingress_twitch_chat",
     "pkg_bus",
     "pkg_events",
+    "pkg_safety",
+    "sub_character_brain",
     "sub_io_log",
 ]

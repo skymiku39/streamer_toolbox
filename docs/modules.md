@@ -10,7 +10,7 @@
 | `ingress-yt-read` | Ingress | 已有 | `ingress-yt-read` | `yt_chat` |
 | `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat`；本專案過渡實作 `ingress-twitch-chat` |
 | `ingress-twitch-audio` | Ingress | 規劃中 | `ingress-twitch-audio` | `llm_twitchat` `ingest/` |
-| `ingress-discord` | Ingress | Future | `ingress-discord` | — |
+| `ingress-discord` | Ingress | 已有 | `ingress-discord` | — |
 | `io-log` | Core | 已有 | `sub-io-log` | `streamer-toolkit` `sub1` |
 | `identity-oauth` | Identity | 已有 | `identity-oauth` | `twitch_api` `auth/` |
 | `core-eventbus` | Core | 已有 | `pkg-bus` | `runtime/events.py` |
@@ -19,7 +19,7 @@
 | `logic-keywords` | Logic | 已有 | `sub-bot-logic` | `bot_responses.py` |
 | `logic-llm` | Logic | 已有（As-is） | `sub-llm` | `llm_twitchat` |
 | `safety-filter` | Logic | 部分 | `pkg-safety` | `tts/message_filter.py` |
-| `character-brain` | Logic | Future | `sub-character-brain` | — |
+| `character-brain` | Logic | 已有 | `sub-character-brain` | — |
 | `character-voice` | Egress | Future | `sub-character-voice` | — |
 | `character-face` | Egress | Future | `sub-character-face` | — |
 | `character-stage` | LocalPC | Future | `sub-character-stage` | — |

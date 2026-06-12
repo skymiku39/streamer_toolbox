@@ -68,6 +68,7 @@ Ingress 應在 `raw` 保留參考庫原始欄位，供 overlay / bot 選讀；**
 | `yt_chat` / `ingress-yt-read` | `message_type` | 如 `textMessage`、`superChat`、`superSticker`、`membershipItem` |
 | `yt_chat` | `amount` | Super Chat 金額字串 |
 | `ingress-twitch-eventsub` | 平台原始 payload | EventSub 回調 body |
+| `ingress-discord` | `guild_id`, `channel_id`, `message_type` | Discord Gateway 訊息 metadata；附件見 `attachments` |
 
 **IRC 匿名路徑與 EventSub 路徑：** 非聊天事件在官方路徑發 `eventsub.*`；匿名 IRC（`ingress-ttv-read`）僅發 `chat.message` 並以 `raw.message_type` 區分，**不**偽造 `eventsub.*`。`sub-bot-logic` 須同時處理兩種來源。
 

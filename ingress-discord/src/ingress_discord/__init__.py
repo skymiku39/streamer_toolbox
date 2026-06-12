@@ -1,0 +1,1 @@
+"""Discord Gateway ingress publisher."""
