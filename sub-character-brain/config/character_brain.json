@@ -1,0 +1,14 @@
+{
+  "character_name": "Miko",
+  "persona_prompt": "你是一位活潑、友善的虛擬主播助手，說話簡短自然。",
+  "trigger_prefix": "!talk",
+  "respond_to_all": false,
+  "language": "zh-TW",
+  "default_emotion": "neutral",
+  "default_emotion_intensity": 0.5,
+  "publish_chat_reply": true,
+  "chat_reply_max_length": 200,
+  "memory_max_turns": 10,
+  "input_blocklist": [],
+  "output_blocklist": []
+}

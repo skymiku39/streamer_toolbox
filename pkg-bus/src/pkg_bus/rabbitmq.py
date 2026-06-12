@@ -38,6 +38,23 @@ async def publish_topic(
     )
 
 
+def publish_topic_blocking(
+    channel: pika.adapters.blocking_connection.BlockingChannel,
+    *,
+    exchange_name: str,
+    routing_key: str,
+    payload: dict[str, Any],
+) -> None:
+    channel.exchange_declare(exchange=exchange_name, exchange_type="topic", durable=True)
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    channel.basic_publish(
+        exchange=exchange_name,
+        routing_key=routing_key,
+        body=body,
+        properties=pika.BasicProperties(delivery_mode=2),
+    )
+
+
 def setup_subscriber_queue(
     channel: pika.adapters.blocking_connection.BlockingChannel,
     *,
@@ -45,9 +62,41 @@ def setup_subscriber_queue(
     queue_name: str,
     routing_key: str,
 ) -> None:
+    setup_subscriber_queue_multi(
+        channel,
+        exchange_name=exchange_name,
+        queue_name=queue_name,
+        routing_keys=[routing_key],
+    )
+
+
+def setup_subscriber_queue_multi(
+    channel: pika.adapters.blocking_connection.BlockingChannel,
+    *,
+    exchange_name: str,
+    queue_name: str,
+    routing_keys: list[str],
+) -> None:
+    if not routing_keys:
+        raise ValueError("routing_keys must not be empty")
     channel.exchange_declare(exchange=exchange_name, exchange_type="topic", durable=True)
     channel.queue_declare(queue=queue_name, durable=True)
-    channel.queue_bind(queue=queue_name, exchange=exchange_name, routing_key=routing_key)
+    for routing_key in routing_keys:
+        channel.queue_bind(queue=queue_name, exchange=exchange_name, routing_key=routing_key)
+    channel.basic_qos(prefetch_count=1)
+
+
+def setup_subscriber_queue_bindings(
+    channel: pika.adapters.blocking_connection.BlockingChannel,
+    *,
+    exchange_name: str,
+    queue_name: str,
+    routing_keys: list[str],
+) -> None:
+    channel.exchange_declare(exchange=exchange_name, exchange_type="topic", durable=True)
+    channel.queue_declare(queue=queue_name, durable=True)
+    for routing_key in routing_keys:
+        channel.queue_bind(queue=queue_name, exchange=exchange_name, routing_key=routing_key)
     channel.basic_qos(prefetch_count=1)
 
 

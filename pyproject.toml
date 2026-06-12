@@ -5,15 +5,28 @@ description = "直播互動助手：設計文件與 stream-core 實作（Pub/Sub
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "identity-oauth",
     "ingress-discord",
     "ingress-ttv-read",
+    "ingress-twitch-audio",
     "ingress-twitch-chat",
+    "ingress-twitch-eventsub",
+    "ingress-yt-read",
     "pkg-bus",
     "pkg-events",
     "pkg-safety",
+    "pkg-tts",
     "python-dotenv>=1.0.0",
     "sub-character-brain",
+    "sub-character-face",
+    "sub-character-stage",
+    "sub-character-voice",
     "sub-io-log",
+    "sub-llm",
+    "sub-tts",
+    "sub-show-overlay",
+    "sub-visual",
+    "twitch-connector",
 ]
 
 [tool.uv]
@@ -25,22 +38,48 @@ members = [
     "pkg-events",
     "pkg-bus",
     "pkg-safety",
+    "pkg-tts",
+    "identity-oauth",
     "ingress-twitch-chat",
+    "ingress-twitch-audio",
+    "ingress-twitch-eventsub",
     "ingress-ttv-read",
     "ingress-discord",
+    "ingress-yt-read",
     "sub-character-brain",
+    "sub-character-face",
+    "sub-character-stage",
+    "sub-character-voice",
     "sub-io-log",
+    "sub-llm",
+    "sub-tts",
+    "sub-show-overlay",
+    "sub-visual",
+    "twitch-connector",
 ]
 
 [tool.uv.sources]
 pkg-events = { workspace = true }
 pkg-bus = { workspace = true }
+identity-oauth = { workspace = true }
 ingress-twitch-chat = { workspace = true }
+ingress-twitch-eventsub = { workspace = true }
+ingress-twitch-audio = { workspace = true }
 ingress-ttv-read = { workspace = true }
 ingress-discord = { workspace = true }
+ingress-yt-read = { workspace = true }
 pkg-safety = { workspace = true }
+pkg-tts = { workspace = true }
 sub-character-brain = { workspace = true }
+sub-character-face = { workspace = true }
+sub-character-stage = { workspace = true }
+sub-character-voice = { workspace = true }
 sub-io-log = { workspace = true }
+sub-llm = { workspace = true }
+sub-tts = { workspace = true }
+sub-show-overlay = { workspace = true }
+sub-visual = { workspace = true }
+twitch-connector = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -53,20 +92,45 @@ testpaths = [
     "pkg-events/tests",
     "pkg-bus/tests",
     "pkg-safety/tests",
+    "pkg-tts/tests",
+    "identity-oauth/tests",
     "ingress-twitch-chat/tests",
+    "ingress-twitch-eventsub/tests",
+    "ingress-twitch-audio/tests",
     "ingress-ttv-read/tests",
     "ingress-discord/tests",
+    "ingress-yt-read/tests",
     "sub-character-brain/tests",
+    "sub-character-face/tests",
+    "sub-character-stage/tests",
+    "sub-llm/tests",
+    "sub-tts/tests",
+    "sub-show-overlay/tests",
+    "sub-visual/tests",
+    "twitch-connector/tests",
 ]
 pythonpath = [
     "pkg-events/src",
     "pkg-bus/src",
     "pkg-safety/src",
+    "pkg-tts/src",
+    "identity-oauth/src",
     "ingress-twitch-chat/src",
+    "ingress-twitch-eventsub/src",
+    "ingress-twitch-audio/src",
     "ingress-ttv-read/src",
     "ingress-discord/src",
+    "ingress-yt-read/src",
     "sub-character-brain/src",
+    "sub-character-face/src",
+    "sub-character-stage/src",
+    "sub-character-voice/src",
     "sub-io-log/src",
+    "sub-llm/src",
+    "sub-tts/src",
+    "sub-show-overlay/src",
+    "sub-visual/src",
+    "twitch-connector/src",
 ]
 
 [tool.ruff]
@@ -79,12 +143,25 @@ select = ["E", "F", "W", "I", "UP"]
 [tool.ruff.lint.isort]
 known-first-party = [
     "app",
+    "identity_oauth",
     "ingress_discord",
     "ingress_ttv_read",
+    "ingress_twitch_audio",
     "ingress_twitch_chat",
+    "ingress_twitch_eventsub",
+    "ingress_yt_read",
     "pkg_bus",
     "pkg_events",
     "pkg_safety",
+    "pkg_tts",
     "sub_character_brain",
+    "sub_character_voice",
+    "sub_character_face",
+    "sub_character_stage",
     "sub_io_log",
+    "sub_llm",
+    "sub_tts",
+    "sub_show_overlay",
+    "sub_visual",
+    "twitch_connector",
 ]

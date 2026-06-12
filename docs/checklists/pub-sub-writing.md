@@ -410,7 +410,7 @@ LLM 問答 Sub（產品 C）。
 
 ---
 
-### `sub-character-brain` 🔮
+### `sub-character-brain` ✅
 
 產品 D：角色大腦。
 
@@ -423,11 +423,11 @@ LLM 問答 Sub（產品 C）。
 
 **撰寫清單**
 
-- [ ] 人設 prompt / 記憶外置配置
-- [ ] 產出 `character.turn`（`turn_id`, `text`, `emotion`, `correlation_id`）
-- [ ] 可選同步 `chat.reply` 精簡版至聊天室
-- [ ] 不直接呼叫 TTS / VTS / OBS
-- [ ] 單元測試：`chat.message` → `character.turn` schema
+- [x] 人設 prompt / 記憶外置配置
+- [x] 產出 `character.turn`（`turn_id`, `text`, `emotion`, `correlation_id`）
+- [x] 可選同步 `chat.reply` 精簡版至聊天室
+- [x] 不直接呼叫 TTS / VTS / OBS
+- [x] 單元測試：`chat.message` → `character.turn` schema
 
 ---
 
