@@ -1,0 +1,13 @@
+{
+  "backend": "file",
+  "sender_name": "StreamerToolboxSubtitle",
+  "output_file": "obs_subtitle.txt",
+  "format_template": "{username}: {message}",
+  "max_chars": 80,
+  "filter": {
+    "min_length": 0,
+    "blocked_keywords": [],
+    "block_commands": true,
+    "block_urls": false
+  }
+}

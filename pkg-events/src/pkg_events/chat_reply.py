@@ -4,13 +4,10 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from pkg_events.topics import TOPIC_CHAT_REPLY
+from pkg_events.topics import REPLY_SOURCES, TOPIC_CHAT_REPLY
 
 SCHEMA_VERSION = 1
 PLATFORMS = frozenset({"youtube", "twitch", "discord"})
-REPLY_SOURCES = frozenset(
-    {"logic-commands", "logic-keywords", "logic-llm", "character-brain"}
-)
 SENDERS = frozenset({"bot", "character"})
 
 

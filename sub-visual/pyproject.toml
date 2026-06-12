@@ -1,0 +1,25 @@
+[project]
+name = "sub-visual"
+version = "0.1.0"
+description = "訂閱 chat.message → 字幕檔或 OBS 文字源（可選 Spout2）"
+requires-python = ">=3.11"
+dependencies = [
+  "pika>=1.3.0",
+  "pkg-bus",
+  "pkg-events",
+  "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+sub-visual = "sub_visual.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sub_visual"]
+
+[tool.uv.sources]
+pkg-bus = { workspace = true }
+pkg-events = { workspace = true }
