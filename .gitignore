@@ -1,0 +1,10 @@
+# Editor / IDE
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+*.pem
