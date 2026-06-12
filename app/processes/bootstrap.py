@@ -8,7 +8,16 @@ def register_builtin_processes() -> None:
         PublisherSpec(
             name="ingress-twitch-chat",
             module="ingress_twitch_chat",
-            description="Twitch IRC → RabbitMQ chat.message",
+            description="Twitch IRC → RabbitMQ chat.message (Phase 01 過渡)",
+            kind="publisher",
+            exchange=DEFAULT_EXCHANGE,
+        )
+    )
+    registry.register_publisher(
+        PublisherSpec(
+            name="ingress-ttv-read",
+            module="ingress_ttv_read",
+            description="ttvchat_lens IRC → RabbitMQ chat.message",
             kind="publisher",
             exchange=DEFAULT_EXCHANGE,
         )
