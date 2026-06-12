@@ -14,13 +14,12 @@
 | `ingress-ttv-read` | Pub | 📋 | `chat.message` | — | A |
 | `ingress-yt-read` | Pub | 📋 | `chat.message` | — | A |
 | `ingress-twitch-eventsub` | Pub | 📋 | `chat.message`, `eventsub.*` | — | B, C, D |
-| `ingress-sa-bridge` | Pub | 📋 | `sa.message` | — | B, C |
 | `ingress-discord` | Pub | 🔮 | `chat.message` | — | — |
 | `sub-io-log` | Sub | ✅ | — | `chat.message` | 診斷 |
 | `sub-show-overlay` | Sub | 📋 | — | `chat.message` | A～D |
 | `sub-visual` | Sub | 📋 | — | `chat.message` | B, C |
 | `sub-tts` | Sub | 📋 | — | `chat.message` | B, C |
-| `sub-bot-logic` | Sub | 📋 | `chat.reply` | `chat.message`, `eventsub.*`, `sa.message` | B, C |
+| `sub-bot-logic` | Sub | 📋 | `chat.reply` | `chat.message`, `eventsub.*` | B, C |
 | `sub-llm` | Sub | 📋 | `chat.reply` | `chat.message` | C |
 | `twitch-connector` | Sub | 📋 | — | `chat.reply` | B～D |
 | `sub-character-brain` | Sub | 🔮 | `character.turn`, `chat.reply` | `chat.message` | D |
@@ -174,26 +173,6 @@ Twitch EventSub + OAuth 主路徑 ingress。
 
 ---
 
-### `ingress-sa-bridge` 📋
-
-Stream Avatars 多平台橋接。
-
-| 項目 | 內容 |
-|------|------|
-| 發布 | `sa.message` |
-| 依賴 | `pkg-events`, `pkg-bus` |
-| 參考 | `twitch_api` `bridge/sa_bridge.py` |
-| 設定 | SA bridge 連線參數 |
-
-**撰寫清單**
-
-- [ ] 讀取 SA bridge 輸出 → `sa.message`（`platform: sa`）
-- [ ] 結構盡量對齊 `chat.message` 便於 `sub-bot-logic` 共用邏輯
-- [ ] 與 `ingress-twitch-eventsub` 並行時不重複發布同一則聊天
-- [ ] 單元測試：bridge mock 訊息 → schema 驗證
-
----
-
 ### `ingress-discord` 🔮
 
 | 項目 | 內容 |
@@ -308,7 +287,7 @@ Stream Avatars 多平台橋接。
 
 | 項目 | 內容 |
 |------|------|
-| 訂閱 | `chat.message`, `eventsub.*`, `sa.message` |
+| 訂閱 | `chat.message`, `eventsub.*` |
 | 發布 | `chat.reply` |
 | 參考 | `twitch_api` `chat_commands.py`, `bot_responses.py` |
 

@@ -11,7 +11,6 @@
 | `chat.message` | `ingress-*` | show, tts, bot, llm, character-brain | A～D |
 | `eventsub.*` | `ingress-twitch-eventsub` | bot-logic | B, C |
 | `chat.reply` | bot, llm, character-brain | twitch-connector | B～D |
-| `sa.message` | `ingress-sa-bridge` | bot-logic | B, C（SA 模式） |
 | `character.turn` | character-brain | character-voice, character-face | D |
 | `character.audio.ready` | character-voice | character-stage | D |
 | `character.expression.ready` | character-face | character-stage | D |
@@ -45,7 +44,7 @@
 
 | 欄位 | 類型 | 必填 | 說明 |
 |------|------|:----:|------|
-| `platform` | string | ✓ | `youtube` / `twitch` / `discord` / `sa` |
+| `platform` | string | ✓ | `youtube` / `twitch` / `discord` |
 | `message_id` | string | ✓ | 平台訊息 ID |
 | `author_name` | string | ✓ | 顯示名稱 |
 | `content` | string | ✓ | 正文 |
@@ -96,10 +95,6 @@ Twitch EventSub 非聊天事件。topic 為完整字串，例如 `eventsub.follo
 |------|------|
 | `source` | 產出者：`logic-commands` / `logic-keywords` / `logic-llm` / `character-brain` |
 | `correlation_id` | 可選，追溯觸發的 `chat.message` |
-
-## `sa.message`
-
-Stream Avatars 多平台 ingress。結構對齊 SA bridge 輸出，normalize 後與 `chat.message` 盡量一致，並設 `platform: "sa"`。
 
 ## `character.turn`
 

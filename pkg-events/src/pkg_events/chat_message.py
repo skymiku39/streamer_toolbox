@@ -7,7 +7,7 @@ from typing import Any
 from pkg_events.topics import TOPIC_CHAT_MESSAGE
 
 SCHEMA_VERSION = 1
-PLATFORMS = frozenset({"youtube", "twitch", "discord", "sa"})
+PLATFORMS = frozenset({"youtube", "twitch", "discord"})
 
 
 @dataclass

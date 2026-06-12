@@ -144,7 +144,7 @@ ttv_chat/                   # 參考程式碼：ingress-ttv-read 模板
 | `sub-show-overlay` | `local-show` | `chat.message` | — | 獨立 | `twitch_api` `ui/chat_overlay_*` |
 | `sub-visual` | `egress-subtitle` | `chat.message` | — | 獨立 | `twitch_api` `runtime/subtitle.py` |
 | `sub-tts` | `egress-tts` | `chat.message` | — | 獨立 | `twitch_api` `tts/` |
-| `sub-bot-logic` | `logic-*` | `chat.message`, `eventsub.*`, `sa.message` | `chat.reply` | 獨立 | `twitch_api` `chat_commands.py` 等 |
+| `sub-bot-logic` | `logic-*` | `chat.message`, `eventsub.*` | `chat.reply` | 獨立 | `twitch_api` `chat_commands.py` 等 |
 | `sub-llm` | `logic-llm` | `chat.message` | `chat.reply` | 獨立 | [`llm_twitchat`](../llm_twitchat)（待 MQ 化） |
 | `sub-character-brain` | character brain | `chat.message` | `character.turn`, `chat.reply` | 獨立 |
 | `sub-character-voice` | character voice | `character.turn` | `character.audio.ready` | 獨立 |
@@ -159,7 +159,6 @@ ttv_chat/                   # 參考程式碼：ingress-ttv-read 模板
 | `ingress-yt-read` | `chat.message` | [`yt_chat`](../yt_chat)（`tubechat_lens`） |
 | `ingress-ttv-read` | `chat.message` | [`ttv_chat`](../ttv_chat)（`ttvchat_lens`） |
 | `ingress-twitch-eventsub` | `chat.message`, `eventsub.*` | [`twitch_api`](../twitch_api) `bot/` |
-| `ingress-sa-bridge` | `sa.message` | `twitch_api` `bridge/` |
 
 Ingress **只做**：連線 → normalize → `pkg-events` 驗證 → publish。
 

@@ -158,7 +158,6 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 | 層 | 路徑 | 遷移目標 |
 |----|------|----------|
 | Ingress | `src/bot/chatbot.py`, `event_handlers.py` | `ingress-twitch-eventsub` |
-| Ingress SA | `src/bridge/sa_bridge.py` | `ingress-sa-bridge` |
 | Ingress fallback | `ttvchat_lens`（path 依賴 `../ttv_chat`） | `ingress-ttv-read`（唯讀保底） |
 | Core | `src/runtime/events.py` | `pkg-bus` |
 | Core | `src/runtime/controller.py`, `bot_manager.py` | `stream-app` |

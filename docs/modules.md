@@ -7,7 +7,6 @@
 | 模組 ID | 層 | 狀態 | Package | 參考實作 |
 |---------|-----|------|---------|----------|
 | `ingress-twitch-eventsub` | Ingress | 已有 | `ingress-twitch-eventsub` | `twitch_api` `bot/` |
-| `ingress-sa-bridge` | Ingress | 已有 | `ingress-sa-bridge` | `twitch_api` `bridge/` |
 | `ingress-yt-read` | Ingress | 已有 | `ingress-yt-read` | `yt_chat` |
 | `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat` |
 | `ingress-discord` | Ingress | Future | `ingress-discord` | — |
@@ -48,7 +47,7 @@
 | `ingress-twitch-eventsub`, `identity-oauth` | Required |
 | `core-orchestrator`, `core-eventbus` | Required |
 | `logic-commands`, `logic-keywords`, `egress-chat-send` | Required |
-| `egress-tts`, `egress-subtitle`, `local-show`, `local-dashboard`, `ingress-sa-bridge` | Optional |
+| `egress-tts`, `egress-subtitle`, `local-show`, `local-dashboard` | Optional |
 
 → [02-rule-bot.md](use-cases/02-rule-bot.md)
 
@@ -94,7 +93,6 @@
 | `ingress-yt/ttv-read` | `chat.message` | ● | — | — | ○ |
 | `ingress-twitch-eventsub` | `chat.message` | ○ | ● | ● | ○ |
 | 同上 | `eventsub.*` | — | ● | ● | — |
-| `ingress-sa-bridge` | `sa.message` | — | ○ | ○ | — |
 
 ### Subscriber
 
@@ -161,7 +159,6 @@ identity: { oauth: { enabled: true, env_file: .env } }
 | `character.turn` | character-brain | character-voice, character-face |
 | `character.audio.ready` | character-voice | character-stage |
 | `character.expression.ready` | character-face | character-stage |
-| `sa.message` | ingress-sa-bridge | bot-logic |
 | `system.*` | 各元件 | dashboard, monitor |
 
 ## 選配速查
