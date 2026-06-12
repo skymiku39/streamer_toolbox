@@ -8,8 +8,10 @@
 |---------|-----|------|---------|----------|
 | `ingress-twitch-eventsub` | Ingress | 已有 | `ingress-twitch-eventsub` | `twitch_api` `bot/` |
 | `ingress-yt-read` | Ingress | 已有 | `ingress-yt-read` | `yt_chat` |
-| `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat` |
+| `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat`；本專案過渡實作 `ingress-twitch-chat` |
+| `ingress-twitch-audio` | Ingress | 規劃中 | `ingress-twitch-audio` | `llm_twitchat` `ingest/` |
 | `ingress-discord` | Ingress | Future | `ingress-discord` | — |
+| `io-log` | Core | 已有 | `sub-io-log` | `streamer-toolkit` `sub1` |
 | `identity-oauth` | Identity | 已有 | `identity-oauth` | `twitch_api` `auth/` |
 | `core-eventbus` | Core | 已有 | `pkg-bus` | `runtime/events.py` |
 | `core-orchestrator` | Core | 已有 | `stream-app` | `runtime/controller.py` |
@@ -24,7 +26,7 @@
 | `egress-chat-send` | Egress | 已有 | `twitch-connector` | `send_message` |
 | `egress-tts` | Egress | 已有 | `sub-tts` | `tts/` |
 | `egress-subtitle` | Egress | 已有 | `sub-visual` | `subtitle.py` |
-| `local-dashboard` | LocalPC | 已有 | `stream-app` UI | `ui/main_window.py` |
+| `local-dashboard` | LocalPC | 暫緩 | （客製 UI 層） | `twitch_api` `ui/main_window.py`；**不作為 Sub 設計**，將來可作 MQ 輸入端 |
 | `local-show` | LocalPC | 部分 | `sub-show-overlay` | overlay / desktop |
 | `local-vts` | LocalPC | Future | — | — |
 
@@ -53,7 +55,7 @@
 
 ### 產品 C — LLM BOT
 
-產品 B Required + `logic-llm` + `safety-filter`（輸入+輸出）。
+產品 B Required + `logic-llm` + `safety-filter`（輸入+輸出）+ `ingress-twitch-audio`（STT，可選但建議）。
 
 → [03-llm-bot.md](use-cases/03-llm-bot.md)
 
@@ -93,6 +95,9 @@
 | `ingress-yt/ttv-read` | `chat.message` | ● | — | — | ○ |
 | `ingress-twitch-eventsub` | `chat.message` | ○ | ● | ● | ○ |
 | 同上 | `eventsub.*` | — | ● | ● | — |
+| `ingress-twitch-audio` | `stt.segment` | — | — | ○ | — |
+
+² EventSub 不可用時，App **改啟** `ingress-ttv-read`（`twitch_api` `fallback_chat.py` 模式），不與 EventSub ingress 並行。
 
 ### Subscriber
 
@@ -102,20 +107,24 @@
 | `sub-visual` | `chat.message` | — | ○ | ○ | — |
 | `sub-tts` | `chat.message` | — | ○ | ○ | — |
 | `sub-bot-logic` | `chat.message`, `eventsub.*` | — | ● | ● | — |
-| `sub-llm` | `chat.message` | — | — | ● | — |
+| `sub-llm` | `chat.message`, `stt.segment` | — | — | ● | — |
+| `sub-io-log` | `chat.message`（診斷） | ○ | ○ | ○ | ○ |
 | `sub-character-brain` | `chat.message` | — | — | — | ● |
 | `sub-character-voice` | `character.turn` | — | — | — | ● |
 | `sub-character-face` | `character.turn` | — | — | — | ● |
 | `sub-character-stage` | `character.audio.ready`, `character.expression.ready` | — | — | — | ● |
 | `twitch-connector` | `chat.reply` | — | ● | ● | ○ |
-| `local-dashboard` | `system.*` | — | ○ | ○ | ○ |
+| `local-dashboard` | `system.*`（監控） | — | ○ | ○ | ○ |
+
+客製控制面板（UI 層）暫不納入啟用表；原則上可作 **Publisher** 將操作轉為 topic（契約待定）。
 
 ### 啟動快照
 
 ```
 A: ingress-read → MQ → sub-show
 B: oauth → ingress-eventsub → MQ → sub-bot → connector
-C: B + sub-llm
+   （降級: ingress-ttv-read 取代 eventsub）
+C: B + ingress-twitch-audio + sub-llm
 D: ingress → MQ → character-brain → character.turn → (voice + face) → stage → OBS
    可選: brain → chat.reply → connector；可選: sub-show 顯示彈幕
 ```
@@ -145,7 +154,42 @@ subscribers:
 identity: { oauth: { enabled: true, env_file: .env } }
 ```
 
-完整產品 B 範例見上文 `product: B` 區塊（與先前相同）。
+### App 設定範例（產品 B）
+
+```yaml
+product: B
+
+mq: { backend: rabbitmq, url: "${RABBITMQ_URL}" }
+
+identity:
+  oauth: { enabled: true, env_file: .env }
+
+publishers:
+  ingress-twitch-eventsub: { enabled: true, channel: your_channel }
+  # 降級時改為:
+  # ingress-ttv-read: { enabled: true, channel: your_channel }
+
+subscribers:
+  sub-bot-logic: { enabled: true, topics: [chat.message, eventsub.*] }
+  twitch-connector: { enabled: true, topics: [chat.reply] }
+  sub-show-overlay: { enabled: false }
+  sub-tts: { enabled: false }
+  sub-visual: { enabled: false }
+  sub-io-log: { enabled: true, topics: [chat.message] }
+```
+
+### App 設定範例（產品 C）
+
+```yaml
+product: C
+
+# 繼承產品 B publishers / subscribers，並加上:
+publishers:
+  ingress-twitch-audio: { enabled: true, channel: your_channel }
+
+subscribers:
+  sub-llm: { enabled: true, topics: [chat.message, stt.segment] }
+```
 
 ## Topic 一覽
 
@@ -155,6 +199,7 @@ identity: { oauth: { enabled: true, env_file: .env } }
 |-------|-----------|------------|
 | `chat.message` | ingress-* | show, tts, bot, llm, character-brain |
 | `eventsub.*` | ingress-twitch-eventsub | bot-logic |
+| `stt.segment` | ingress-twitch-audio | llm, io-log |
 | `chat.reply` | bot, llm, character-brain | twitch-connector |
 | `character.turn` | character-brain | character-voice, character-face |
 | `character.audio.ready` | character-voice | character-stage |
@@ -170,6 +215,24 @@ identity: { oauth: { enabled: true, env_file: .env } }
 | AI 文字回話 | 產品 C |
 | 虛擬角色（TTS+表情+OBS） | 產品 D |
 | 觀眾彈幕朗讀 | `sub-tts`（與產品 D 的 character-voice 不同） |
+| 直播音訊 STT + LLM | `ingress-twitch-audio` + `sub-llm` |
+| EventSub 降級唯讀 | App 改啟 `ingress-ttv-read`，停 `ingress-twitch-eventsub` |
+
+## 參考程式碼對照
+
+| Package | 參考路徑 |
+|---------|----------|
+| `ingress-ttv-read` | [`ttv_chat`](../ttv_chat) `ttvchat_lens/reader.py` |
+| `ingress-yt-read` | [`yt_chat`](../yt_chat) `tubechat_lens/reader.py` |
+| `ingress-twitch-eventsub` | [`twitch_api`](../twitch_api) `src/bot/chatbot.py`, `event_handlers.py` |
+| `ingress-twitch-audio` | [`llm_twitchat`](../llm_twitchat) `services/ingest.py`, `ingest/stt_worker.py` |
+| `sub-bot-logic` | `twitch_api` `chat_commands.py`, `bot_responses.py`, `redemption_responses.py` |
+| `sub-tts` | `twitch_api` `tts/` |
+| `sub-show-overlay` | `twitch_api` `ui/chat_overlay_*` |
+| `sub-visual` | `twitch_api` `runtime/subtitle.py` |
+| `twitch-connector` | `twitch_api` `send_message`, `throttle.py` |
+| `identity-oauth` | `twitch_api` `auth/`, `account_service.py` |
+| `sub-llm` | [`llm_twitchat`](../llm_twitchat) `llm/`, `services/stream_session.py` |
 
 ## 相關文件
 

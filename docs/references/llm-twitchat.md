@@ -81,7 +81,7 @@ flowchart LR
 | 無 MQ / `pkg-events` | payload 未對齊 [events.md](../events.md) |
 | 無 `chat.reply` | 無法經 `twitch-connector` 自動回覆聊天室 |
 | 無 `sub-bot-logic` 協作 | 與規則 BOT 需 App 層分別啟停 |
-| STT topic 未定義 | 設計文件尚未註冊 `stt.*` topic |
+| STT 未拆 ingress | 目標：`ingress-twitch-audio` → `stt.segment`（見 [events.md](../events.md#sttsegment)） |
 
 ## 相關文件
 

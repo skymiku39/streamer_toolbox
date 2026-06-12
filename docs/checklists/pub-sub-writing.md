@@ -4,23 +4,44 @@
 
 **圖例：** ✅ 本專案已有 · 📋 規劃中 · 🔮 Future · 📎 參考程式碼
 
+**過渡：** `ingress-twitch-chat` 為 Phase 01 實作，目標演進為 `ingress-ttv-read`（包 `ttv_chat`）。
+
+---
+
+## 參考程式碼索引
+
+| Package | 參考 repo | 關鍵路徑 |
+|---------|-----------|----------|
+| `ingress-ttv-read` | [`ttv_chat`](../../ttv_chat) | `src/ttvchat_lens/reader.py` |
+| `ingress-yt-read` | [`yt_chat`](../../yt_chat) | `src/tubechat_lens/reader.py` |
+| `ingress-twitch-eventsub` | [`twitch_api`](../../twitch_api) | `src/bot/chatbot.py`, `event_handlers.py` |
+| `ingress-twitch-audio` | [`llm_twitchat`](../../llm_twitchat) | `services/ingest.py`, `ingest/stt_worker.py` |
+| `sub-bot-logic` | `twitch_api` | `chat_commands.py`, `bot_responses.py`, `redemption_responses.py` |
+| `sub-tts` | `twitch_api` | `tts/service.py`, `tts/message_filter.py` |
+| `sub-show-overlay` | `twitch_api` | `ui/chat_overlay_ipc.py`, `chat_overlay_window.py` |
+| `sub-visual` | `twitch_api` | `runtime/subtitle.py` |
+| `twitch-connector` | `twitch_api` | `bot/chatbot.py` (`send_message`), `throttle.py` |
+| `identity-oauth` | `twitch_api` | `auth/oauth_manager.py`, `runtime/account_service.py` |
+| `sub-llm` | `llm_twitchat` | `llm/`, `services/stream_session.py`, `memory/knowledge.py` |
+
 ---
 
 ## 速查總表
 
 | Package | 類型 | 狀態 | 發布 topic | 訂閱 topic | 產品 |
 |---------|------|------|------------|------------|------|
-| `ingress-twitch-chat` | Pub | ✅ | `chat.message` | — | A, Phase 01 |
-| `ingress-ttv-read` | Pub | 📋 | `chat.message` | — | A |
+| `ingress-twitch-chat` | Pub | ✅ 過渡 | `chat.message` | — | A, Phase 01 |
+| `ingress-ttv-read` | Pub | 📋 | `chat.message` | — | A, B 降級 |
 | `ingress-yt-read` | Pub | 📋 | `chat.message` | — | A |
 | `ingress-twitch-eventsub` | Pub | 📋 | `chat.message`, `eventsub.*` | — | B, C, D |
+| `ingress-twitch-audio` | Pub | 📋 | `stt.segment` | — | C |
 | `ingress-discord` | Pub | 🔮 | `chat.message` | — | — |
 | `sub-io-log` | Sub | ✅ | — | `chat.message` | 診斷 |
 | `sub-show-overlay` | Sub | 📋 | — | `chat.message` | A～D |
 | `sub-visual` | Sub | 📋 | — | `chat.message` | B, C |
 | `sub-tts` | Sub | 📋 | — | `chat.message` | B, C |
 | `sub-bot-logic` | Sub | 📋 | `chat.reply` | `chat.message`, `eventsub.*` | B, C |
-| `sub-llm` | Sub | 📋 | `chat.reply` | `chat.message` | C |
+| `sub-llm` | Sub | 📋 | `chat.reply` | `chat.message`, `stt.segment` | C |
 | `twitch-connector` | Sub | 📋 | — | `chat.reply` | B～D |
 | `sub-character-brain` | Sub | 🔮 | `character.turn`, `chat.reply` | `chat.message` | D |
 | `sub-character-voice` | Sub | 🔮 | `character.audio.ready` | `character.turn` | D |
@@ -116,10 +137,10 @@ Twitch IRC 匿名唯讀（通用產品 A ingress）。
 **撰寫清單**
 
 - [ ] 包裝 `ttvchat_lens.LiveChatReader`，callback 不阻塞讀取 thread
-- [ ] 支援 `textMessage`、`USERNOTICE`（訂閱 / raid / bits）→ 統一或分 topic
+- [ ] 支援 `textMessage`、`USERNOTICE`（訂閱 / raid / bits）→ `chat.message` + `raw.message_type`（**不**發 `eventsub.*`）
 - [ ] `message_id`, `author_name`, `content`, `timestamp`, `channel` 必填
 - [ ] `author_id`、badge 等放 `raw` 或 optional 欄位
-- [ ] 與 `ingress-twitch-chat` 差異說明（合併或並存策略）
+- [ ] 吸收 `ingress-twitch-chat` 實作，成為產品 A 正式 ingress
 - [ ] 單元測試：mock reader → 輸出 JSON 符合 schema
 
 **驗收：** 與 `sub-io-log` 分 process 跑，Sub 即時印出 IRC 訊息。
@@ -141,6 +162,7 @@ YouTube 直播聊天唯讀。
 
 - [ ] 包裝 `tubechat_lens.LiveChatReader`
 - [ ] `platform: youtube`；InnerTube `message_id` 對齊
+- [ ] Super Chat / 會員：`raw.message_type`（`superChat`、`membershipItem`）、`raw.amount`
 - [ ] 直播結束 / 頻道離線時優雅停止並 log 狀態
 - [ ] Queue 消費模式（handler 內不做 I/O）
 - [ ] 單元測試：fixture `ChatMessage.to_dict()` → event payload
@@ -151,25 +173,51 @@ YouTube 直播聊天唯讀。
 
 ### `ingress-twitch-eventsub` 📋
 
-Twitch EventSub + OAuth 主路徑 ingress。
+Twitch EventSub + OAuth 主路徑 ingress。Webhook / WebSocket 僅為**連線方式**，不另建 `ingress-webhook` package。
 
 | 項目 | 內容 |
 |------|------|
-| 發布 | `chat.message`, `eventsub.*`（如 `eventsub.follow`） |
+| 發布 | `chat.message`, `eventsub.*` |
 | 依賴 | `pkg-events`, `pkg-bus`, `identity-oauth`（token） |
-| 參考 | [`twitch_api`](../../twitch_api) `bot/`, `event_handlers.py` |
-| 設定 | OAuth `.env`, `TWITCH_CHANNEL`, webhook 或 websocket 模式 |
+| 參考 | [`twitch_api`](../../twitch_api) `src/bot/chatbot.py`, `event_handlers.py` |
+| 設定 | OAuth `.env`, `TWITCH_CHANNEL`, websocket 或 webhook |
+
+**應覆蓋的 `eventsub.*`**（見 [events.md#eventsub](../events.md#eventsub) 註冊表）：
+
+`follow`, `raid`, `subscribe`, `subscription_gift`, `subscription_message`, `redemption`, `bits`, `stream_online` / `stream_offline`, `message_delete`, `ban` / `unban`, `poll_*`, `prediction_*`, `hype_train_*`, `automod_message_*`, `first_chat`（應用層合成）
 
 **撰寫清單**
 
 - [ ] OAuth token 刷新委派 `identity-oauth`，ingress 不內嵌 auth 邏輯
 - [ ] 聊天事件 normalize → `chat.message`（**禁止**在 ingress 做指令判斷）
 - [ ] 非聊天 EventSub → `eventsub.{event_type}` payload 對齊 [events.md](../events.md#eventsub)
-- [ ] EventSub 不可用時：文件說明是否降級 `ingress-ttv-read`（App 層切換，非 import fallback）
-- [ ] 單元測試：sample webhook body → 兩種 topic 輸出
-- [ ] 從 `twitch_api` 剝離時：`event_message` 僅保留 normalize + publish
+- [ ] EventSub 不可用時：由 **App 改啟** `ingress-ttv-read`，停本 ingress（對照 `fallback_chat.py`）
+- [ ] 單元測試：sample EventSub body → `chat.message` 或 `eventsub.*`
+- [ ] 從 `twitch_api` 剝離：`event_message` 僅 normalize + publish
 
 **驗收：** 追隨 / 聊天各一則 → 對應 topic 出現在 MQ；重啟 ingress 不影響已運行 Sub。
+
+---
+
+### `ingress-twitch-audio` 📋
+
+直播音訊 STT（產品 C）。對照 `llm_twitchat`，**不**內嵌於 `sub-llm`。
+
+| 項目 | 內容 |
+|------|------|
+| 發布 | `stt.segment`（可選 `stt.status` / `stt.error`） |
+| 依賴 | `pkg-events`, `pkg-bus`；streamlink + faster-whisper（或抽象 STT Protocol） |
+| 參考 | [`llm_twitchat`](../../llm_twitchat) `services/ingest.py`, `ingest/stt_worker.py`, `ingest/stt_filters.py` |
+| 設定 | `TWITCH_CHANNEL`, STT 模型路徑、chunk 秒數 |
+
+**撰寫清單**
+
+- [ ] streamlink 拉音訊 → chunk → STT → `stt.segment` payload 對齊 [events.md](../events.md#sttsegment)
+- [ ] 輸入過濾委派 `pkg-safety`（幻覺黑名單、靜音閘等）
+- [ ] **禁止** 訂閱 queue、呼叫 LLM、發 `chat.reply`
+- [ ] 單元測試：mock 音訊 chunk → segment JSON
+
+**驗收：** 開播頻道 → `sub-llm` 或 `sub-io-log`（若擴充訂閱）收到 `stt.segment`。
 
 ---
 
@@ -229,11 +277,12 @@ Twitch EventSub + OAuth 主路徑 ingress。
 | 訂閱 | `chat.message` |
 | 發布 | — |
 | 依賴 | `pkg-events`, `pkg-bus`；UI 層（WebSocket / 本地視窗） |
-| 參考 | `twitch_api` `ui/chat_overlay_*` |
+| 參考 | `twitch_api` `ui/chat_overlay_ipc.py`, `chat_overlay_window.py`, `chat_rich_renderer.py` |
 | 設定 | overlay 埠號、樣式路徑 |
 
 **撰寫清單**
 
+- [ ] 支援兩種 layout 模式：聊天室 overlay、自由視窗（對照 `free_chat_overlay_*`）
 - [ ] 僅訂閱 `chat.message`，渲染 `author_name`、`content`、badge、emote
 - [ ] UI 與 MQ 消費解耦（queue + 渲染 thread）
 - [ ] 高流量時丟棄策略或合併（避免 UI 卡死）
@@ -251,11 +300,11 @@ Twitch EventSub + OAuth 主路徑 ingress。
 | 項目 | 內容 |
 |------|------|
 | 訂閱 | `chat.message` |
-| 參考 | `twitch_api` `runtime/subtitle.py` |
+| 參考 | `twitch_api` `runtime/subtitle.py`（含 Spout2 driver） |
 
 **撰寫清單**
 
-- [ ] 彈幕 → 字幕檔或 OBS 文字源更新
+- [ ] 彈幕 → 字幕檔或 OBS 文字源更新；可選 Spout2 輸出（driver 可替換）
 - [ ] 過濾規則可配置（長度、關鍵字）
 - [ ] 與 `sub-show-overlay` 職責不重疊（本 Sub 偏「字幕檔」而非 overlay UI）
 
@@ -289,14 +338,15 @@ Twitch EventSub + OAuth 主路徑 ingress。
 |------|------|
 | 訂閱 | `chat.message`, `eventsub.*` |
 | 發布 | `chat.reply` |
-| 參考 | `twitch_api` `chat_commands.py`, `bot_responses.py` |
+| 參考 | `twitch_api` `chat_commands.py`, `bot_responses.py`, `redemption_responses.py` |
 
 **撰寫清單**
 
 - [ ] 指令表與關鍵字表外置設定（YAML/JSON）
 - [ ] 處理 `!command` → `chat.reply`（`source: logic-commands`）
 - [ ] 關鍵字觸發 → `chat.reply`（`source: logic-keywords`）
-- [ ] EventSub 事件（如 follow）→ 回覆模板
+- [ ] `eventsub.*`（follow、redemption、raid…）→ 回覆模板
+- [ ] `chat.message` + `raw.message_type`（IRC 降級路徑的 USERNOTICE）→ 同一套規則引擎
 - [ ] **禁止** 直接 `send_message` / Twitch API（交給 `twitch-connector`）
 - [ ] `correlation_id` 指向觸發的 `message_id`
 - [ ] 單元測試：各觸發條件 → 預期 `chat.reply` payload
@@ -311,18 +361,20 @@ LLM 問答 Sub（產品 C）。
 
 | 項目 | 內容 |
 |------|------|
-| 訂閱 | `chat.message` |
+| 訂閱 | `chat.message`, `stt.segment` |
 | 發布 | `chat.reply` |
 | 依賴 | `pkg-events`, `pkg-bus`, `pkg-safety`（雙閘門） |
-| 參考 | [`llm_twitchat`](../../llm_twitchat) |
+| 參考 | [`llm_twitchat`](../../llm_twitchat) `services/stream_session.py`, `memory/knowledge.py` |
 
 **撰寫清單**
 
-- [ ] 觸發條件（如 `!ask`、@mention）可配置
-- [ ] 輸入閘門：`pkg-safety` 過濾觀眾輸入
+- [ ] 觸發條件（如 `!ask`、redemption）可配置
+- [ ] 訂閱 `stt.segment` 累積時間窗上下文（不內嵌 streamlink）
+- [ ] 知識庫 / RAG 留於本 Sub 內部（Chroma 等），不另建 Pub
+- [ ] 輸入閘門：`pkg-safety` 過濾觀眾輸入與 STT 片段
 - [ ] LLM 呼叫抽象（Protocol），不綁死 Gemini
 - [ ] 輸出閘門：幻覺 / 敏感詞過濾後才 `publish chat.reply`
-- [ ] `source: logic-llm`；STT 若需要另建 ingress（不內嵌 streamlink）
+- [ ] `source: logic-llm`；經 `twitch-connector` 發話，不內嵌 Helix API
 - [ ] 不與 `sub-bot-logic` 共用程式碼，僅共用 topic
 - [ ] 單元測試：mock LLM + safety → reply payload
 
@@ -426,23 +478,28 @@ flowchart LR
     P1[ingress-twitch-chat]
     S1[sub-io-log]
     S2[sub-show-overlay]
+    P2a[ingress-ttv-read]
     P2[ingress-twitch-eventsub]
     S3[sub-bot-logic]
     S4[twitch-connector]
+    P5[ingress-twitch-audio]
     S5[sub-llm]
 
     P0 --> P1 --> S1
+    P1 -.->|演進| P2a
     S1 --> S2
     P2 --> S3 --> S4
+    P5 --> S5
     S3 --> S5
 ```
 
 | 階段 | 建議順序 | 驗證目標 |
 |------|----------|----------|
 | Phase 01 | `ingress-twitch-chat` → `sub-io-log` | Pub/Sub 解耦 ✅ |
-| 產品 A | `ingress-yt-read` 或 `ingress-ttv-read` → `sub-show-overlay` | fan-out 兩 Sub |
-| 產品 B | `ingress-twitch-eventsub` → `sub-bot-logic` → `twitch-connector` | 指令回話 |
-| 產品 C | + `sub-llm` + `pkg-safety` | 雙閘門 LLM |
+| 產品 A | `ingress-ttv-read` / `ingress-yt-read` → `sub-show-overlay` | fan-out |
+| 產品 B | `identity-oauth` → `ingress-twitch-eventsub` → `sub-bot-logic` → `twitch-connector` | 指令回話 |
+| 產品 B 降級 | App 改 `ingress-ttv-read` | IRC 唯讀 + `raw.message_type` |
+| 產品 C | + `ingress-twitch-audio` → `sub-llm` + `pkg-safety` | STT + 聊天觸發 LLM |
 | 產品 D | `sub-character-*` 四件組 | `character.turn` 管線 |
 
 ---
