@@ -29,9 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--driver",
-        default=os.environ.get("CHARACTER_FACE_DRIVER", "vts"),
-        choices=["vts"],
-        help="表情驅動後端（預設 vts）",
+        default=os.environ.get("CHARACTER_FACE_DRIVER", "vts-stub"),
+        choices=["vts", "vts-stub"],
+        help="表情驅動：vts（WebSocket）或 vts-stub（離線 pass-through）",
     )
     args = parser.parse_args(argv)
 

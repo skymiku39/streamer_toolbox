@@ -8,6 +8,7 @@ dependencies = [
   "pkg-bus",
   "pkg-events",
   "python-dotenv>=1.0.0",
+  "websockets>=12.0",
 ]
 
 [project.scripts]
