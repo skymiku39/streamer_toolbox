@@ -1,0 +1,6 @@
+from __future__ import annotations
+
+CHAT_INGRESS_STATUS_PREFIX = "CHAT_INGRESS_STATUS="
+CHAT_INGRESS_EVENTSUB = "eventsub"
+CHAT_INGRESS_IRC_FALLBACK = "irc_fallback"
+CHAT_FALLBACK_EXIT_CODE = 2

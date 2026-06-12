@@ -22,6 +22,15 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="Process names (default: all registered processes)",
     )
+    run_parser.add_argument(
+        "--chat-fallback",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "When ingress-twitch-eventsub is included, fall back to ingress-ttv-read "
+            "if EventSub chat read is unavailable (default: enabled)"
+        ),
+    )
     group = run_parser.add_mutually_exclusive_group()
     group.add_argument("--publishers", action="store_true", help="Run all publishers")
     group.add_argument("--subscribers", action="store_true", help="Run all subscribers")
@@ -67,7 +76,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("No matching processes found.", file=sys.stderr)
         return 1
 
-    return run_processes(specs)
+    return run_processes(specs, chat_fallback=args.chat_fallback)
 
 
 def main(argv: list[str] | None = None) -> int:

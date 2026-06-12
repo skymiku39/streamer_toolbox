@@ -21,7 +21,7 @@ def register_builtin_processes() -> None:
         PublisherSpec(
             name="ingress-twitch-chat",
             module="ingress_twitch_chat",
-            description="Twitch IRC → RabbitMQ chat.message (Phase 01 過渡)",
+            description="Twitch IRC → RabbitMQ chat.message（已棄用，請用 ingress-ttv-read）",
             kind="publisher",
             exchange=DEFAULT_EXCHANGE,
         )

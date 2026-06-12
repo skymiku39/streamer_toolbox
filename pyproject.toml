@@ -96,6 +96,7 @@ testpaths = [
     "pkg-bus/tests",
     "pkg-safety/tests",
     "pkg-tts/tests",
+    "app/tests",
     "identity-oauth/tests",
     "ingress-twitch-chat/tests",
     "ingress-twitch-eventsub/tests",
@@ -108,6 +109,7 @@ testpaths = [
     "sub-character-face/tests",
     "sub-character-stage/tests",
     "sub-bot-logic/tests",
+    "sub-io-log/tests",
     "sub-llm/tests",
     "sub-tts/tests",
     "sub-show-overlay/tests",
@@ -115,6 +117,7 @@ testpaths = [
     "twitch-connector/tests",
 ]
 pythonpath = [
+    ".",
     "pkg-events/src",
     "pkg-bus/src",
     "pkg-safety/src",

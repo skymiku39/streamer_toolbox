@@ -32,6 +32,12 @@ from twitchio.models.eventsub_ import (
     StreamOnline,
 )
 
+from ingress_twitch_eventsub.chat_status import (
+    CHAT_FALLBACK_EXIT_CODE,
+    CHAT_INGRESS_EVENTSUB,
+    CHAT_INGRESS_IRC_FALLBACK,
+    CHAT_INGRESS_STATUS_PREFIX,
+)
 from ingress_twitch_eventsub.first_chat import FirstChatTracker
 from ingress_twitch_eventsub.normalize import (
     chat_message_from_eventsub,
@@ -160,6 +166,14 @@ class EventSubIngressBot(commands.Bot):
 
     async def event_ready(self) -> None:
         logger.info("ingress-twitch-eventsub ready for channels: %s", ", ".join(self.bot_channels))
+        if self.chat_read_ok:
+            print(f"{CHAT_INGRESS_STATUS_PREFIX}{CHAT_INGRESS_EVENTSUB}", flush=True)
+            return
+        logger.error(
+            "ChatMessage EventSub unavailable; requesting IRC fallback via ingress-ttv-read",
+        )
+        print(f"{CHAT_INGRESS_STATUS_PREFIX}{CHAT_INGRESS_IRC_FALLBACK}", flush=True)
+        raise SystemExit(CHAT_FALLBACK_EXIT_CODE)
 
     async def event_message(self, message: ChatMessage) -> None:
         default_channel = self.bot_channels[0].lstrip("#") if self.bot_channels else ""
