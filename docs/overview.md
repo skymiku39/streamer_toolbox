@@ -32,6 +32,7 @@ flowchart LR
 | [references.md](references.md) | 姊妹專案、參考程式碼、Sub/Ingress 對照、twitch_api 遷移 |
 | [references/llm-twitchat.md](references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
 | [use-cases/](use-cases/) | 各產品時序圖 |
+| [checklists/pub-sub-writing.md](checklists/pub-sub-writing.md) | Pub/Sub 各 package 撰寫清單 |
 
 ## 三種圖表
 

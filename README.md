@@ -54,6 +54,7 @@ uv run python -m app.main run
 | [docs/references/streamer-toolkit.md](docs/references/streamer-toolkit.md) | Phase 01 參考實作（streamer-toolkit） |
 | [docs/references/llm-twitchat.md](docs/references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
 | [docs/development.md](docs/development.md) | 開發環境、測試、workspace 結構 |
+| [docs/checklists/pub-sub-writing.md](docs/checklists/pub-sub-writing.md) | Pub/Sub 各 package 撰寫清單 |
 
 ### 使用案例（時序圖）
 
