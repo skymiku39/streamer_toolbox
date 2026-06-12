@@ -7,19 +7,25 @@ import threading
 
 from dotenv import load_dotenv
 
+from app.processes.registry import register_subscriber
+from app.subscribers.stream_record_config import RecordConfig
+from app.subscribers.stream_record_writer import ChatRecordWriter
 from pkg_bus.config import rabbitmq_url, stream_exchange
 from pkg_bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
-from pkg_bus.topology import QUEUE_STREAM_RECORD_CHAT_MESSAGE
+from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_STREAM_RECORD_CHAT_MESSAGE
 from pkg_events import TOPIC_CHAT_MESSAGE
 from pkg_stream_store import StreamTextStore
-
-from sub_stream_record.config import RecordConfig
-from sub_stream_record.writer import ChatRecordWriter
 
 PROCESS_NAME = "sub-stream-record"
 STATS_INTERVAL_SECONDS = 30
 
 
+@register_subscriber(
+    name="sub-stream-record",
+    exchange=DEFAULT_EXCHANGE,
+    queue=QUEUE_STREAM_RECORD_CHAT_MESSAGE,
+    description="chat.message → SQLite 記錄層（Phase 1 聊天室）",
+)
 def main(argv: list[str] | None = None) -> int:
     load_dotenv(override=True)
     parser = argparse.ArgumentParser(

@@ -10,7 +10,6 @@ from pkg_bus.topology import (
     QUEUE_IO_LOG_CHAT_MESSAGE,
     QUEUE_SUB_LLM,
     QUEUE_SHOW_OVERLAY_CHAT_MESSAGE,
-    QUEUE_STREAM_RECORD_CHAT_MESSAGE,
     QUEUE_TTS_CHAT_MESSAGE,
     QUEUE_TWITCH_CONNECTOR_CHAT_REPLY,
     QUEUE_VISUAL_CHAT_MESSAGE,
@@ -71,16 +70,6 @@ def register_builtin_processes() -> None:
             kind="subscriber",
             exchange=DEFAULT_EXCHANGE,
             queue=QUEUE_IO_LOG_CHAT_MESSAGE,
-        )
-    )
-    registry.register_subscriber(
-        SubscriberSpec(
-            name="sub-stream-record",
-            module="sub_stream_record",
-            description="chat.message → SQLite 記錄層（Phase 1 聊天室）",
-            kind="subscriber",
-            exchange=DEFAULT_EXCHANGE,
-            queue=QUEUE_STREAM_RECORD_CHAT_MESSAGE,
         )
     )
     registry.register_subscriber(

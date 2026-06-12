@@ -7,8 +7,8 @@
 | 層 | Package | 職責 | 狀態 |
 |----|---------|------|------|
 | L0 Ingress | `ingress-*` | 讀平台 → publish MQ | 已有 |
-| L1 記錄 | `sub-stream-record` | `chat.message` → SQLite | **Phase 1（聊天室）** |
-| L2 記憶 | `sub-memory-worker` | 定期摘要 → `summaries` 表 | **Phase 1** |
+| L1 記錄 | `app/subscribers/stream_record.py` | `chat.message` → SQLite | **Phase 1（聊天室）** |
+| L2 記憶 | `app/workers/` | 定期摘要 → `summaries` 表 | **Phase 1** |
 | L3 指令 | `sub-llm-query`（規劃） | `!ask` → 查 DB/RAG → LLM → `chat.reply` | 未實作（涉 OAuth） |
 | L4 LLM | `pkg-llm`（規劃） | 無狀態推理 | 未實作 |
 
@@ -19,9 +19,9 @@
 ```mermaid
 flowchart LR
     IRC["ingress-ttv-read<br/>或 eventsub"] -->|chat.message| MQ[("RabbitMQ")]
-    MQ --> Rec["sub-stream-record"]
+    MQ --> Rec["app.subscribers.stream_record"]
     Rec --> DB[("pkg-stream-store<br/>SQLite")]
-    Worker["sub-memory-worker<br/>定時"] --> DB
+    Worker["app.workers<br/>定時"] --> DB
     Worker --> Sum[("summaries 表")]
 ```
 
@@ -56,7 +56,8 @@ flowchart LR
 docker compose up -d
 uv run python -m app.main run ingress-ttv-read sub-stream-record
 # 另開終端
-uv run sub-memory-worker
+uv run python -m app.workers --once --llm-backend gemini
+# 或常駐：uv run python -m app.workers --llm-backend gemini
 ```
 
 指令層（`sub-llm-query` + `twitch-connector`）待 OAuth 就緒後再接。

@@ -7,11 +7,10 @@ import time
 
 from dotenv import load_dotenv
 
+from app.workers.memory_config import MemoryWorkerConfig
+from app.workers.memory_summarizer import create_summarizer
+from app.workers.memory_worker import MemoryWorker
 from pkg_stream_store import StreamTextStore
-
-from sub_memory_worker.config import MemoryWorkerConfig
-from sub_memory_worker.summarizer import create_summarizer
-from sub_memory_worker.worker import MemoryWorker
 
 PROCESS_NAME = "sub-memory-worker"
 

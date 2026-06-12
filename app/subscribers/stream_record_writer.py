@@ -7,7 +7,7 @@ from typing import Any
 from pkg_events import ChatMessageEvent
 from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
 
-from sub_stream_record.config import RecordConfig, resolve_session_id
+from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
 
 
 class ChatRecordWriter:

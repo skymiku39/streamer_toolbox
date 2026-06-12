@@ -4,9 +4,9 @@ from pathlib import Path
 
 from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
 
-from sub_memory_worker.config import MemoryWorkerConfig
-from sub_memory_worker.summarizer import TemplateSummarizer
-from sub_memory_worker.worker import MemoryWorker
+from app.workers.memory_config import MemoryWorkerConfig
+from app.workers.memory_summarizer import TemplateSummarizer
+from app.workers.memory_worker import MemoryWorker
 
 
 def test_memory_worker_summarizes_and_marks_records(tmp_path: Path) -> None:

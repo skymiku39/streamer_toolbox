@@ -5,8 +5,8 @@ import sys
 from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
 from pkg_stream_store.models import TextRecord
 
-from sub_memory_worker.config import MemoryWorkerConfig
-from sub_memory_worker.summarizer import Summarizer, create_summarizer
+from app.workers.memory_config import MemoryWorkerConfig
+from app.workers.memory_summarizer import Summarizer
 
 
 class MemoryWorker:

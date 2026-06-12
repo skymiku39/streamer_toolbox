@@ -23,11 +23,9 @@ dependencies = [
     "sub-character-voice",
     "sub-bot-logic",
     "sub-io-log",
-    "sub-memory-worker",
     "sub-llm",
     "sub-tts",
     "sub-show-overlay",
-    "sub-stream-record",
     "sub-visual",
     "twitch-connector",
 ]
@@ -55,11 +53,9 @@ members = [
     "sub-character-voice",
     "sub-bot-logic",
     "sub-io-log",
-    "sub-memory-worker",
     "sub-llm",
     "sub-tts",
     "sub-show-overlay",
-    "sub-stream-record",
     "sub-visual",
     "twitch-connector",
 ]
@@ -82,11 +78,9 @@ sub-character-stage = { workspace = true }
 sub-character-voice = { workspace = true }
 sub-bot-logic = { workspace = true }
 sub-io-log = { workspace = true }
-sub-memory-worker = { workspace = true }
 sub-llm = { workspace = true }
 sub-tts = { workspace = true }
 sub-show-overlay = { workspace = true }
-sub-stream-record = { workspace = true }
 sub-visual = { workspace = true }
 twitch-connector = { workspace = true }
 
@@ -116,11 +110,9 @@ testpaths = [
     "sub-character-stage/tests",
     "sub-bot-logic/tests",
     "sub-io-log/tests",
-    "sub-memory-worker/tests",
     "sub-llm/tests",
     "sub-tts/tests",
     "sub-show-overlay/tests",
-    "sub-stream-record/tests",
     "sub-visual/tests",
     "twitch-connector/tests",
 ]
@@ -143,11 +135,9 @@ pythonpath = [
     "sub-character-voice/src",
     "sub-bot-logic/src",
     "sub-io-log/src",
-    "sub-memory-worker/src",
     "sub-llm/src",
     "sub-tts/src",
     "sub-show-overlay/src",
-    "sub-stream-record/src",
     "sub-visual/src",
     "twitch-connector/src",
 ]
@@ -179,9 +169,7 @@ known-first-party = [
     "sub_character_stage",
     "sub_bot_logic",
     "sub_io_log",
-    "sub_memory_worker",
     "sub_llm",
-    "sub_stream_record",
     "sub_tts",
     "sub_show_overlay",
     "sub_visual",

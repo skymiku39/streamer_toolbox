@@ -27,9 +27,7 @@ members = [
     "sub-character-voice",
     "sub-io-log",
     "sub-llm",
-    "sub-memory-worker",
     "sub-show-overlay",
-    "sub-stream-record",
     "sub-tts",
     "sub-visual",
     "twitch-connector",
@@ -1823,9 +1821,7 @@ dependencies = [
     { name = "sub-character-voice" },
     { name = "sub-io-log" },
     { name = "sub-llm" },
-    { name = "sub-memory-worker" },
     { name = "sub-show-overlay" },
-    { name = "sub-stream-record" },
     { name = "sub-tts" },
     { name = "sub-visual" },
     { name = "twitch-connector" },
@@ -1858,9 +1854,7 @@ requires-dist = [
     { name = "sub-character-voice", editable = "sub-character-voice" },
     { name = "sub-io-log", editable = "sub-io-log" },
     { name = "sub-llm", editable = "sub-llm" },
-    { name = "sub-memory-worker", editable = "sub-memory-worker" },
     { name = "sub-show-overlay", editable = "sub-show-overlay" },
-    { name = "sub-stream-record", editable = "sub-stream-record" },
     { name = "sub-tts", editable = "sub-tts" },
     { name = "sub-visual", editable = "sub-visual" },
     { name = "twitch-connector", editable = "twitch-connector" },
@@ -2040,21 +2034,6 @@ requires-dist = [
 ]
 
 [[package]]
-name = "sub-memory-worker"
-version = "0.1.0"
-source = { editable = "sub-memory-worker" }
-dependencies = [
-    { name = "pkg-stream-store" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pkg-stream-store", editable = "pkg-stream-store" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
 name = "sub-show-overlay"
 version = "0.1.0"
 source = { editable = "sub-show-overlay" }
@@ -2070,27 +2049,6 @@ requires-dist = [
     { name = "pika", specifier = ">=1.3.0" },
     { name = "pkg-bus", editable = "pkg-bus" },
     { name = "pkg-events", editable = "pkg-events" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "sub-stream-record"
-version = "0.1.0"
-source = { editable = "sub-stream-record" }
-dependencies = [
-    { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-stream-store" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-stream-store", editable = "pkg-stream-store" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
 

@@ -5,8 +5,8 @@ from pathlib import Path
 from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 from pkg_stream_store import StreamTextStore
 
-from sub_stream_record.config import RecordConfig
-from sub_stream_record.writer import ChatRecordWriter
+from app.subscribers.stream_record_config import RecordConfig
+from app.subscribers.stream_record_writer import ChatRecordWriter
 
 
 def _payload(**overrides) -> dict:

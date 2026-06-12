@@ -45,3 +45,45 @@ class ProcessRegistry:
 
 
 registry = ProcessRegistry()
+
+
+def register_publisher(
+    name: str,
+    exchange: str,
+    description: str,
+) -> Callable[[F], F]:
+    def decorator(func: F) -> F:
+        registry.register_publisher(
+            PublisherSpec(
+                name=name,
+                module=func.__module__,
+                description=description,
+                kind="publisher",
+                exchange=exchange,
+            )
+        )
+        return func
+
+    return decorator
+
+
+def register_subscriber(
+    name: str,
+    exchange: str,
+    queue: str,
+    description: str,
+) -> Callable[[F], F]:
+    def decorator(func: F) -> F:
+        registry.register_subscriber(
+            SubscriberSpec(
+                name=name,
+                module=func.__module__,
+                description=description,
+                kind="subscriber",
+                exchange=exchange,
+                queue=queue,
+            )
+        )
+        return func
+
+    return decorator
