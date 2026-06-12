@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Overlay</title>
+  <style>
+    :root {
+      --bg-color: rgba(0, 0, 0, 0.74);
+      --font-color: #ffffff;
+      --link-color: #8fd3ff;
+      --font-size: 28px;
+      --line-height: 1.45;
+      --padding-x: 14px;
+      --padding-y: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: var(--padding-y) var(--padding-x);
+      background: var(--bg-color);
+      color: var(--font-color);
+      font-family: "Microsoft JhengHei UI", "Segoe UI", sans-serif;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      overflow-x: hidden;
+    }
+
+    @keyframes chatFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-line {
+      margin: 4px 0;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+      animation: chatFadeIn 0.3s ease-out both;
+    }
+
+    .reply-ctx {
+      color: #888;
+      font-size: 0.85em;
+      padding-left: 8px;
+      border-left: 3px solid #555;
+      margin-bottom: 2px;
+    }
+
+    .author {
+      font-weight: 600;
+      color: #f5f5f5;
+      margin-right: 4px;
+    }
+
+    .badge, .emote {
+      height: 1.2em;
+      vertical-align: middle;
+      margin-right: 2px;
+    }
+
+    a { color: var(--link-color); text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="chat-container"></div>
+  <script>
+    const container = document.getElementById("chat-container");
+    let lastRevision = -1;
+    let lastSignatures = [];
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function renderSegment(segment, emoteAssets) {
+      if (!segment || typeof segment !== "object") return "";
+      if (segment.type === "text") return escapeHtml(segment.text || "");
+      if (segment.type === "link") {
+        const url = segment.url || segment.text || "";
+        const safeUrl = escapeHtml(url);
+        return `<a href="${safeUrl}">${safeUrl}</a>`;
+      }
+      if (segment.type === "emote") {
+        const token = segment.token || segment.text || "";
+        const src = segment.image_url || emoteAssets[token] || "";
+        if (!src) return escapeHtml(token);
+        return `<img class="emote" src="${escapeHtml(src)}" alt="${escapeHtml(token)}" />`;
+      }
+      return "";
+    }
+
+    function renderBadges(badges, badgeSources) {
+      if (!Array.isArray(badges)) return "";
+      return badges.map((badge) => {
+        const setId = badge.set_id || badge.name || "";
+        const id = badge.id || badge.version || "1";
+        const key = `${setId}/${id}`;
+        const src = badgeSources[key] || "";
+        if (!src) return "";
+        return `<img class="badge" src="${escapeHtml(src)}" alt="${escapeHtml(setId)}" />`;
+      }).join("");
+    }
+
+    function renderReply(reply) {
+      if (!reply) return "";
+      const user = escapeHtml(reply.parent_user || "");
+      let body = reply.parent_body || "";
+      if (body.length > 40) body = body.slice(0, 40) + "…";
+      return `<div class="reply-ctx">↩ @${user}: ${escapeHtml(body)}</div>`;
+    }
+
+    function renderLine(entry, emoteAssets, badgeSources) {
+      const author = escapeHtml(entry.author_name || "");
+      const segments = Array.isArray(entry.segments) ? entry.segments : [];
+      const body = segments.map((segment) => renderSegment(segment, emoteAssets)).join("");
+      const badges = renderBadges(entry.badges, badgeSources);
+      const reply = renderReply(entry.reply);
+      return `<div class="chat-line">${reply}${badges}<span class="author">${author}:</span>${body}</div>`;
+    }
+
+    function applyStyle(style) {
+      if (!style || typeof style !== "object") return;
+      const root = document.documentElement.style;
+      if (style.background_color) root.setProperty("--bg-color", style.background_color);
+      if (style.font_color) root.setProperty("--font-color", style.font_color);
+      if (style.link_color) root.setProperty("--link-color", style.link_color);
+      if (style.font_size) root.setProperty("--font-size", `${style.font_size}px`);
+      if (style.line_height) root.setProperty("--line-height", style.line_height);
+      if (style.padding_x) root.setProperty("--padding-x", `${style.padding_x}px`);
+      if (style.padding_y) root.setProperty("--padding-y", `${style.padding_y}px`);
+    }
+
+    function entrySignature(entry) {
+      return JSON.stringify(entry);
+    }
+
+    function renderSnapshot(snapshot) {
+      const revision = snapshot.content_revision ?? 0;
+      const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
+      const emoteAssets = snapshot.emote_assets || {};
+      const badgeSources = snapshot.badge_sources || {};
+      applyStyle(snapshot.style);
+
+      const signatures = lines.map(entrySignature);
+      if (revision === lastRevision && signatures.join("|") === lastSignatures.join("|")) {
+        return;
+      }
+
+      if (lastSignatures.length > 0 && signatures.length >= lastSignatures.length) {
+        const prefixMatches = signatures.slice(0, lastSignatures.length).every((sig, idx) => sig === lastSignatures[idx]);
+        if (prefixMatches && signatures.length > lastSignatures.length) {
+          const appended = lines.slice(lastSignatures.length)
+            .map((entry) => renderLine(entry, emoteAssets, badgeSources))
+            .join("");
+          container.insertAdjacentHTML("beforeend", appended);
+          lastRevision = revision;
+          lastSignatures = signatures;
+          window.scrollTo(0, document.body.scrollHeight);
+          return;
+        }
+      }
+
+      container.innerHTML = lines.map((entry) => renderLine(entry, emoteAssets, badgeSources)).join("");
+      lastRevision = revision;
+      lastSignatures = signatures;
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    async function pollSnapshot() {
+      try {
+        const response = await fetch("/snapshot.json", { cache: "no-store" });
+        if (!response.ok) return;
+        const snapshot = await response.json();
+        renderSnapshot(snapshot);
+      } catch (_error) {
+        // Browser source may start before the HTTP server is ready.
+      }
+    }
+
+    pollSnapshot();
+    setInterval(pollSnapshot, 200);
+  </script>
+</body>
+</html>
