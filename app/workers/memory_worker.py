@@ -23,30 +23,52 @@ class MemoryWorker:
     def run_once(self) -> int:
         session_id = self._resolve_session_id()
         if session_id is None:
-            print("[memory-worker] no session yet; waiting for chat records", file=sys.stderr)
+            print("[memory-worker] no session yet; waiting for records", file=sys.stderr)
             return 0
 
-        records = self._store.fetch_unsummarized_chat(
-            session_id,
-            limit=self._config.batch_limit,
-        )
+        processed = 0
+        if self._config.include_chat:
+            processed += self._summarize_source(
+                session_id,
+                source="chat",
+                fetch=self._store.fetch_unsummarized_chat,
+                summarize=self._summarizer.summarize_chat,
+            )
+        if self._config.include_stt:
+            processed += self._summarize_source(
+                session_id,
+                source="stt",
+                fetch=self._store.fetch_unsummarized_stt,
+                summarize=self._summarizer.summarize_stt,
+            )
+        return processed
+
+    def _summarize_source(
+        self,
+        session_id: str,
+        *,
+        source: str,
+        fetch,
+        summarize,
+    ) -> int:
+        records = fetch(session_id, limit=self._config.batch_limit)
         if not records:
             return 0
 
-        content = self._summarizer.summarize_chat(records)
+        content = summarize(records)
         period_start = records[0].timestamp
         period_end = records[-1].timestamp
         summary_id = self._store.save_summary(
             session_id=session_id,
             period_start=period_start,
             period_end=period_end,
-            source="chat",
+            source=source,
             content=content,
             record_count=len(records),
         )
         self._store.mark_summarized([record.id for record in records])
         print(
-            f"[memory-worker] summary id={summary_id} session={session_id} "
+            f"[memory-worker] summary id={summary_id} session={session_id} source={source} "
             f"records={len(records)} period={period_start}..{period_end}",
             file=sys.stderr,
             flush=True,
@@ -62,7 +84,7 @@ class MemoryWorker:
         return self._infer_latest_session()
 
     def _infer_latest_session(self) -> str | None:
-        session_id = self._store.latest_chat_session_id()
+        session_id = self._store.latest_session_id()
         if session_id is None:
             return None
         self._store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)

@@ -39,6 +39,7 @@ def test_memory_worker_summarizes_and_marks_records(tmp_path: Path) -> None:
             interval_minutes=5,
             llm_backend="template",
             batch_limit=200,
+            record_mode="chat",
         ),
         TemplateSummarizer(),
     )
@@ -48,4 +49,37 @@ def test_memory_worker_summarizes_and_marks_records(tmp_path: Path) -> None:
     summaries = store.list_summaries(session_id)
     assert len(summaries) == 1
     assert "第一則" in summaries[0].content
+    store.close()
+
+
+def test_memory_worker_summarizes_stt(tmp_path: Path) -> None:
+    db_path = tmp_path / "stream.db"
+    store = StreamTextStore(db_path)
+    session_id = "sess-stt"
+    store.append_stt(
+        session_id=session_id,
+        channel="demo",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="開場白",
+        segment_id="s1",
+    )
+    store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+
+    worker = MemoryWorker(
+        store,
+        MemoryWorkerConfig(
+            db_path=str(db_path),
+            session_id=None,
+            interval_minutes=5,
+            llm_backend="template",
+            batch_limit=200,
+            record_mode="stt",
+        ),
+        TemplateSummarizer(),
+    )
+    processed = worker.run_once()
+    assert processed == 1
+    summaries = store.list_summaries(session_id)
+    assert summaries[0].source == "stt"
+    assert "開場白" in summaries[0].content
     store.close()

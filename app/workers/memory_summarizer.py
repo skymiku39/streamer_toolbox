@@ -7,9 +7,14 @@ from pkg_stream_store.models import TextRecord
 SUMMARY_SYSTEM = """你是 Twitch 直播摘要助手。根據聊天室訊息產生精簡摘要（繁體中文，條列 3-5 點）。
 若訊息很少或無實質內容，簡短說明即可。"""
 
+STT_SUMMARY_SYSTEM = """你是直播語音摘要助手。根據實況主 STT 轉錄文字產生精簡摘要（繁體中文，條列 3-5 點）。
+聚焦實況主說了什麼、討論主題與重要決策；若內容零碎或無實質，簡短說明即可。"""
+
 
 class Summarizer(Protocol):
     def summarize_chat(self, records: list[TextRecord]) -> str: ...
+
+    def summarize_stt(self, records: list[TextRecord]) -> str: ...
 
 
 class TemplateSummarizer:
@@ -23,6 +28,16 @@ class TemplateSummarizer:
             lines.append(f"- {record.author}: {record.text[:120]}")
         if len(records) > 30:
             lines.append(f"- … 另有 {len(records) - 30} 則未列出")
+        return "\n".join(lines)
+
+    def summarize_stt(self, records: list[TextRecord]) -> str:
+        if not records:
+            return "（本時段無語音轉錄）"
+        lines = ["【實況語音摘要（規則版）】"]
+        for record in records[:30]:
+            lines.append(f"- [{record.timestamp}] {record.text[:120]}")
+        if len(records) > 30:
+            lines.append(f"- … 另有 {len(records) - 30} 段未列出")
         return "\n".join(lines)
 
 
@@ -79,6 +94,13 @@ class LlmSummarizer:
         chat_lines = [f"{record.author}: {record.text}" for record in records]
         user_content = "請摘要以下 Twitch 聊天室訊息：\n\n" + "\n".join(chat_lines)
         return self._complete(SUMMARY_SYSTEM, user_content)
+
+    def summarize_stt(self, records: list[TextRecord]) -> str:
+        if not records:
+            return "（本時段無語音轉錄）"
+        stt_lines = [f"[{record.timestamp}] {record.text}" for record in records]
+        user_content = "請摘要以下實況主語音轉錄：\n\n" + "\n".join(stt_lines)
+        return self._complete(STT_SUMMARY_SYSTEM, user_content)
 
     def _complete(self, system: str, user: str) -> str:
         import json

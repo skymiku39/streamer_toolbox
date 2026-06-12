@@ -52,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         interval_minutes=args.interval_minutes,
         llm_backend=args.llm_backend,
         batch_limit=config.batch_limit,
+        record_mode=config.record_mode,
     )
 
     try:
@@ -64,8 +65,8 @@ def main(argv: list[str] | None = None) -> int:
     worker = MemoryWorker(store, config, summarizer)
 
     print(
-        f"{PROCESS_NAME} db={config.db_path} interval={config.interval_minutes}m "
-        f"backend={config.llm_backend}",
+        f"{PROCESS_NAME} db={config.db_path} mode={config.record_mode} "
+        f"interval={config.interval_minutes}m backend={config.llm_backend}",
         file=sys.stderr,
         flush=True,
     )

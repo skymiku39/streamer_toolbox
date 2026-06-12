@@ -23,10 +23,27 @@ class RecordConfig:
     def validate(self) -> None:
         if self.record_mode not in {"chat", "stt", "both"}:
             raise ValueError(f"unsupported RECORD_MODE: {self.record_mode!r}")
-        if self.record_mode != "chat":
-            raise ValueError(
-                "Phase 1 only supports RECORD_MODE=chat; stt/both will come in a later phase"
-            )
+
+    @property
+    def include_chat(self) -> bool:
+        return self.record_mode in {"chat", "both"}
+
+    @property
+    def include_stt(self) -> bool:
+        return self.record_mode in {"stt", "both"}
+
+
+def routing_keys_for_mode(record_mode: str) -> list[str]:
+    from pkg_events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT
+
+    config = RecordConfig(db_path="", session_id=None, record_mode=record_mode)
+    config.validate()
+    keys: list[str] = []
+    if config.include_chat:
+        keys.append(TOPIC_CHAT_MESSAGE)
+    if config.include_stt:
+        keys.append(TOPIC_STT_SEGMENT)
+    return keys
 
 
 def resolve_session_id(config: RecordConfig, *, channel: str) -> str:

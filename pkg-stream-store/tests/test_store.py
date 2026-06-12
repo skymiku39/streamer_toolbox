@@ -49,3 +49,20 @@ def test_save_summary_and_checkpoint(tmp_path: Path) -> None:
     assert summary_id == summaries[0].id
     assert summaries[0].content == "摘要內容"
     store.close()
+
+
+def test_append_stt_and_fetch_unsummarized(tmp_path: Path) -> None:
+    store = StreamTextStore(tmp_path / "test.db")
+    store.append_stt(
+        session_id="sess-1",
+        channel="demo",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="大家好",
+        segment_id="seg-1",
+    )
+    records = store.fetch_unsummarized_stt("sess-1")
+    assert len(records) == 1
+    assert records[0].source == "stt"
+    assert records[0].author == "streamer"
+    assert records[0].text == "大家好"
+    store.close()

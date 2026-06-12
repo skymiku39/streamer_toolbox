@@ -106,6 +106,27 @@ class StreamTextStore:
         self._conn.commit()
         return int(cursor.lastrowid)
 
+    def append_stt(
+        self,
+        *,
+        session_id: str,
+        channel: str,
+        timestamp: str,
+        text: str,
+        segment_id: str,
+    ) -> int:
+        self.ensure_session(session_id, channel=channel)
+        cursor = self._conn.execute(
+            """
+            INSERT INTO text_records
+                (session_id, source, timestamp, text, author, channel, message_id, summarized)
+            VALUES (?, 'stt', ?, ?, 'streamer', ?, ?, 0)
+            """,
+            (session_id, timestamp, text, channel, segment_id),
+        )
+        self._conn.commit()
+        return int(cursor.lastrowid)
+
     def fetch_unsummarized_chat(
         self,
         session_id: str,
@@ -117,6 +138,24 @@ class StreamTextStore:
             SELECT id, session_id, source, timestamp, text, author, channel, message_id
             FROM text_records
             WHERE session_id = ? AND source = 'chat' AND summarized = 0
+            ORDER BY timestamp ASC
+            LIMIT ?
+            """,
+            (session_id, limit),
+        ).fetchall()
+        return [_row_to_record(row) for row in rows]
+
+    def fetch_unsummarized_stt(
+        self,
+        session_id: str,
+        *,
+        limit: int = 500,
+    ) -> list[TextRecord]:
+        rows = self._conn.execute(
+            """
+            SELECT id, session_id, source, timestamp, text, author, channel, message_id
+            FROM text_records
+            WHERE session_id = ? AND source = 'stt' AND summarized = 0
             ORDER BY timestamp ASC
             LIMIT ?
             """,
@@ -185,6 +224,18 @@ class StreamTextStore:
             (key, value),
         )
         self._conn.commit()
+
+    def latest_session_id(self) -> str | None:
+        row = self._conn.execute(
+            """
+            SELECT session_id FROM text_records
+            ORDER BY id DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        if row is None:
+            return None
+        return str(row["session_id"])
 
     def latest_chat_session_id(self) -> str | None:
         row = self._conn.execute(
