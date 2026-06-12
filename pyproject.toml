@@ -1,0 +1,33 @@
+[project]
+name = "streamer-toolbox"
+version = "0.1.0"
+description = "直播互動助手：設計文件與 stream-core 實作（Pub/Sub 模組）"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.uv]
+managed = true
+package = false
+
+[tool.uv.workspace]
+members = ["pkg-events", "pkg-bus"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0",
+    "ruff>=0.11",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["pkg-events/tests", "pkg-bus/tests"]
+pythonpath = ["pkg-events/src", "pkg-bus/src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pkg_events", "pkg_bus"]

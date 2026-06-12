@@ -1,6 +1,6 @@
 # 總覽
 
-stream_helper 是直播互動助手的**設計文件庫**（無可執行程式）。目標：用可組裝的 Pub/Sub 模組，從參考專案演進出產品 A～D。
+streamer-toolbox 是直播互動助手的**設計文件庫與 stream-core 實作根目錄**。目標：用可組裝的 Pub/Sub 模組，從參考專案演進出產品 A～D。開發環境見 [development.md](development.md)。
 
 ## 設計約束（強制）
 
@@ -79,8 +79,8 @@ flowchart LR
 |------|------|
 | Phase 01 | [plans/phase-01-rabbitmq-io-poc.md](plans/phase-01-rabbitmq-io-poc.md) — RabbitMQ 1 Pub + 1 Sub（Twitch → I/O Log） |
 
-參考實作位於姊妹 repo [`streamer-toolkit`](../streamer-toolkit)，詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。計畫書中的 `implementations/phase-01/` 為設計時暫定路徑，以 toolkit 為準。
+參考實作位於姊妹 repo [`streamer-toolkit`](../streamer-toolkit)，詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。本 repo 的 `pkg-events`、`pkg-bus` 等 workspace package 為正式實作起點。
 
-## 範圍外（設計 repo 本身）
+## 實作範圍
 
-`docs/` 不含可執行程式；實作依 [packages.md](packages.md) 與 [solid.md](solid.md) 進行。
+`docs/` 為契約與設計；程式碼置於 workspace package（見 [development.md](development.md)），依 [packages.md](packages.md) 與 [solid.md](solid.md) 擴充。

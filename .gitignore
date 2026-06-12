@@ -1,5 +1,7 @@
 # Editor / IDE
 .cursor/
+.vscode/
+.idea/
 
 # OS
 .DS_Store
@@ -8,3 +10,18 @@ Thumbs.db
 # Env / secrets
 .env
 *.pem
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Runtime logs
+logs/

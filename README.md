@@ -1,6 +1,22 @@
-# stream_helper
+# streamer-toolbox
 
-直播互動助手的**完整設計文件庫**。以 Pub/Sub、可組裝模組與 **[SOLID](docs/solid.md)** 為強制約束，指導現有與未來所有 repo/package。本 repo **不含可執行程式**。
+直播互動助手的**設計文件庫與 stream-core 實作根目錄**。以 Pub/Sub、可組裝模組與 **[SOLID](docs/solid.md)** 為強制約束。
+
+| 區塊 | 路徑 | 說明 |
+|------|------|------|
+| 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
+| 實作 | `pkg-events/`、`pkg-bus/`… | uv workspace package（見 [development.md](docs/development.md)） |
+
+## 快速開始（開發）
+
+```powershell
+uv sync
+copy .env.example .env
+docker compose up -d
+uv run pytest
+```
+
+詳見 [docs/development.md](docs/development.md)。
 
 ## 姊妹專案
 
@@ -25,6 +41,7 @@
 | [docs/deployment.md](docs/deployment.md) | Pub/Sub 部署、MQ、可觀測性 |
 | [docs/references.md](docs/references.md) | 姊妹專案、twitch_api 遷移 |
 | [docs/references/streamer-toolkit.md](docs/references/streamer-toolkit.md) | Phase 01 參考實作（streamer-toolkit） |
+| [docs/development.md](docs/development.md) | 開發環境、測試、workspace 結構 |
 
 ### 使用案例（時序圖）
 
