@@ -32,9 +32,9 @@ class ChatRecordWriter:
 
         channel = event.channel or "unknown"
         with self._lock:
-            if self._session_id is None:
-                self._session_id = resolve_session_id(self._config, channel=channel)
-            session_id = self._session_id
+            session_id = resolve_session_id(self._config, channel=channel)
+            if self._session_id != session_id:
+                self._session_id = session_id
             self._store.append_chat(
                 session_id=session_id,
                 channel=channel,

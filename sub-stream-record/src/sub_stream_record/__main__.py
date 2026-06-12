@@ -21,7 +21,7 @@ STATS_INTERVAL_SECONDS = 30
 
 
 def main(argv: list[str] | None = None) -> int:
-    load_dotenv()
+    load_dotenv(override=True)
     parser = argparse.ArgumentParser(
         description="Subscribe chat.message → SQLite stream text store (Phase 1: chat only)",
     )

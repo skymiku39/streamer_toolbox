@@ -35,3 +35,17 @@ def test_writer_persists_chat_message(tmp_path: Path) -> None:
     assert records[0].author == "Viewer"
     assert records[0].text == "測試訊息"
     store.close()
+
+
+def test_writer_resolves_session_per_channel(tmp_path: Path) -> None:
+    db_path = tmp_path / "stream.db"
+    store = StreamTextStore(db_path)
+    config = RecordConfig(db_path=str(db_path), session_id=None, record_mode="chat")
+    writer = ChatRecordWriter(store, config)
+    writer.handle(_payload(channel="caren_surfdemon", message_id="m1"))
+    writer.handle(_payload(channel="lupulu0524", message_id="m2", content="第二則"))
+    caren = store.fetch_unsummarized_chat("caren_surfdemon_20260612")
+    lupulu = store.fetch_unsummarized_chat("lupulu0524_20260612")
+    assert len(caren) == 1
+    assert len(lupulu) == 1
+    store.close()

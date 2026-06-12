@@ -17,7 +17,7 @@ PROCESS_NAME = "sub-memory-worker"
 
 
 def main(argv: list[str] | None = None) -> int:
-    load_dotenv()
+    load_dotenv(override=True)
     parser = argparse.ArgumentParser(
         description="Periodic chat summarization → summaries table (Phase 1)",
     )
