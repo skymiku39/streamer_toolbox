@@ -103,6 +103,7 @@ testpaths = [
     "ingress-ttv-read/tests",
     "ingress-discord/tests",
     "ingress-yt-read/tests",
+    "sub-character-voice/tests",
     "sub-character-brain/tests",
     "sub-character-face/tests",
     "sub-character-stage/tests",
