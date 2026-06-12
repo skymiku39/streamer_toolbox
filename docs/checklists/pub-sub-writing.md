@@ -315,12 +315,13 @@ L2 記憶層：定時讀未摘要 chat / stt → 寫 `summaries` 表。實作於
 
 **撰寫清單**
 
-- [x] `fetch_unsummarized_chat` / `fetch_unsummarized_stt` → 摘要 → `save_summary` → `mark_summarized`
+- [x] `fetch_unsummarized_chat` / `fetch_unsummarized_stt` / `fetch_unsummarized_merged` → 摘要 → `save_summary` → `mark_summarized`
+- [x] `RECORD_MODE=both` 時合併時序摘要（`source=both`），LLM prompt 要求問答對照與待回覆
 - [x] `MEMORY_LLM_BACKEND=template` 規則摘要（無 API key）
 - [x] 可選 `openai` / `gemini` LLM 摘要
 - [x] 單元測試：`MemoryWorker.run_once`（chat / stt）
 
-**驗收：** `RECORD_MODE=both` 且 `--once` 後，`summaries` 可同時有 `source=chat` 與 `source=stt` 列。
+**驗收：** `RECORD_MODE=both` 且 `--once` 後，`summaries` 有 `source=both` 列，內容含問答對照；`text_records.summarized=1`。
 
 ---
 

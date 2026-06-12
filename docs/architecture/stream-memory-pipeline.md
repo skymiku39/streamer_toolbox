@@ -32,13 +32,13 @@ flowchart LR
 |----|------|
 | `chat` | 只記 `chat.message` |
 | `stt` | 只記 `stt.segment` |
-| `both` | 聊天室 + 實況語音 STT |
+| `both` | 聊天室 + 實況語音 STT；記憶層**合併**時序摘要並標註問答對照 |
 
 ## SQLite 表
 
 - `stream_sessions` — 場次
 - `text_records` — 原始文字（`source=chat` 或 `stt`）
-- `summaries` — 記憶層產出的摘要（`source=chat` / `stt` 分開）
+- `summaries` — 記憶層產出的摘要（`source=chat` / `stt` / `both`；`both` 為合併問答摘要）
 - `memory_checkpoints` — worker 游標
 
 ## 環境變數

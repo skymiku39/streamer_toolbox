@@ -26,6 +26,9 @@ class MemoryWorker:
             print("[memory-worker] no session yet; waiting for records", file=sys.stderr)
             return 0
 
+        if self._config.record_mode == "both":
+            return self._summarize_merged(session_id)
+
         processed = 0
         if self._config.include_chat:
             processed += self._summarize_source(
@@ -70,6 +73,38 @@ class MemoryWorker:
         print(
             f"[memory-worker] summary id={summary_id} session={session_id} source={source} "
             f"records={len(records)} period={period_start}..{period_end}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return len(records)
+
+    def _summarize_merged(self, session_id: str) -> int:
+        records = self._store.fetch_unsummarized_merged(
+            session_id,
+            sources=["chat", "stt"],
+            limit=self._config.batch_limit,
+        )
+        if not records:
+            return 0
+
+        content = self._summarizer.summarize_merged(records)
+        period_start = records[0].timestamp
+        period_end = records[-1].timestamp
+        summary_id = self._store.save_summary(
+            session_id=session_id,
+            period_start=period_start,
+            period_end=period_end,
+            source="both",
+            content=content,
+            record_count=len(records),
+        )
+        self._store.mark_summarized([record.id for record in records])
+        chat_count = sum(1 for r in records if r.source == "chat")
+        stt_count = sum(1 for r in records if r.source == "stt")
+        print(
+            f"[memory-worker] summary id={summary_id} session={session_id} source=both "
+            f"records={len(records)} (chat={chat_count}, stt={stt_count}) "
+            f"period={period_start}..{period_end}",
             file=sys.stderr,
             flush=True,
         )

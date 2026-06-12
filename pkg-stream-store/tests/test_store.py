@@ -66,3 +66,26 @@ def test_append_stt_and_fetch_unsummarized(tmp_path: Path) -> None:
     assert records[0].author == "streamer"
     assert records[0].text == "大家好"
     store.close()
+
+
+def test_fetch_unsummarized_merged_orders_by_timestamp(tmp_path: Path) -> None:
+    store = StreamTextStore(tmp_path / "test.db")
+    session_id = "sess-1"
+    store.append_stt(
+        session_id=session_id,
+        channel="demo",
+        timestamp="2026-06-12T10:01:00+00:00",
+        text="回答",
+        segment_id="s1",
+    )
+    store.append_chat(
+        session_id=session_id,
+        channel="demo",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="問題",
+        author="viewer",
+        message_id="m1",
+    )
+    merged = store.fetch_unsummarized_merged(session_id, sources=["chat", "stt"])
+    assert [record.source for record in merged] == ["chat", "stt"]
+    store.close()

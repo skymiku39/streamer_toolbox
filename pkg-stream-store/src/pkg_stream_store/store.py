@@ -163,6 +163,28 @@ class StreamTextStore:
         ).fetchall()
         return [_row_to_record(row) for row in rows]
 
+    def fetch_unsummarized_merged(
+        self,
+        session_id: str,
+        *,
+        sources: list[str],
+        limit: int = 500,
+    ) -> list[TextRecord]:
+        if not sources:
+            return []
+        placeholders = ",".join("?" for _ in sources)
+        rows = self._conn.execute(
+            f"""
+            SELECT id, session_id, source, timestamp, text, author, channel, message_id
+            FROM text_records
+            WHERE session_id = ? AND source IN ({placeholders}) AND summarized = 0
+            ORDER BY timestamp ASC
+            LIMIT ?
+            """,
+            (session_id, *sources, limit),
+        ).fetchall()
+        return [_row_to_record(row) for row in rows]
+
     def mark_summarized(self, record_ids: list[int]) -> None:
         if not record_ids:
             return

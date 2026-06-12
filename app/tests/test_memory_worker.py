@@ -83,3 +83,50 @@ def test_memory_worker_summarizes_stt(tmp_path: Path) -> None:
     assert summaries[0].source == "stt"
     assert "開場白" in summaries[0].content
     store.close()
+
+
+def test_memory_worker_merged_both_qa(tmp_path: Path) -> None:
+    db_path = tmp_path / "stream.db"
+    store = StreamTextStore(db_path)
+    session_id = "sess-both"
+    store.append_chat(
+        session_id=session_id,
+        channel="demo",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="今天玩什麼？",
+        author="viewer1",
+        message_id="m1",
+    )
+    store.append_stt(
+        session_id=session_id,
+        channel="demo",
+        timestamp="2026-06-12T10:00:30+00:00",
+        text="今天打算打 Boss",
+        segment_id="s1",
+    )
+    store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+
+    worker = MemoryWorker(
+        store,
+        MemoryWorkerConfig(
+            db_path=str(db_path),
+            session_id=None,
+            interval_minutes=5,
+            llm_backend="template",
+            batch_limit=200,
+            record_mode="both",
+        ),
+        TemplateSummarizer(),
+    )
+    processed = worker.run_once()
+    assert processed == 2
+    assert not store.fetch_unsummarized_chat(session_id)
+    assert not store.fetch_unsummarized_stt(session_id)
+    summaries = store.list_summaries(session_id)
+    assert len(summaries) == 1
+    assert summaries[0].source == "both"
+    content = summaries[0].content
+    assert "今天玩什麼" in content
+    assert "Boss" in content
+    assert "問答對照" in content
+    store.close()
