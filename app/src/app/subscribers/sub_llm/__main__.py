@@ -16,7 +16,7 @@ from bus.rabbitmq import (
     setup_subscriber_queue_bindings,
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
-from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_STT_SEGMENT
+from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA
 from safety import BlocklistSafetyFilter
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         channel,
         exchange_name=exchange_name,
         queue_name=QUEUE_SUB_LLM,
-        routing_keys=[TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT],
+        routing_keys=[TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA],
     )
 
     def publish(topic: str, payload: dict) -> None:
@@ -127,7 +127,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     print(
-        f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT} "
+        f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT}, "
+        f"{TOPIC_STREAM_METADATA} "
         f"(backend={args.llm_backend!r}, knowledge=RAG/chroma, triggers={config.trigger_prefixes!r})",
         file=sys.stderr,
         flush=True,

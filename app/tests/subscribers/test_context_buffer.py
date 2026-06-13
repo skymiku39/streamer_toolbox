@@ -92,9 +92,41 @@ def test_live_context_buffer_merges_stt_and_chat() -> None:
     buffer.add_segment(_segment("主播說話", channel="room_a"))
     buffer.add_chat_message(_chat("觀眾聊天", channel="room_a", author_id="viewer-id"))
     context = buffer.context_text("room_a")
-    stt_count, chat_count, context_len = buffer.stats("room_a")
+    stt_count, chat_count, context_len, has_stream = buffer.stats("room_a")
     assert "主播說話" in context
     assert "觀眾聊天" in context
     assert stt_count == 1
     assert chat_count == 1
     assert context_len > 0
+    assert has_stream is False
+
+
+def test_live_context_buffer_includes_stream_metadata() -> None:
+    from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
+
+    buffer = LiveContextBuffer(window_minutes=5)
+    buffer.update_stream_metadata(
+        StreamMetadataEvent(
+            schema_version=1,
+            topic=TOPIC_STREAM_METADATA,
+            platform="twitch",
+            channel="room_a",
+            timestamp="2026-06-13T10:00:00+00:00",
+            snapshot_id="snap-1",
+            is_live=True,
+            title="打 Boss",
+            game_name="Dark Souls",
+            display_name="Streamer",
+            started_at="2026-06-13T09:00:00+00:00",
+            duration_seconds=3600,
+            viewer_count=50,
+            stream_url="https://www.twitch.tv/room_a",
+        )
+    )
+    context = buffer.context_text("room_a")
+    _, _, _, has_stream = buffer.stats("room_a")
+    assert has_stream is True
+    assert "【直播狀態" in context
+    assert "打 Boss" in context
+    assert "Dark Souls" in context
+    assert "1h 0m" in context

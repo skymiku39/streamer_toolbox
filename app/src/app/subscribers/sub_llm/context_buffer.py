@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime
 
-from events import ChatMessageEvent, SttSegmentEvent
+from events import ChatMessageEvent, SttSegmentEvent, StreamMetadataEvent
 from stream_store.session import normalize_channel
 
 
@@ -134,8 +134,57 @@ class ChatContextBuffer:
         self._lines_by_channel[channel] = pruned
 
 
+def format_duration_seconds(seconds: int) -> str:
+    hours, remainder = divmod(max(0, seconds), 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours}h {minutes}m"
+    if minutes:
+        return f"{minutes}m {secs}s"
+    return f"{secs}s"
+
+
+class StreamMetadataBuffer:
+    """保存各 channel 最新直播 metadata 快照。"""
+
+    def __init__(self) -> None:
+        self._latest_by_channel: dict[str, StreamMetadataEvent] = {}
+        self._lock = threading.Lock()
+
+    def update(self, event: StreamMetadataEvent) -> None:
+        channel = normalize_channel(event.channel or "")
+        with self._lock:
+            self._latest_by_channel[channel] = event
+
+    def has_metadata(self, channel: str) -> bool:
+        key = normalize_channel(channel)
+        with self._lock:
+            return key in self._latest_by_channel
+
+    def context_text(self, channel: str) -> str:
+        key = normalize_channel(channel)
+        with self._lock:
+            event = self._latest_by_channel.get(key)
+        if event is None:
+            return ""
+        lines = [f"【直播狀態（{key}）】"]
+        status = "直播中" if event.is_live else "離線"
+        lines.append(f"狀態：{status}")
+        if event.display_name:
+            lines.append(f"顯示名稱：{event.display_name}")
+        if event.title:
+            lines.append(f"標題：{event.title}")
+        if event.game_name:
+            lines.append(f"分類／遊戲：{event.game_name}")
+        if event.is_live and event.duration_seconds is not None:
+            lines.append(f"已直播：{format_duration_seconds(event.duration_seconds)}")
+        if event.viewer_count is not None and event.is_live:
+            lines.append(f"觀眾：{event.viewer_count}")
+        return "\n".join(lines)
+
+
 class LiveContextBuffer:
-    """合併 STT 逐字稿與聊天室短期記憶。"""
+    """合併直播 metadata、STT 逐字稿與聊天室短期記憶。"""
 
     def __init__(
         self,
@@ -148,6 +197,10 @@ class LiveContextBuffer:
             window_minutes=window_minutes,
             skip_author_ids=skip_author_ids,
         )
+        self._stream = StreamMetadataBuffer()
+
+    def update_stream_metadata(self, event: StreamMetadataEvent) -> None:
+        self._stream.update(event)
 
     def add_segment(self, event: SttSegmentEvent) -> None:
         self._stt.add_segment(event)
@@ -159,6 +212,7 @@ class LiveContextBuffer:
         parts = [
             part
             for part in (
+                self._stream.context_text(channel),
                 self._stt.context_text(channel),
                 self._chat.context_text(channel),
             )
@@ -166,7 +220,8 @@ class LiveContextBuffer:
         ]
         return "\n\n".join(parts)
 
-    def stats(self, channel: str) -> tuple[int, int, int]:
+    def stats(self, channel: str) -> tuple[int, int, int, bool]:
         stt_count = self._stt.count(channel)
         chat_count = self._chat.count(channel)
-        return stt_count, chat_count, len(self.context_text(channel))
+        has_stream = self._stream.has_metadata(channel)
+        return stt_count, chat_count, len(self.context_text(channel)), has_stream

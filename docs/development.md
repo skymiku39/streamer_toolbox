@@ -156,7 +156,7 @@ powershell -NoProfile -File scripts/stop_all.ps1
 
 ```powershell
 # 終端 1
-uv run python -m app.main run ingress-ttv-read ingress-twitch-audio sub-stream-record
+uv run python -m app.main run ingress-ttv-read ingress-twitch-audio ingress-twitch-stream sub-stream-record
 
 # 終端 2
 uv run python -m app.main run sub-llm twitch-connector

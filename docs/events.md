@@ -11,6 +11,7 @@
 | `chat.message` | `ingress-*` | show, tts, bot, llm, character-brain | A～D |
 | `eventsub.*` | `ingress-twitch-eventsub` | bot-logic | B, C |
 | `stt.segment` | `ingress-twitch-audio` | llm, io-log（診斷） | C |
+| `stream.metadata` | `ingress-twitch-stream` | llm | C |
 | `stt.status` / `stt.error` | `ingress-twitch-audio` | monitor（App） | C |
 | `chat.reply` | bot, llm, character-brain | twitch-connector | B～D |
 | `character.turn` | character-brain | character-voice, character-face | D |
@@ -177,6 +178,36 @@ Twitch EventSub 非聊天事件（**僅** `ingress-twitch-eventsub` 發布）。
 | `highlight_score` | 聊天密度等衍生分數（可選，供摘要／高光） |
 
 `stt.status`、`stt.error` 供 `ingress-twitch-audio` 回報載入／擷取狀態；由 App 訂閱 `system.*` 或專用 monitor 處理，**不**進入 `chat.reply` 管線。
+
+## `stream.metadata`
+
+Twitch 直播 metadata 快照（`ingress-twitch-stream` 輪詢 GQL 發布；`sub-llm` 訂閱後更新短期上下文）。
+
+```json
+{
+  "schema_version": 1,
+  "topic": "stream.metadata",
+  "platform": "twitch",
+  "channel": "channel_name",
+  "timestamp": "2026-06-13T10:00:00+00:00",
+  "snapshot_id": "abc123snapshot01",
+  "is_live": true,
+  "title": "直播標題",
+  "game_name": "Just Chatting",
+  "display_name": "DisplayName",
+  "started_at": "2026-06-13T08:00:00+00:00",
+  "duration_seconds": 7200,
+  "viewer_count": 128,
+  "stream_url": "https://www.twitch.tv/channel_name"
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `snapshot_id` | 去重鍵（ingress 依標題／分類／時長分鐘桶計算） |
+| `game_name` | Twitch 遊戲／分類名稱 |
+| `duration_seconds` | 直播中時，相對 `started_at` 的已直播秒數 |
+| `viewer_count` | 即時觀眾數（離線時通常為 null） |
 
 ## `character.turn`
 

@@ -63,6 +63,7 @@ def analyze_prompt_payload(
         "user_len": len(user_content),
         "has_stt_marker": "【直播逐字稿" in context_body,
         "has_chat_marker": "【近期聊天室" in context_body,
+        "has_stream_metadata_marker": "【直播狀態" in context_body,
         "has_static_kb_marker": "【實況主知識庫】" in knowledge_body,
         "has_memory_marker": "【近期直播摘要】" in knowledge_body,
         "has_general_knowledge_hint": "本身的常識" in system_content,

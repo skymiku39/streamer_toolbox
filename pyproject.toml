@@ -61,6 +61,7 @@ known-first-party = [
     "ingress_ttv_read",
     "ingress_local_audio",
     "ingress_twitch_audio",
+    "ingress_twitch_stream",
     "ingress_twitch_eventsub",
     "ingress_yt_read",
     "safety",

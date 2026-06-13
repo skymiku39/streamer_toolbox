@@ -7,6 +7,7 @@ from events.eventsub_event import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_
 from events.memory_summarize_request import MemorySummarizeRequestEvent
 from events.memory_summary_ready import MemorySummaryReadyEvent
 from events.stt_segment import SttSegmentEvent
+from events.stream_metadata import StreamMetadataEvent
 from events.system_error import SystemErrorEvent
 from events.topics import (
     REPLY_SOURCES,
@@ -23,6 +24,7 @@ from events.topics import (
     TOPIC_EVENTSUB_PREFIX,
     TOPIC_STT_ERROR,
     TOPIC_STT_SEGMENT,
+    TOPIC_STREAM_METADATA,
     TOPIC_STT_STATUS,
     TOPIC_SYSTEM_ERROR,
     TOPIC_MEMORY_SUMMARIZE_REQUEST,
@@ -46,6 +48,7 @@ __all__ = [
     "MemorySummarizeRequestEvent",
     "MemorySummaryReadyEvent",
     "SttSegmentEvent",
+    "StreamMetadataEvent",
     "SystemErrorEvent",
     "TOPIC_CHARACTER_AUDIO_READY",
     "TOPIC_CHARACTER_EXPRESSION_READY",
@@ -55,6 +58,7 @@ __all__ = [
     "TOPIC_EVENTSUB_PREFIX",
     "TOPIC_STT_ERROR",
     "TOPIC_STT_SEGMENT",
+    "TOPIC_STREAM_METADATA",
     "TOPIC_STT_STATUS",
     "TOPIC_SYSTEM_ERROR",
     "TOPIC_MEMORY_SUMMARIZE_REQUEST",

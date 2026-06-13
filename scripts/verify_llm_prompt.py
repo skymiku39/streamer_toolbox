@@ -69,7 +69,7 @@ def main() -> int:
     store = create_knowledge_store(knowledge_path or None)
     preload_knowledge_store(store)
 
-    context_buffer, (stt_count, chat_count, context_len) = _build_sample_context(channel)
+    context_buffer, (stt_count, chat_count, context_len, has_stream) = _build_sample_context(channel)
     context = context_buffer.context_text(channel)
 
     scenarios = [
@@ -82,7 +82,12 @@ def main() -> int:
         "channel": channel,
         "backend": os.environ.get("LLM_KNOWLEDGE_BACKEND", "chroma"),
         "memory_from_db": os.environ.get("LLM_MEMORY_FROM_DB"),
-        "buffer_stats": {"stt": stt_count, "chat": chat_count, "context_len": context_len},
+        "buffer_stats": {
+            "stt": stt_count,
+            "chat": chat_count,
+            "context_len": context_len,
+            "has_stream": has_stream,
+        },
         "scenarios": [],
     }
 

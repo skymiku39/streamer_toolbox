@@ -3,6 +3,7 @@ from events import (
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
     TOPIC_STT_SEGMENT,
+    TOPIC_STREAM_METADATA,
     ChatMessageEvent,
     SttSegmentEvent,
 )
@@ -107,6 +108,47 @@ def test_chat_messages_accumulate_context_for_reply() -> None:
 
     assert len(published) == 1
     assert "近期直播上下文" in published[0][1]["content"]
+
+
+def test_stream_metadata_updates_context_for_reply() -> None:
+    from events import StreamMetadataEvent
+
+    published: list[tuple[str, dict]] = []
+    captured: dict[str, str] = {}
+
+    class CapturingLlm:
+        def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+            captured["context"] = context
+            return "metadata-aware reply"
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=CapturingLlm(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(
+        StreamMetadataEvent(
+            schema_version=1,
+            topic=TOPIC_STREAM_METADATA,
+            platform="twitch",
+            channel="demo_channel",
+            timestamp="2026-06-13T10:00:00+00:00",
+            snapshot_id="meta-1",
+            is_live=True,
+            title="Just Chatting 測試",
+            game_name="Just Chatting",
+            duration_seconds=1800,
+        ).to_dict()
+    )
+    subscriber.handle(_chat_payload("!ask 現在在播什麼？"))
+
+    assert len(published) == 1
+    assert "Just Chatting 測試" in captured["context"]
+    assert "【直播狀態" in captured["context"]
 
 
 def test_stt_context_does_not_leak_across_channels() -> None:

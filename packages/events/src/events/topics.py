@@ -1,6 +1,7 @@
 TOPIC_CHAT_MESSAGE = "chat.message"
 TOPIC_CHAT_REPLY = "chat.reply"
 TOPIC_STT_SEGMENT = "stt.segment"
+TOPIC_STREAM_METADATA = "stream.metadata"
 TOPIC_STT_STATUS = "stt.status"
 TOPIC_STT_ERROR = "stt.error"
 TOPIC_CHARACTER_TURN = "character.turn"

@@ -11,9 +11,11 @@ from events import (
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
     TOPIC_STT_SEGMENT,
+    TOPIC_STREAM_METADATA,
     ChatMessageEvent,
     ChatReplyEvent,
     SttSegmentEvent,
+    StreamMetadataEvent,
 )
 from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
@@ -65,8 +67,14 @@ class LlmSubscriber:
         topic = payload.get("topic")
         if topic == TOPIC_STT_SEGMENT:
             self._handle_stt_segment(payload)
+        elif topic == TOPIC_STREAM_METADATA:
+            self._handle_stream_metadata(payload)
         elif topic == TOPIC_CHAT_MESSAGE:
             self._handle_chat_message(payload)
+
+    def _handle_stream_metadata(self, payload: dict[str, Any]) -> None:
+        event = StreamMetadataEvent.from_dict(payload)
+        self._context_buffer.update_stream_metadata(event)
 
     def _handle_stt_segment(self, payload: dict[str, Any]) -> None:
         event = SttSegmentEvent.from_dict(payload)
@@ -117,9 +125,10 @@ class LlmSubscriber:
         try:
             channel = event.channel or ""
             context = self._context_buffer.context_text(channel)
-            stt_count, chat_count, context_len = self._context_buffer.stats(channel)
+            stt_count, chat_count, context_len, has_stream = self._context_buffer.stats(channel)
             print(
-                f"[sub-llm] context stt={stt_count} chat={chat_count} chars={context_len}",
+                f"[sub-llm] context stream={has_stream} stt={stt_count} "
+                f"chat={chat_count} chars={context_len}",
                 file=sys.stderr,
                 flush=True,
             )
