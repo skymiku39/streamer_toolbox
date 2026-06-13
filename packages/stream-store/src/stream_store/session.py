@@ -23,10 +23,16 @@ def resolve_session_id(
     explicit_session_id: str | None = None,
     day: str | None = None,
 ) -> str:
-    if explicit_session_id:
-        return explicit_session_id
+    normalized = normalize_channel(channel)
     session_day = day or datetime.now(UTC).strftime("%Y%m%d")
-    return f"{normalize_channel(channel)}_{session_day}"
+    channel_based = f"{normalized}_{session_day}"
+    if explicit_session_id:
+        explicit = explicit_session_id.strip()
+        if explicit.startswith(f"{normalized}_"):
+            return explicit
+        # 忽略與 channel 不符的 STREAM_SESSION_ID，避免多直播間混寫同一 session
+        return channel_based
+    return channel_based
 
 
 def resolve_session_for_channel(
@@ -37,7 +43,10 @@ def resolve_session_for_channel(
 ) -> str | None:
     """依直播間 channel 解析 session_id，避免跨房間誤用 checkpoint。"""
     if explicit_session_id:
-        return explicit_session_id
+        normalized = normalize_channel(channel)
+        explicit = explicit_session_id.strip()
+        if normalized and explicit.startswith(f"{normalized}_"):
+            return explicit
 
     normalized = normalize_channel(channel)
     if not normalized or normalized == "unknown":

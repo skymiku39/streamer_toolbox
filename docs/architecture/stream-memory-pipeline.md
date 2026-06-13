@@ -41,6 +41,7 @@ flowchart LR
 L2 記憶層的作法：
 
 - **分開摘要**：chat 與 stt 各自摘要，保留各自時間軸敘述
+- **channel 過濾**：同一 session 若因早期 E2E 混寫多房資料，摘要時只取 `channel` 符合目標直播間的列
 - **period 對齊**：同一 worker 批次共用 `period_start`/`period_end`，方便下游（L3/L4）依時段並列兩份摘要，由 LLM 自行推理語意關聯
 - **不做配對**：不在 L2 寫死 Q↔A 規則；若未來要問答分析，應在 L4 用語意理解或更長上下文，而非 timestamp 鄰近配對
 

@@ -125,21 +125,30 @@ class StreamTextStore:
         self._conn.commit()
         return int(cursor.lastrowid)
 
+    def _channel_clause(self, channel: str | None) -> tuple[str, tuple[str, ...]]:
+        if not channel:
+            return "", ()
+        from stream_store.session import normalize_channel
+
+        return " AND LOWER(REPLACE(channel, '#', '')) = ?", (normalize_channel(channel),)
+
     def fetch_unsummarized_chat(
         self,
         session_id: str,
         *,
+        channel: str | None = None,
         limit: int = 500,
     ) -> list[TextRecord]:
+        channel_sql, channel_params = self._channel_clause(channel)
         rows = self._conn.execute(
-            """
+            f"""
             SELECT id, session_id, source, timestamp, text, author, channel, message_id
             FROM text_records
-            WHERE session_id = ? AND source = 'chat' AND summarized = 0
+            WHERE session_id = ? AND source = 'chat' AND summarized = 0{channel_sql}
             ORDER BY timestamp ASC
             LIMIT ?
             """,
-            (session_id, limit),
+            (session_id, *channel_params, limit),
         ).fetchall()
         return [_row_to_record(row) for row in rows]
 
@@ -147,17 +156,19 @@ class StreamTextStore:
         self,
         session_id: str,
         *,
+        channel: str | None = None,
         limit: int = 500,
     ) -> list[TextRecord]:
+        channel_sql, channel_params = self._channel_clause(channel)
         rows = self._conn.execute(
-            """
+            f"""
             SELECT id, session_id, source, timestamp, text, author, channel, message_id
             FROM text_records
-            WHERE session_id = ? AND source = 'stt' AND summarized = 0
+            WHERE session_id = ? AND source = 'stt' AND summarized = 0{channel_sql}
             ORDER BY timestamp ASC
             LIMIT ?
             """,
-            (session_id, limit),
+            (session_id, *channel_params, limit),
         ).fetchall()
         return [_row_to_record(row) for row in rows]
 
@@ -166,20 +177,22 @@ class StreamTextStore:
         session_id: str,
         *,
         sources: list[str],
+        channel: str | None = None,
         limit: int = 500,
     ) -> list[TextRecord]:
         if not sources:
             return []
         placeholders = ",".join("?" for _ in sources)
+        channel_sql, channel_params = self._channel_clause(channel)
         rows = self._conn.execute(
             f"""
             SELECT id, session_id, source, timestamp, text, author, channel, message_id
             FROM text_records
-            WHERE session_id = ? AND source IN ({placeholders}) AND summarized = 0
+            WHERE session_id = ? AND source IN ({placeholders}) AND summarized = 0{channel_sql}
             ORDER BY timestamp ASC
             LIMIT ?
             """,
-            (session_id, *sources, limit),
+            (session_id, *sources, *channel_params, limit),
         ).fetchall()
         return [_row_to_record(row) for row in rows]
 

@@ -24,6 +24,22 @@ def test_resolve_session_id_from_channel_and_day() -> None:
     assert session_id == "ramengyozaset_20260612"
 
 
+def test_resolve_session_id_ignores_mismatched_explicit() -> None:
+    session_id = resolve_session_id(
+        channel="skymiku39",
+        explicit_session_id="skymiku39_20260613",
+        day="20260612",
+    )
+    assert session_id == "skymiku39_20260613"
+
+    session_id = resolve_session_id(
+        channel="lupulu0524",
+        explicit_session_id="skymiku39_20260613",
+        day="20260612",
+    )
+    assert session_id == "lupulu0524_20260612"
+
+
 def test_resolve_session_for_channel_uses_per_channel_checkpoint(tmp_path: Path) -> None:
     store = StreamTextStore(tmp_path / "test.db")
     set_active_session_for_channel(

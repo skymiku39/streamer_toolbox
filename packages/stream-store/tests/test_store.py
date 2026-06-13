@@ -89,3 +89,31 @@ def test_fetch_unsummarized_merged_orders_by_timestamp(tmp_path: Path) -> None:
     merged = store.fetch_unsummarized_merged(session_id, sources=["chat", "stt"])
     assert [record.source for record in merged] == ["chat", "stt"]
     store.close()
+
+
+def test_fetch_unsummarized_filters_by_channel(tmp_path: Path) -> None:
+    store = StreamTextStore(tmp_path / "test.db")
+    session_id = "mixed_20260613"
+    store.append_chat(
+        session_id=session_id,
+        channel="room_a",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="A only",
+        author="a",
+        message_id="m1",
+    )
+    store.append_chat(
+        session_id=session_id,
+        channel="room_b",
+        timestamp="2026-06-12T10:01:00+00:00",
+        text="B only",
+        author="b",
+        message_id="m2",
+    )
+    room_a = store.fetch_unsummarized_chat(session_id, channel="room_a")
+    assert len(room_a) == 1
+    assert room_a[0].text == "A only"
+    room_b = store.fetch_unsummarized_chat(session_id, channel="room_b")
+    assert len(room_b) == 1
+    assert room_b[0].text == "B only"
+    store.close()

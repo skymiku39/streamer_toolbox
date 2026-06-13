@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
+from functools import partial
 
 from stream_store import StreamTextStore, resolve_session_for_channel
 from stream_store.models import Summary, TextRecord
@@ -39,14 +40,14 @@ class MemoryWorker:
             processed += self._summarize_source(
                 resolved_session_id,
                 source="chat",
-                fetch=self._store.fetch_unsummarized_chat,
+                fetch=partial(self._store.fetch_unsummarized_chat, channel=self._config.channel),
                 summarize=self._summarizer.summarize_chat,
             )
         if self._config.include_stt:
             processed += self._summarize_source(
                 resolved_session_id,
                 source="stt",
-                fetch=self._store.fetch_unsummarized_stt,
+                fetch=partial(self._store.fetch_unsummarized_stt, channel=self._config.channel),
                 summarize=self._summarizer.summarize_stt,
             )
         return processed
@@ -56,6 +57,7 @@ class MemoryWorker:
         batch = self._store.fetch_unsummarized_merged(
             session_id,
             sources=["chat", "stt"],
+            channel=self._config.channel,
             limit=self._config.batch_limit,
         )
         if not batch:
@@ -134,20 +136,31 @@ class MemoryWorker:
             record_count=len(records),
         )
         self._summary_publisher.publish(summary)
+        channel_hint = self._config.channel or records[0].channel
         print(
-            f"[memory-worker] summary id={summary.id} session={session_id} source={source} "
-            f"records={len(records)} period={period_start}..{period_end}",
+            f"[memory-worker] summary id={summary.id} session={session_id} channel={channel_hint} "
+            f"source={source} records={len(records)} period={period_start}..{period_end}",
             file=sys.stderr,
             flush=True,
         )
         return len(records)
 
     def _resolve_session_id(self) -> str | None:
-        if self._config.session_id:
+        if self._config.session_id and self._config.channel:
+            from stream_store.session import normalize_channel
+
+            normalized = normalize_channel(self._config.channel)
+            if self._config.session_id.startswith(f"{normalized}_"):
+                return self._config.session_id
+        elif self._config.session_id:
             return self._config.session_id
         channel = self._config.channel
         if channel:
-            return resolve_session_for_channel(self._store, channel)
+            return resolve_session_for_channel(
+                self._store,
+                channel,
+                explicit_session_id=self._config.session_id,
+            )
         return resolve_session_for_channel(self._store, "")
 
 
