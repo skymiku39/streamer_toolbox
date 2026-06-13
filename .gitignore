@@ -1,5 +1,7 @@
 # Editor / IDE
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 .vscode/
 .idea/
 

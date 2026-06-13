@@ -1,0 +1,77 @@
+---
+description: Monorepo 架構：packages/ 與 app/ 職責分離、單向依賴、命名與 uv workspace
+alwaysApply: true
+---
+
+# Monorepo 架構規則
+
+## 規則一：明確的職責分離 (Separation of Concerns)
+
+### packages/（底層工具與合約）
+
+- 模組必須是「無狀態」或「純粹的基礎設施」
+- **不知道** `app/` 的存在，只專注單一功能（例：`bus` 只管 RabbitMQ 連線、`tts` 只管文字轉語音）
+- 商業邏輯、事件路由（Publishers/Subscribers）、角色大腦決策 **禁止** 出現在此
+
+### app/（高層業務邏輯）
+
+- 負責將 `packages/` 裡的工具組裝起來
+- 商業邏輯、事件路由、角色大腦決策 **只能** 存在於此
+
+## 規則二：嚴格的單向依賴 (Unidirectional Dependency)
+
+| 允許 | 禁止 |
+|------|------|
+| `app/` 匯入並依賴 `packages/` 內任何套件 | `packages/` 匯入 `app/` 的任何東西 |
+| `packages/` 內套件互相依賴（例：`stream-store` → `events` schema） | 造成循環依賴 (Circular Dependency) 的 import |
+
+```python
+# ✅ app/subscribers/sub_tts/__main__.py
+from bus import EventBus
+from events import ChatMessage
+
+# ❌ packages/bus/src/bus/foo.py
+from app.subscribers.sub_tts import something  # 絕對禁止
+```
+
+## 規則三：統一的套件命名與結構
+
+- 套件統一放在 `packages/`，**不使用** `pkg-` 前綴；直接命名為 `bus`、`events`、`safety`
+- Python import 應簡潔：`import bus`、`import safety`
+- 每個套件內部嚴格分離 `src/` 與 `tests/`，確保可獨立測試與打包
+
+```
+packages/bus/
+├── pyproject.toml
+├── src/bus/
+└── tests/
+```
+
+## 規則四：使用 uv Workspace 統一管理依賴
+
+根目錄 `pyproject.toml` 啟用 workspace：
+
+```toml
+[tool.uv.workspace]
+members = [
+    "app",
+    "packages/*"
+]
+```
+
+`app/pyproject.toml` 以 workspace 參照引入本地套件：
+
+```toml
+[project]
+name = "streamer-toolbox-app"
+dependencies = [
+    "bus",
+    "events",
+    "identity-oauth",
+]
+
+[tool.uv.sources]
+bus = { workspace = true }
+events = { workspace = true }
+identity-oauth = { workspace = true }
+```
