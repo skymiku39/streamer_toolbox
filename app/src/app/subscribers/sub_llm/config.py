@@ -17,15 +17,13 @@ class LlmSubscriberConfig:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> LlmSubscriberConfig:
-        prefixes = data.get("trigger_prefixes", cls.trigger_prefixes)
+        prefixes = data.get("trigger_prefixes", ["!ask"])
         if isinstance(prefixes, str):
             prefixes = [prefix.strip() for prefix in prefixes.split(",") if prefix.strip()]
         return cls(
             trigger_prefixes=list(prefixes),
-            context_window_minutes=int(
-                data.get("context_window_minutes", cls.context_window_minutes)
-            ),
-            reply_max_length=int(data.get("reply_max_length", cls.reply_max_length)),
+            context_window_minutes=int(data.get("context_window_minutes", 5)),
+            reply_max_length=int(data.get("reply_max_length", 500)),
             input_blocklist=list(data.get("input_blocklist", [])),
             output_blocklist=list(data.get("output_blocklist", [])),
         )
