@@ -10,7 +10,7 @@ Pub/Sub 是達成 SOLID 的**手段**，不是替代品：
 |------|----------|
 | 一個 Sub 只訂閱/處理一類職責 | **S** |
 | 新功能 = 新 Sub + 新 topic，不改舊 Sub | **O** |
-| 共用 `pkg-*` 介面，多種實作可替換 | **L**, **D** |
+| 共用 `packages/` 介面，多種實作可替換 | **L**, **D** |
 | `TtsEngine`、`ChatPublisher` 等小介面 | **I** |
 | Sub 只依賴 event schema，不依賴具體框架 | **D** |
 
@@ -76,10 +76,10 @@ class TtsEngine(Protocol):
 
 | Package | 介面規模 |
 |---------|----------|
-| `pkg-events` | 純資料類型，無行為 |
-| `pkg-tts` | 僅 TTS 相關 |
-| `pkg-safety` | 僅 filter 相關 |
-| `pkg-bus` | 僅 publish / subscribe |
+| `events` | 純資料類型，無行為 |
+| `tts` | 僅 TTS 相關 |
+| `safety` | 僅 filter 相關 |
+| `bus` | 僅 publish / subscribe |
 
 ## D — Dependency Inversion（依賴反轉）
 
@@ -112,7 +112,7 @@ flowchart TB
 | `sub-character-voice` | `CharacterTurn`、`TtsEngine` | `sub-character-brain` 的內部 class |
 | App | 各 Sub 的啟停契約 | 各 Sub 的業務邏輯 |
 
-## 何時抽 `pkg-*` 共用 repo
+## 何時抽共用 package
 
 | 條件 | 動作 |
 |------|------|
@@ -148,9 +148,9 @@ flowchart TB
 | 來源 | SOLID 債務 | 遷移方向 |
 |------|------------|----------|
 | `twitch_api` | `TwitchBot` + Mixin 違反 S、D | 拆 ingress / logic / egress Sub |
-| `yt_chat` / `ttv_chat` | 結構較乾淨 | 作為 ingress 模板，加 `pkg-events` 對齊 schema |
+| `yt_chat` / `ttv_chat` | 結構較乾淨 | 作為 ingress 模板，加 `events` 對齊 schema |
 | `llm_twitchat` | 單機 EventBus，未 MQ 化 | 演進為 `sub-llm`；不反向 import 進 `sub-bot-logic` |
-| `streamer-toolkit` | schema / bus 未拆 pkg | 對齊 `events.md` 後併入本專案 `pkg-events`、`pkg-bus` |
+| `streamer-toolkit` | schema / bus 未拆 pkg | 對齊 `events.md` 後併入本專案 `packages/events`、`packages/bus` |
 | 未來新 package | — | 從一開始依本文件與 [modules.md](modules.md) 模組 ID 命名 |
 
 ## 相關文件

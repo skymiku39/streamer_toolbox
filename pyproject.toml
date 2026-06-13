@@ -15,12 +15,7 @@ package = false
 [tool.uv.workspace]
 members = [
     "app",
-    "packages/events",
-    "packages/bus",
-    "packages/safety",
-    "packages/tts",
-    "packages/stream-store",
-    "packages/identity-oauth",
+    "packages/*",
 ]
 
 [tool.uv.sources]

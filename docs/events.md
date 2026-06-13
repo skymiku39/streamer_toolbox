@@ -245,12 +245,12 @@ Twitch EventSub 非聊天事件（**僅** `ingress-twitch-eventsub` 發布）。
 | 規則 | 說明 |
 |------|------|
 | 序列化 | JSON；MQ 傳輸統一 UTF-8 |
-| 驗證 | `pkg-events` 提供 pydantic/dataclass 驗證 |
+| 驗證 | `events`（`packages/events`）提供 pydantic/dataclass 驗證 |
 | 向後相容 | 只加 optional 欄位；刪欄位須 bump `schema_version` |
 | 禁止 | Sub 間傳遞框架原生物件（如 TwitchIO `ChatMessage`） |
 
 ## 相關文件
 
 - [modules.md](modules.md) — 誰 publish / subscribe
-- [packages.md](packages.md) — `pkg-events` 定義處
+- [packages.md](packages.md) — `events` 定義處（`packages/events`）
 - [solid.md](solid.md) — 依賴反轉

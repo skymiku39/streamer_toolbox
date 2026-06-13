@@ -63,15 +63,21 @@ members = [
 
 ```toml
 [project]
-name = "streamer-toolbox-app"
+name = "streamer-app"
 dependencies = [
     "bus",
     "events",
     "identity-oauth",
+    "safety",
+    "stream-store",
+    "tts",
 ]
 
 [tool.uv.sources]
 bus = { workspace = true }
 events = { workspace = true }
 identity-oauth = { workspace = true }
+safety = { workspace = true }
+stream-store = { workspace = true }
+tts = { workspace = true }
 ```

@@ -12,7 +12,7 @@
 | L3 指令 | （規劃） | `!ask` → 查 DB/RAG → LLM → `chat.reply` | 未實作 |
 | L4 LLM | （規劃） | 無狀態推理 | 未實作 |
 
-共用持久化：`pkg-stream-store`（SQLite schema + CRUD）。
+共用持久化：`stream-store`（`packages/stream-store/`，SQLite schema + CRUD）。
 
 ## Phase 2 資料流（聊天 + STT）
 
@@ -21,7 +21,7 @@ flowchart LR
     IRC["ingress-ttv-read"] -->|chat.message| MQ[("RabbitMQ")]
     Audio["ingress-twitch-audio"] -->|stt.segment| MQ
     MQ --> Rec["app.subscribers.stream_record"]
-    Rec --> DB[("pkg-stream-store<br/>SQLite")]
+    Rec --> DB[("stream-store<br/>SQLite")]
     Worker["app.workers<br/>定時"] --> DB
     Worker --> Sum[("summaries 表")]
 ```

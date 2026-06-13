@@ -98,6 +98,16 @@ uv run python -m app.workers --once --llm-backend gemini
 
 ## Workspace 結構
 
+根目錄 `pyproject.toml` 以 uv workspace 管理 monorepo：
+
+```toml
+[tool.uv.workspace]
+members = [
+    "app",
+    "packages/*",
+]
+```
+
 ```
 streamer_toolbox/
 ├── pyproject.toml           # Workspace 定義
@@ -120,7 +130,7 @@ streamer_toolbox/
 
 ## 設計約束
 
-實作須遵守 [solid.md](solid.md) 與 [events.md](events.md)。契約變更先改文件，再改 `pkg-events`。
+實作須遵守 [solid.md](solid.md) 與 [events.md](events.md)。契約變更先改文件，再改 `packages/events`。
 
 ## 常見問題
 

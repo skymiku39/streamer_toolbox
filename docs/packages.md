@@ -1,23 +1,34 @@
 # Repo / Package 規劃
 
-每個黃框為獨立 repo 或 monorepo 子 package。依 [SOLID](solid.md)：**Sub 不互相 import，只經 MQ + `pkg-*` 介面**。
+每個黃框為獨立 repo 或 monorepo 子 package。依 [SOLID](solid.md)：**Sub 不互相 import，只經 MQ + `packages/` 共用介面**。
 
-**拆 repo 與否不影響執行期架構**——只要遵守 `events.md` 與 `pkg-bus` 契約，留本專案或拆獨立 repo 行為相同。
+**拆 repo 與否不影響執行期架構**——只要遵守 `events.md` 與 `bus` 契約，留本專案或拆獨立 repo 行為相同。
+
+## Monorepo 架構規則（強制）
+
+| 規則 | 摘要 |
+|------|------|
+| **職責分離** | `packages/` = 無狀態基礎設施與合約；`app/` = 商業邏輯、Pub/Sub 組裝 |
+| **單向依賴** | `app/` → `packages/` 允許；`packages/` → `app/` **禁止** |
+| **命名** | 套件在 `packages/` 下，不帶 `pkg-` 前綴（`bus`、`events`、`safety`…） |
+| **uv Workspace** | 根 `pyproject.toml`：`members = ["app", "packages/*"]` |
+
+詳見 Cursor 規則 `.cursor/rules/monorepo-architecture.mdc`。
 
 ## 本專案 vs 獨立 repo
 
-**本專案** = `streamer_toolbox`（`docs/` 設計文件 + stream-core 實作 package）。下列「留本專案」指不另外開 Git remote。
+**本專案** = `streamer_toolbox`（`docs/` 設計文件 + `app/` 應用層 + `packages/` 共用套件）。下列「留本專案」指不另外開 Git remote。
 
 ### 留本專案（stream-core 層）
 
 承載**簡單、基礎、幾乎一定會用到**的程式；與 App 同生命週期、同版號發布。
 
-| 留本專案 | 理由 |
-|-----------|------|
-| `pkg-events`, `pkg-bus` | 全體契約，變更需全專案對齊 |
-| `stream-app` | 編排核心 |
-| `sub-io-log` | Phase 01 診斷用；開發/維運必備，邏輯極簡 |
-| `identity-oauth`（未來） | 橫切基礎設施，多產品共用 |
+| 留本專案 | 路徑 | 理由 |
+|-----------|------|------|
+| `events`, `bus` | `packages/events`, `packages/bus` | 全體契約，變更需全專案對齊 |
+| `streamer-app` | `app/` | 編排核心 |
+| `sub-io-log` | `app/src/app/subscribers/sub_io_log/` | Phase 01 診斷用；開發/維運必備，邏輯極簡 |
+| `identity-oauth` | `packages/identity-oauth/` | 橫切基礎設施，多產品共用 |
 
 本專案內仍用 **package 目錄分離**（SOLID **S**），只是不另外開 Git remote。
 
@@ -43,7 +54,7 @@ flowchart TD
     Q3{獨立依賴或產品可選?}
     Main[留本專案 streamer_toolbox]
     Split[獨立 repo]
-    Wait[先放本專案目錄 介面穩定後再拆]
+    Wait[先放 app/ 目錄 介面穩定後再拆]
 
     Start --> Q1
     Q1 -->|否| Wait
@@ -56,91 +67,58 @@ flowchart TD
 
 | 問題 | 是 → | 否 → |
 |------|------|------|
-| `events.md` / `pkg-bus` 已穩定？ | 可考慮拆 | 先留本專案 |
+| `events.md` / `bus` 已穩定？ | 可考慮拆 | 先留本專案 |
 | 少於 ~200 行、無重型依賴？ | 傾向本專案 | 傾向獨立 |
 | 只有部分產品需要？ | 獨立 repo | 本專案 |
 
-**拆 repo 的必要條件：** 僅依賴 `pkg-events`、`pkg-bus`（及已發布的 pkg PyPI/git 依賴），**禁止**依賴其他 Sub 的原始碼。
+**拆 repo 的必要條件：** 僅依賴 `events`、`bus`（及已發布的 PyPI/git 依賴），**禁止**依賴其他 Sub 的原始碼。
 
-### 目錄對照（規劃）
+## 目錄結構（現況）
 
 ```
-# 本專案（streamer_toolbox）
 streamer_toolbox/
-├── docs/                   # 設計文件
-├── pkg-events/             # 事件 schema
-├── pkg-bus/                # EventBus Protocol + adapters
-├── stream-app/             # （規劃）core-orchestrator
-├── sub-io-log/             # （規劃）診斷 Sub
-├── ingress-twitch-chat/    # Phase 01 Pub（過渡 → ingress-ttv-read）
-├── ingress-twitch-audio/   # （規劃）STT Pub
-└── ...
-
-# 姊妹專案
-../streamer-toolkit/        # Phase 01 可執行參考
-
-# 參考程式碼（拆分來源，非姊妹專案）
-../twitch_api/
-../yt_chat/
-../ttv_chat/
-../llm_twitchat/
-
-# 獨立 repo（介面穩定後，可選）
-../sub-bot-logic/
-../sub-show-overlay/
-└── ...
-```
-
-Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）為早期架構參考，其 `app/` 目錄結構曾作為 `app/`、`pkg-events`、`pkg-bus` 孵化的對照來源。
-
-## 目錄結構（長期全景）
-
-```
-streamer_toolbox/           # 本專案：設計 + stream-core 實作
+├── pyproject.toml           # uv workspace 根（members: app, packages/*）
+├── app/
+│   ├── pyproject.toml       # streamer-app
+│   ├── src/app/
+│   │   ├── main.py          # CLI 編排
+│   │   ├── publishers/      # Ingress（ingress_*）
+│   │   ├── subscribers/     # Sub（sub_*、twitch_connector）
+│   │   └── workers/         # 定時 worker（記憶層等）
+│   └── tests/
+├── packages/
+│   ├── bus/                 # EventBus Protocol + MQ adapter
+│   ├── events/              # Topic 常數與 payload schema
+│   ├── identity-oauth/      # Twitch OAuth token provider
+│   ├── safety/              # SafetyFilter Protocol
+│   ├── stream-store/        # SQLite 記錄/記憶
+│   └── tts/                 # TtsEngine Protocol
+├── config/
 ├── docs/
-├── pkg-events/
-├── pkg-bus/
-├── pkg-tts/                # （規劃）
-├── pkg-safety/             # （規劃）
-├── ingress-yt-read/        # （規劃）
-├── ingress-ttv-read/
-├── ingress-twitch-eventsub/
-├── sub-show-overlay/
-├── sub-bot-logic/
-├── sub-llm/
-├── sub-character-brain/
-├── sub-character-voice/
-├── sub-character-face/
-├── sub-character-stage/
-├── twitch-connector/
-└── stream-app/
-
-streamer-toolkit/           # 姊妹專案：Phase 01 可執行參考
-twitch_api/                 # 參考程式碼：產品 B As-is
-llm_twitchat/               # 參考程式碼：產品 C As-is
-yt_chat/                    # 參考程式碼：ingress-yt-read 模板
-ttv_chat/                   # 參考程式碼：ingress-ttv-read 模板
+└── docker-compose.yml
 ```
 
-不必一次建齊；**產品 A 可僅 2～3 個 package**。
+Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-toolkit)（見 [references/streamer-toolkit.md](references/streamer-toolkit.md)）為早期架構參考。
 
-## 共用 Package（`pkg-*`）
+## 共用 Package（`packages/`）
 
-| Package | 職責 | 依賴 | 被誰用 |
-|---------|------|------|--------|
-| `pkg-events` | Topic 常數、payload dataclass、JSON 驗證 | 無（或僅 pydantic） | 全部 Sub |
-| `pkg-bus` | `EventBus` Protocol；`InProcessBus`、`RabbitMQBus` | `pkg-events` | ingress、所有 sub、app |
-| `pkg-tts` | `TtsEngine` Protocol；SAPI5 實作 | 無平台依賴 | `sub-tts`, `sub-character-voice` |
-| `pkg-safety` | `SafetyFilter` Protocol；輸入/輸出實作 | `pkg-events` | `sub-llm`, `sub-character-brain` |
+| Package | 路徑 | 職責 | 依賴 | 被誰用 |
+|---------|------|------|------|--------|
+| `events` | `packages/events/` | Topic 常數、payload dataclass、JSON 驗證 | 無 | 全部 Sub、Ingress |
+| `bus` | `packages/bus/` | `EventBus` Protocol；RabbitMQ adapter | `events` | ingress、所有 sub、app |
+| `tts` | `packages/tts/` | `TtsEngine` Protocol；SAPI5 實作 | 無平台依賴 | `sub-tts`, `sub-character-voice` |
+| `safety` | `packages/safety/` | `SafetyFilter` Protocol；輸入/輸出實作 | `events` | `sub-llm`, `sub-character-brain` |
+| `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `sub-memory-worker` |
+| `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
 
-抽取時機見 [solid.md](solid.md#何時抽-pkg--共用-repo)。
+抽取時機見 [solid.md](solid.md#何時抽共用-package)。
 
-## Subscriber Package
+## Subscriber 模組（`app/src/app/subscribers/`）
 
-**Sub** = Pub/Sub 架構中的 Subscriber process/package（`sub-*`），與 Git submodule 無關。As-is 參考實作見 [references.md](references.md#sub--ingress-與參考程式對照)。
+**Sub** = Pub/Sub 架構中的 Subscriber process（`sub-*`），與 Git submodule 無關。As-is 參考實作見 [references.md](references.md#sub--ingress-與參考程式對照)。
 
-| Package | 模組 ID | 訂閱 topic | 發布 topic | Repo | As-is 參考 |
-|---------|---------|------------|------------|------|------------|
+| 模組 | 模組 ID | 訂閱 topic | 發布 topic | Repo | As-is 參考 |
+|------|---------|------------|------------|------|------------|
 | `sub-io-log` | （診斷） | `chat.message` | — | **本專案** | streamer-toolkit `sub1` |
 | `sub-show-overlay` | `local-show` | `chat.message` | — | 獨立 | `twitch_api` `ui/chat_overlay_*` |
 | `sub-visual` | `egress-subtitle` | `chat.message` | — | 獨立 | `twitch_api` `runtime/subtitle.py` |
@@ -153,21 +131,21 @@ ttv_chat/                   # 參考程式碼：ingress-ttv-read 模板
 | `sub-character-stage` | character stage | `character.audio.ready`, `character.expression.ready` | — | 獨立 |
 | `twitch-connector` | `egress-chat-send` | `chat.reply` | — | 獨立 |
 
-## Publisher / Ingress Package
+## Publisher / Ingress 模組（`app/src/app/publishers/`）
 
-| Package | 發布 topic | As-is 參考 |
-|---------|------------|------------|
+| 模組 | 發布 topic | As-is 參考 |
+|------|------------|------------|
 | `ingress-yt-read` | `chat.message` | [`yt_chat`](../yt_chat)（`tubechat_lens`） |
 | `ingress-ttv-read` | `chat.message` | [`ttv_chat`](../ttv_chat)（`ttvchat_lens`） |
 | `ingress-twitch-eventsub` | `chat.message`, `eventsub.*` | [`twitch_api`](../twitch_api) `bot/` |
 | `ingress-twitch-audio` | `stt.segment` | [`llm_twitchat`](../llm_twitchat) `ingest/` |
-| `ingress-twitch-chat` | `chat.message` | 本專案 Phase 01（過渡，演進為 `ingress-ttv-read`） |
+| `ingress-discord` | `chat.message` | — |
 
-Ingress **只做**：連線 → normalize → `pkg-events` 驗證 → publish。
+Ingress **只做**：連線 → normalize → `events` 驗證 → publish。
 
 ## App Package
 
-`stream-app`（`core-orchestrator`）：
+`streamer-app`（`app/`）：
 
 - 讀取 YAML 產品設定（見 [modules.md](modules.md)）
 - 啟停各 Sub process 或 in-process 註冊
@@ -179,13 +157,13 @@ Ingress **只做**：連線 → normalize → `pkg-events` 驗證 → publish。
 
 ```mermaid
 flowchart TB
-    App[stream-app]
-    PkgEv[pkg-events]
-    PkgBus[pkg-bus]
+    App[streamer-app]
+    PkgEv[events]
+    PkgBus[bus]
     Ingress[ingress-*]
     Sub[sub-*]
-    PkgTts[pkg-tts]
-    PkgSafe[pkg-safety]
+    PkgTts[tts]
+    PkgSafe[safety]
 
     App --> PkgBus
     App --> PkgEv
@@ -199,28 +177,30 @@ flowchart TB
 
 | 允許 | 禁止 |
 |------|------|
-| `sub-*` → `pkg-*` | `sub-a` → `sub-b` |
-| `ingress-*` → `pkg-*` | `sub-*` → `twitch_api.src.bot` |
-| `app` → 啟停契約（CLI/entrypoint） | `pkg-events` → 任何 Sub |
+| `app/` → `packages/*` | `packages/*` → `app/` |
+| `sub-*` → `packages/*` | `sub-a` → `sub-b` |
+| `ingress-*` → `packages/*` | `sub-*` → `twitch_api.src.bot` |
+| `packages/*` 互相依賴（例：`bus` → `events`） | `events` → 任何 Sub |
 
 ## 各產品最小 package 集
 
 | 產品 | packages |
 |------|----------|
-| A | `pkg-events`, `pkg-bus`, `ingress-*`, `sub-show-overlay` |
+| A | `events`, `bus`, `ingress-*`, `sub-show-overlay` |
 | B | A 基礎 + `identity-oauth`, `ingress-twitch-eventsub`, `sub-bot-logic`, `twitch-connector` |
-| C | B + `pkg-safety`, `ingress-twitch-audio`, `sub-llm` |
-| D | `pkg-events`, `pkg-bus`, `pkg-tts`, `pkg-safety`, `ingress-*`, `sub-character-*`×4, `twitch-connector`；可選 `sub-show-overlay` |
+| C | B + `safety`, `ingress-twitch-audio`, `sub-llm` |
+| D | `events`, `bus`, `tts`, `safety`, `ingress-*`, `sub-character-*`×4, `twitch-connector`；可選 `sub-show-overlay` |
 
 ## Python 技術約定（實作階段）
 
-- 套件管理：**uv**（與姊妹專案 `streamer-toolkit` 及參考程式碼一致）
+- 套件管理：**uv workspace**（根 `members = ["app", "packages/*"]`）
 - Python：**>= 3.11**
 - 介面：`typing.Protocol` 或抽象 base class
 - 設定：環境變數 + YAML；secrets 不進 repo
 
 ## 相關文件
 
-- [events.md](events.md) — payload 定義歸入 `pkg-events`
+- [events.md](events.md) — payload 定義歸入 `packages/events`
 - [modules.md](modules.md) — 模組 ID 與產品組裝
 - [deployment.md](deployment.md) — 運行時部署
+- [development.md](development.md) — workspace 結構與開發流程
