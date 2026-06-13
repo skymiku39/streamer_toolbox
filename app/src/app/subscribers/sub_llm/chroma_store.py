@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sub_llm.knowledge import iter_text_documents
-from sub_llm.debug_agent_log import agent_log
 
 logger = logging.getLogger(__name__)
 
@@ -67,31 +66,10 @@ class ChromaKnowledgeStore:
     def preload(self) -> None:
         with self._preload_lock:
             if self._preloaded:
-                # region agent log
-                agent_log(
-                    hypothesis_id="H5",
-                    location="chroma_store.py:preload",
-                    message="preload skipped (already loaded)",
-                    data={"root": str(self._root), "exists": self._root.exists()},
-                )
-                # endregion
                 return
             self._ensure_chroma()
             self._sync_if_needed()
             self._preloaded = True
-            # region agent log
-            agent_log(
-                hypothesis_id="H3",
-                location="chroma_store.py:preload",
-                message="preload finished",
-                data={
-                    "root": str(self._root),
-                    "root_exists": self._root.exists(),
-                    "collection_ready": self._collection is not None,
-                    "chroma_dir": str(self._chroma_dir),
-                },
-            )
-            # endregion
 
     def _ensure_chroma(self) -> None:
         if self._chroma_tried:
@@ -109,14 +87,6 @@ class ChromaKnowledgeStore:
         except Exception as exc:
             logger.warning("ChromaDB 初始化失敗，知識庫查詢將回傳空結果: %s", exc)
             self._collection = None
-            # region agent log
-            agent_log(
-                hypothesis_id="H3",
-                location="chroma_store.py:_ensure_chroma",
-                message="chroma init failed",
-                data={"error_type": type(exc).__name__, "error": str(exc)[:200]},
-            )
-            # endregion
 
     def _sync_state_path(self) -> Path:
         return self._chroma_dir / SYNC_STATE_FILE
@@ -141,18 +111,6 @@ class ChromaKnowledgeStore:
 
     def _sync_if_needed(self) -> None:
         if self._collection is None or not self._root.exists():
-            # region agent log
-            agent_log(
-                hypothesis_id="H2",
-                location="chroma_store.py:_sync_if_needed",
-                message="sync skipped",
-                data={
-                    "collection_ready": self._collection is not None,
-                    "root": str(self._root),
-                    "root_exists": self._root.exists(),
-                },
-            )
-            # endregion
             return
 
         documents = iter_text_documents(self._root)
@@ -197,18 +155,6 @@ class ChromaKnowledgeStore:
             return ""
 
         unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
-        # region agent log
-        agent_log(
-            hypothesis_id="H4",
-            location="chroma_store.py:query",
-            message="chroma query result",
-            data={
-                "question_len": len(question),
-                "hit_count": len(unique),
-                "has_kb_marker": any("實況主知識庫" in doc for doc in unique),
-            },
-        )
-        # endregion
         if not unique:
             return ""
         text = "【實況主知識庫】\n" + "\n".join(unique)
@@ -361,19 +307,6 @@ class ChromaSummaryKnowledgeStore:
             return ""
 
         unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
-        # region agent log
-        agent_log(
-            hypothesis_id="H4",
-            location="chroma_store.py:ChromaSummaryKnowledgeStore.query",
-            message="chroma memory query result",
-            data={
-                "question_len": len(question),
-                "hit_count": len(unique),
-                "session_id": session_id,
-                "via_chroma_memory": True,
-            },
-        )
-        # endregion
         if not unique:
             return ""
         text = "【近期直播摘要】\n" + "\n".join(unique)

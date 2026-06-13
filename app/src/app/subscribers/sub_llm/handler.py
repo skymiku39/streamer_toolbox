@@ -22,7 +22,6 @@ from stream_store.idempotency import IdempotencyStore
 from sub_llm.chat_format import plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
-from sub_llm.debug_agent_log import agent_log
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.llm import LlmClient
 from sub_llm.triggers import TriggerMatcher
@@ -117,21 +116,6 @@ class LlmSubscriber:
             channel = event.channel or ""
             context = self._context_buffer.context_text(channel)
             knowledge = self._knowledge.query(filtered_question, channel=channel)
-            # region agent log
-            agent_log(
-                hypothesis_id="H4",
-                location="handler.py:_handle_chat_message",
-                message="knowledge injected to llm",
-                data={
-                    "question_len": len(filtered_question),
-                    "knowledge_len": len(knowledge),
-                    "has_chroma_marker": "實況主知識庫" in knowledge,
-                    "has_chroma_memory_marker": "【近期直播摘要】" in knowledge,
-                    "has_legacy_summary_dump": knowledge.startswith("[chat]") or knowledge.startswith("[stt]"),
-                    "channel": channel,
-                },
-            )
-            # endregion
             raw_reply = self._llm.ask(
                 filtered_question,
                 context=context,

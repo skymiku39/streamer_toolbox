@@ -5,7 +5,6 @@ import os
 from stream_store import StreamTextStore
 
 from sub_llm.chroma_store import ChromaKnowledgeStore, ChromaSummaryKnowledgeStore
-from sub_llm.debug_agent_log import agent_log
 from sub_llm.knowledge import (
     CompositeKnowledgeStore,
     EmptyKnowledgeStore,
@@ -80,25 +79,8 @@ def create_knowledge_store(path: str | None = None) -> KnowledgeStore:
     if not stores:
         return EmptyKnowledgeStore()
     if len(stores) == 1:
-        result = stores[0]
-    else:
-        result = CompositeKnowledgeStore(stores)
-
-    # region agent log
-    agent_log(
-        hypothesis_id="H1",
-        location="factory.py:create_knowledge_store",
-        message="knowledge store created",
-        data={
-            "backend": os.environ.get("LLM_KNOWLEDGE_BACKEND", "file"),
-            "knowledge_path": knowledge_path,
-            "memory_from_db": _env_bool("LLM_MEMORY_FROM_DB", True),
-            "store_type": type(result).__name__,
-            "child_types": [type(s).__name__ for s in getattr(result, "_stores", [result])],
-        },
-    )
-    # endregion
-    return result
+        return stores[0]
+    return CompositeKnowledgeStore(stores)
 
 
 def preload_knowledge_store(store: KnowledgeStore) -> None:
@@ -106,11 +88,3 @@ def preload_knowledge_store(store: KnowledgeStore) -> None:
     preload = getattr(store, "preload", None)
     if callable(preload):
         preload()
-        # region agent log
-        agent_log(
-            hypothesis_id="H5",
-            location="factory.py:preload_knowledge_store",
-            message="preload completed",
-            data={"store_type": type(store).__name__},
-        )
-        # endregion
