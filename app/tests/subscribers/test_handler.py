@@ -72,6 +72,30 @@ def test_chat_trigger_publishes_chat_reply() -> None:
     assert "SOLID" in payload["content"]
 
 
+def test_bot_author_trigger_is_ignored() -> None:
+    published: list[tuple[str, dict]] = []
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        skip_trigger_author_ids=frozenset({"bot-id"}),
+    )
+
+    subscriber.handle(
+        _chat_payload(
+            "!ask 這是 BOT 自己的訊息",
+            message_id="msg-bot-1",
+            author_id="bot-id",
+        )
+    )
+
+    assert published == []
+
+
 def test_stt_segment_accumulates_context_for_reply() -> None:
     published: list[tuple[str, dict]] = []
 
@@ -332,7 +356,8 @@ def test_bot_reply_appears_in_follow_up_ask_context() -> None:
     subscriber.handle(_chat_payload("!ask 剛剛那個遊戲規則版本？", message_id="msg-2"))
 
     assert len(published) == 2
-    assert "【Bot 近期回覆" in captured[1]
+    assert "【Bot 近期問答" in captured[1]
+    assert "我們在玩什麼？" in captured[1]
     assert "DND" in captured[1]
     assert "alice" in captured[1]
 

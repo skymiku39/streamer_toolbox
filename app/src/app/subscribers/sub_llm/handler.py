@@ -44,6 +44,13 @@ def _ask_content_dedup_key(event: ChatMessageEvent, question: str) -> str:
     return f"{bucket}:{channel}:{author}:{question.strip().lower()}"
 
 
+def _is_skipped_trigger_author(event: ChatMessageEvent, skip_author_ids: frozenset[str]) -> bool:
+    if not skip_author_ids:
+        return False
+    author_id = (event.author_id or "").strip()
+    return bool(author_id and author_id in skip_author_ids)
+
+
 class LlmSubscriber:
     def __init__(
         self,
@@ -56,6 +63,7 @@ class LlmSubscriber:
         *,
         idempotency: IdempotencyStore | None = None,
         game_info: GameInfoProvider | None = None,
+        skip_trigger_author_ids: frozenset[str] = frozenset(),
     ) -> None:
         self._config = config
         self._llm = llm
@@ -65,6 +73,7 @@ class LlmSubscriber:
         self._publish = publish
         self._idempotency = idempotency
         self._game_info = game_info
+        self._skip_trigger_author_ids = skip_trigger_author_ids
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -106,6 +115,14 @@ class LlmSubscriber:
         if question is None:
             return
 
+        if _is_skipped_trigger_author(event, self._skip_trigger_author_ids):
+            print(
+                f"[sub-llm] skip bot trigger message_id={event.message_id[:8]}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return
+
         filtered_question = self._safety.filter_input(question)
         if filtered_question is None:
             return
@@ -132,7 +149,7 @@ class LlmSubscriber:
             return
 
         if not self._busy.acquire(blocking=False):
-            self._publish_reply(event, BUSY_REPLY)
+            self._publish_reply(event, BUSY_REPLY, question=filtered_question)
             return
 
         try:
@@ -183,11 +200,17 @@ class LlmSubscriber:
             if len(filtered_reply) > self._config.reply_max_length:
                 limit = self._config.reply_max_length
                 filtered_reply = filtered_reply[: limit - 3] + "..."
-            self._publish_reply(event, filtered_reply)
+            self._publish_reply(event, filtered_reply, question=filtered_question)
         finally:
             self._busy.release()
 
-    def _publish_reply(self, trigger: ChatMessageEvent, content: str) -> None:
+    def _publish_reply(
+        self,
+        trigger: ChatMessageEvent,
+        content: str,
+        *,
+        question: str = "",
+    ) -> None:
         reply = ChatReplyEvent(
             schema_version=1,
             topic=TOPIC_CHAT_REPLY,
@@ -204,5 +227,6 @@ class LlmSubscriber:
         self._context_buffer.add_bot_reply(
             trigger.channel or "",
             content,
+            question=question,
             reply_to_author=reply_to,
         )

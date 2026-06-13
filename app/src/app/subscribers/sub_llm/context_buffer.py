@@ -24,22 +24,23 @@ class BufferedChatLine:
 
 @dataclass(frozen=True)
 class BufferedBotReply:
+    question: str
     text: str
     reply_to_author: str
     timestamp: datetime
 
 
 class BotReplyContextBuffer:
-    """保存 bot 近期回覆，供 LLM 延續同一對話脈絡（不寫入 RAG）。"""
+    """保存 bot 近期問答對，供 LLM 延續同一對話脈絡（不寫入 RAG）。"""
 
     def __init__(
         self,
         *,
         window_minutes: int = 30,
-        max_lines: int = 20,
+        max_pairs: int = 5,
     ) -> None:
         self._window_seconds = max(1, window_minutes) * 60
-        self._max_lines = max(1, max_lines)
+        self._max_pairs = max(1, max_pairs)
         self._replies_by_channel: dict[str, list[BufferedBotReply]] = {}
         self._lock = threading.Lock()
 
@@ -48,6 +49,7 @@ class BotReplyContextBuffer:
         channel: str,
         text: str,
         *,
+        question: str = "",
         reply_to_author: str = "",
         timestamp: datetime | None = None,
     ) -> None:
@@ -56,6 +58,7 @@ class BotReplyContextBuffer:
             return
         key = normalize_channel(channel)
         reply = BufferedBotReply(
+            question=question.strip(),
             text=content,
             reply_to_author=reply_to_author.strip(),
             timestamp=timestamp or datetime.now().astimezone(),
@@ -71,10 +74,14 @@ class BotReplyContextBuffer:
             replies = list(self._replies_by_channel.get(key, []))
         if not replies:
             return ""
-        lines = [f"【Bot 近期回覆（{key}）】"]
-        for reply in replies:
-            target = f"（回覆 {reply.reply_to_author}）" if reply.reply_to_author else ""
-            lines.append(f"bot{target}: {reply.text}")
+        lines = [f"【Bot 近期問答（{key}，最近 {len(replies)} 則）】"]
+        for index, reply in enumerate(replies, start=1):
+            author = reply.reply_to_author or "觀眾"
+            if reply.question:
+                lines.append(f"{index}. {author} 問：{reply.question}")
+            else:
+                lines.append(f"{index}. {author}：（無對應問題）")
+            lines.append(f"   bot 答：{reply.text}")
         return "\n".join(lines)
 
     def count(self, channel: str) -> int:
@@ -88,8 +95,8 @@ class BotReplyContextBuffer:
             return
         cutoff = replies[-1].timestamp.timestamp() - self._window_seconds
         pruned = [reply for reply in replies if reply.timestamp.timestamp() >= cutoff]
-        if len(pruned) > self._max_lines:
-            pruned = pruned[-self._max_lines :]
+        if len(pruned) > self._max_pairs:
+            pruned = pruned[-self._max_pairs :]
         self._replies_by_channel[channel] = pruned
 
 
@@ -272,7 +279,7 @@ class LiveContextBuffer:
         window_minutes: int = 5,
         skip_author_ids: frozenset[str] = frozenset(),
         bot_reply_window_minutes: int | None = None,
-        bot_reply_max_lines: int = 20,
+        bot_reply_max_pairs: int = 5,
     ) -> None:
         self._stt = SttContextBuffer(window_minutes=window_minutes)
         self._chat = ChatContextBuffer(
@@ -281,7 +288,7 @@ class LiveContextBuffer:
         )
         self._bot_replies = BotReplyContextBuffer(
             window_minutes=bot_reply_window_minutes or max(window_minutes * 3, 15),
-            max_lines=bot_reply_max_lines,
+            max_pairs=bot_reply_max_pairs,
         )
         self._stream = StreamMetadataBuffer()
 
@@ -299,11 +306,13 @@ class LiveContextBuffer:
         channel: str,
         content: str,
         *,
+        question: str = "",
         reply_to_author: str = "",
     ) -> None:
         self._bot_replies.add_reply(
             channel,
             content,
+            question=question,
             reply_to_author=reply_to_author,
         )
 

@@ -104,14 +104,36 @@ def test_live_context_buffer_merges_stt_and_chat() -> None:
 
 def test_live_context_buffer_includes_bot_replies() -> None:
     buffer = LiveContextBuffer(window_minutes=5, bot_reply_window_minutes=30)
-    buffer.add_bot_reply("room_a", "我們在玩 DND", reply_to_author="alice")
+    buffer.add_bot_reply(
+        "room_a",
+        "我們在玩 DND",
+        question="我們在玩什麼？",
+        reply_to_author="alice",
+    )
     context = buffer.context_text("room_a")
     _, _, bot_reply_count, _, _ = buffer.stats("room_a")
-    assert "【Bot 近期回覆" in context
-    assert "DND" in context
-    assert "alice" in context
+    assert "【Bot 近期問答" in context
+    assert "alice 問：我們在玩什麼？" in context
+    assert "bot 答：我們在玩 DND" in context
     assert bot_reply_count == 1
 
+
+def test_bot_reply_buffer_keeps_only_recent_pairs() -> None:
+    from sub_llm.context_buffer import BotReplyContextBuffer
+
+    buffer = BotReplyContextBuffer(window_minutes=30, max_pairs=3)
+    for index in range(5):
+        buffer.add_reply(
+            "room_a",
+            f"答覆 {index}",
+            question=f"問題 {index}",
+            reply_to_author="viewer",
+        )
+    context = buffer.context_text("room_a")
+    assert "問題 2" in context
+    assert "問題 4" in context
+    assert "問題 0" not in context
+    assert "最近 3 則" in context
 
 def test_live_context_buffer_includes_stream_metadata() -> None:
     from events import TOPIC_STREAM_METADATA, StreamMetadataEvent

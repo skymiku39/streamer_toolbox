@@ -121,6 +121,7 @@ def main(argv: list[str] | None = None) -> int:
         window_minutes=config.context_window_minutes,
         skip_author_ids=skip_author_ids,
         bot_reply_window_minutes=config.bot_reply_window_minutes,
+        bot_reply_max_pairs=config.bot_reply_max_pairs,
     )
     subscriber = LlmSubscriber(
         config=config,
@@ -131,6 +132,7 @@ def main(argv: list[str] | None = None) -> int:
         publish=publish,
         idempotency=idempotency,
         game_info=game_info,
+        skip_trigger_author_ids=skip_author_ids,
     )
 
     print(
