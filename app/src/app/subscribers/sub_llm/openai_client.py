@@ -9,6 +9,10 @@ from typing import Any
 
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
+from sub_llm.startup_announcement import (
+    _STARTUP_SYSTEM_PROMPT,
+    build_startup_user_prompt,
+)
 
 
 class LlmApiError(RuntimeError):
@@ -110,10 +114,36 @@ class OpenAiCompatibleLlmClient:
                 flush=True,
             )
 
+        return self._complete(messages, temperature=0.7)
+
+    def generate_startup_greeting(
+        self,
+        *,
+        channel: str,
+        trigger_prefixes: tuple[str, ...],
+    ) -> str:
+        messages = [
+            {"role": "system", "content": _STARTUP_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": build_startup_user_prompt(
+                    channel=channel,
+                    trigger_prefixes=trigger_prefixes,
+                ),
+            },
+        ]
+        return self._complete(messages, temperature=0.9)
+
+    def _complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float,
+    ) -> str:
         payload = {
             "model": self._model,
             "messages": messages,
-            "temperature": 0.7,
+            "temperature": temperature,
         }
         response = self._post_json("chat/completions", payload)
         choices = response.get("choices", [])
