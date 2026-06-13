@@ -7,6 +7,9 @@ import urllib.request
 from typing import Any
 
 
+from sub_llm.prompts import resolve_system_prompt
+
+
 class LlmApiError(RuntimeError):
     pass
 
@@ -55,7 +58,7 @@ class OpenAiCompatibleLlmClient:
             base_url = (os.environ.get("LLM_API_BASE") or "https://api.openai.com/v1").strip()
             api_key = (os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or "").strip()
             model = (os.environ.get("LLM_MODEL") or "gpt-4o-mini").strip()
-        system_prompt = (os.environ.get("LLM_SYSTEM_PROMPT") or "").strip()
+        system_prompt = resolve_system_prompt()
         if not api_key:
             if selected == "gemini":
                 raise ValueError(

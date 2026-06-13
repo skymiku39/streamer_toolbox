@@ -1,0 +1,23 @@
+from sub_llm.prompts import DEFAULT_LLM_SYSTEM_PROMPT, resolve_system_prompt
+
+
+def test_resolve_system_prompt_uses_default_when_empty(monkeypatch) -> None:
+    monkeypatch.delenv("LLM_SYSTEM_PROMPT", raising=False)
+    monkeypatch.setenv("LLM_GENERAL_KNOWLEDGE", "true")
+    prompt = resolve_system_prompt()
+    assert "本身的常識" in prompt
+    assert prompt == DEFAULT_LLM_SYSTEM_PROMPT
+
+
+def test_resolve_system_prompt_honors_custom_prompt(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_SYSTEM_PROMPT", "自訂助手")
+    monkeypatch.setenv("LLM_GENERAL_KNOWLEDGE", "true")
+    assert resolve_system_prompt() == "自訂助手"
+
+
+def test_resolve_system_prompt_strict_mode_disables_general_knowledge(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_SYSTEM_PROMPT", "自訂助手")
+    monkeypatch.setenv("LLM_GENERAL_KNOWLEDGE", "false")
+    prompt = resolve_system_prompt()
+    assert prompt.startswith("自訂助手")
+    assert "勿使用其他常識" in prompt
