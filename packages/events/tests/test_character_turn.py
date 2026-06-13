@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import TOPIC_CHARACTER_TURN, CharacterTurnEvent
+from events import TOPIC_CHARACTER_TURN, CharacterTurnEvent
 
 
 def _sample_payload() -> dict:

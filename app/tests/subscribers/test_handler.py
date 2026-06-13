@@ -1,4 +1,4 @@
-from pkg_events import (
+from events import (
     SOURCE_LOGIC_LLM,
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
@@ -6,7 +6,7 @@ from pkg_events import (
     ChatMessageEvent,
     SttSegmentEvent,
 )
-from pkg_safety import PassThroughSafetyFilter
+from safety import PassThroughSafetyFilter
 
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer

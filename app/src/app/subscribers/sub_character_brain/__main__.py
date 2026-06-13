@@ -8,18 +8,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
 
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import (
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import (
     connect_blocking,
     consume_messages,
     publish_topic_blocking,
     setup_subscriber_queue,
 )
-from pkg_bus.topology import QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
-from pkg_events import TOPIC_CHAT_MESSAGE
-from pkg_safety import BlocklistSafetyFilter
+from bus.topology import QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
+from events import TOPIC_CHAT_MESSAGE
+from safety import BlocklistSafetyFilter
 
 from sub_character_brain.brain import CharacterBrain
 from sub_character_brain.config import CharacterConfig

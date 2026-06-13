@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from pkg_events.topics import REPLY_SOURCES, TOPIC_CHAT_REPLY
+from events.topics import REPLY_SOURCES, TOPIC_CHAT_REPLY
 
 SCHEMA_VERSION = 1
 PLATFORMS = frozenset({"youtube", "twitch", "discord"})

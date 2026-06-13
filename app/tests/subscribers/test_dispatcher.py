@@ -1,4 +1,4 @@
-from pkg_events import TOPIC_CHAT_REPLY, ChatReplyEvent
+from events import TOPIC_CHAT_REPLY, ChatReplyEvent
 
 from twitch_connector.dispatcher import ChatReplyDispatcher, UnsupportedPlatformError
 

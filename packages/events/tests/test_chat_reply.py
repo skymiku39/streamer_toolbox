@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import TOPIC_CHAT_REPLY, ChatReplyEvent
+from events import TOPIC_CHAT_REPLY, ChatReplyEvent
 
 
 def _sample_payload() -> dict:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 SCHEMA_VERSION = 1
 

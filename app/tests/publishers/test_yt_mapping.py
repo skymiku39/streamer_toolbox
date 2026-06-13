@@ -6,7 +6,7 @@ import pytest
 from tubechat_lens.reader import ChatMessage
 
 from ingress_yt_read.mapper import map_chat_message
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 
 def _sample_message(**overrides: object) -> ChatMessage:

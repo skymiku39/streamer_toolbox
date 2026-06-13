@@ -7,17 +7,17 @@ import sys
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
 
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import (
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import (
     connect_blocking,
     consume_messages,
     publish_topic_blocking,
     setup_subscriber_queue,
 )
-from pkg_bus.topology import QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
-from pkg_events import TOPIC_CHAT_REPLY, TOPIC_SYSTEM_ERROR
+from bus.topology import QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
+from events import TOPIC_CHAT_REPLY, TOPIC_SYSTEM_ERROR
 
 from twitch_connector.dispatcher import ChatReplyDispatcher
 from twitch_connector.subscriber import ReplySubscriber

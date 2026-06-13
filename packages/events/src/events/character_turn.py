@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from pkg_events.topics import TOPIC_CHARACTER_TURN
+from events.topics import TOPIC_CHARACTER_TURN
 
 SCHEMA_VERSION = 1
 EMOTIONS = frozenset({"neutral", "happy", "angry", "sad", "surprised"})

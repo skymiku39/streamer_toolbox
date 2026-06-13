@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
 
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import TemplateSummarizer

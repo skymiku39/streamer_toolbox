@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
+from events import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
 
 
 def _sample_payload() -> dict:

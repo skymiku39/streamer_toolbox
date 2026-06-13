@@ -1,4 +1,4 @@
-from pkg_safety import BlocklistSafetyFilter, PassThroughSafetyFilter
+from safety import BlocklistSafetyFilter, PassThroughSafetyFilter
 
 
 def test_pass_through_strips_whitespace() -> None:

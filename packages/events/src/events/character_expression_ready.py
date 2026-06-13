@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from pkg_events.topics import TOPIC_CHARACTER_EXPRESSION_READY
+from events.topics import TOPIC_CHARACTER_EXPRESSION_READY
 
 SCHEMA_VERSION = 1
 DRIVERS = frozenset({"vts"})

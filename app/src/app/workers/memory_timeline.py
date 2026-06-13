@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pkg_stream_store.models import TextRecord
+from stream_store.models import TextRecord
 
 
 def format_chat_timeline(records: list[TextRecord]) -> str:

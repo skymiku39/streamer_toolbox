@@ -34,7 +34,7 @@ class RecordConfig:
 
 
 def routing_keys_for_mode(record_mode: str) -> list[str]:
-    from pkg_events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT
+    from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT
 
     config = RecordConfig(db_path="", session_id=None, record_mode=record_mode)
     config.validate()

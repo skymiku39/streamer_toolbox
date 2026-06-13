@@ -4,8 +4,8 @@ import sys
 import threading
 from typing import Any
 
-from pkg_events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
-from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
+from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
 
 from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
 

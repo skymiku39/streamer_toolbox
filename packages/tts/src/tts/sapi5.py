@@ -13,7 +13,7 @@ class Sapi5TtsEngine:
             import win32com.client
         except ImportError as exc:
             raise RuntimeError(
-                "pywin32 is required for SAPI5; install with: uv sync --package pkg-tts --extra sapi5"
+                "pywin32 is required for SAPI5; install with: uv sync --package tts --extra sapi5"
             ) from exc
         self._voice = win32com.client.Dispatch("SAPI.SpVoice")
 

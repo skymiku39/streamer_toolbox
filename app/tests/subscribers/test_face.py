@@ -1,6 +1,6 @@
 import pytest
 
-from pkg_events import TOPIC_CHARACTER_EXPRESSION_READY, TOPIC_CHARACTER_TURN
+from events import TOPIC_CHARACTER_EXPRESSION_READY, TOPIC_CHARACTER_TURN
 
 from sub_character_face.driver import VtsExpressionDriver
 from sub_character_face.face import CharacterFace

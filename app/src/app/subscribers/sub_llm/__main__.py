@@ -8,18 +8,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
 
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import (
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import (
     connect_blocking,
     consume_messages,
     publish_topic_blocking,
     setup_subscriber_queue_bindings,
 )
-from pkg_bus.topology import QUEUE_SUB_LLM
-from pkg_events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT
-from pkg_safety import BlocklistSafetyFilter
+from bus.topology import QUEUE_SUB_LLM
+from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT
+from safety import BlocklistSafetyFilter
 
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer

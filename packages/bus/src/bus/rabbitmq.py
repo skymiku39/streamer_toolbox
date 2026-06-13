@@ -8,7 +8,7 @@ import aio_pika
 import pika
 from aio_pika import DeliveryMode, ExchangeType, Message
 
-from pkg_bus.topology import DEFAULT_EXCHANGE
+from bus.topology import DEFAULT_EXCHANGE
 
 
 def connect_blocking(url: str) -> pika.BlockingConnection:

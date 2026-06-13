@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pkg_tts.noop import NoOpTtsEngine
+from tts.noop import NoOpTtsEngine
 
 
 def test_noop_without_record_does_not_store() -> None:

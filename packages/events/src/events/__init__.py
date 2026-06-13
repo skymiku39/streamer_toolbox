@@ -1,12 +1,12 @@
-from pkg_events.character_audio_ready import CharacterAudioReadyEvent
-from pkg_events.character_expression_ready import CharacterExpressionReadyEvent
-from pkg_events.character_turn import CharacterTurnEvent
-from pkg_events.chat_message import ChatMessageEvent
-from pkg_events.chat_reply import ChatReplyEvent
-from pkg_events.eventsub_event import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
-from pkg_events.stt_segment import SttSegmentEvent
-from pkg_events.system_error import SystemErrorEvent
-from pkg_events.topics import (
+from events.character_audio_ready import CharacterAudioReadyEvent
+from events.character_expression_ready import CharacterExpressionReadyEvent
+from events.character_turn import CharacterTurnEvent
+from events.chat_message import ChatMessageEvent
+from events.chat_reply import ChatReplyEvent
+from events.eventsub_event import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
+from events.stt_segment import SttSegmentEvent
+from events.system_error import SystemErrorEvent
+from events.topics import (
     REPLY_SOURCES,
     SOURCE_CHARACTER_BRAIN,
     SOURCE_LOGIC_COMMANDS,

@@ -8,7 +8,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
-from pkg_events import (
+from events import (
     TOPIC_SYSTEM_ERROR,
     ChatReplyEvent,
     SystemErrorEvent,

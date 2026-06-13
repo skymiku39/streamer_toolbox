@@ -1,6 +1,6 @@
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.protocol import EventBus
-from pkg_bus.topology import (
+from bus.config import rabbitmq_url, stream_exchange
+from bus.protocol import EventBus
+from bus.topology import (
     DEFAULT_EXCHANGE,
     QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE,
     QUEUE_IO_LOG_CHAT_MESSAGE,

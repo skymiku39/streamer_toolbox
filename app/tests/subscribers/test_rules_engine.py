@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pkg_events import (
+from events import (
     SOURCE_LOGIC_COMMANDS,
     SOURCE_LOGIC_EVENTS,
     SOURCE_LOGIC_KEYWORDS,

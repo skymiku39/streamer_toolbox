@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pkg_tts.noop import NoOpTtsEngine
+from tts.noop import NoOpTtsEngine
 
 from sub_tts.queue_worker import TtsPlaybackQueue
 

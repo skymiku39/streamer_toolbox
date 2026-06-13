@@ -1,7 +1,7 @@
 import pytest
 
-from pkg_events import TOPIC_CHARACTER_AUDIO_READY, TOPIC_CHARACTER_TURN, CharacterTurnEvent
-from pkg_tts import SynthesizedAudio
+from events import TOPIC_CHARACTER_AUDIO_READY, TOPIC_CHARACTER_TURN, CharacterTurnEvent
+from tts import SynthesizedAudio
 
 from sub_character_voice.voice import CharacterVoiceSubscriber
 

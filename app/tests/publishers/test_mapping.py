@@ -1,5 +1,5 @@
 from ingress_discord.mapping import DiscordChatMessage, build_chat_event, parse_reply
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 
 def _sample_discord_message() -> DiscordChatMessage:

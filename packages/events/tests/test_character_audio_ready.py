@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import TOPIC_CHARACTER_AUDIO_READY, CharacterAudioReadyEvent
+from events import TOPIC_CHARACTER_AUDIO_READY, CharacterAudioReadyEvent
 
 
 def _sample_payload() -> dict:

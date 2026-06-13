@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 from sub_visual.config import FilterConfig, SubtitleConfig
 from sub_visual.service import SubtitleService

@@ -1,6 +1,6 @@
 import pytest
 
-from pkg_tts.file_synthesizer import FileVoiceSynthesizer, estimate_duration_ms
+from tts.file_synthesizer import FileVoiceSynthesizer, estimate_duration_ms
 
 
 def test_estimate_duration_ms_minimum() -> None:

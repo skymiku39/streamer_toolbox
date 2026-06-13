@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from pkg_events import CharacterAudioReadyEvent, CharacterExpressionReadyEvent
+from events import CharacterAudioReadyEvent, CharacterExpressionReadyEvent
 
 from sub_character_stage.cue import StageCue
 from sub_character_stage.driver import ObsWebSocketStageDriver

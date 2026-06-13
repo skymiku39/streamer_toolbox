@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
 
 
 def test_append_chat_and_fetch_unsummarized(tmp_path: Path) -> None:

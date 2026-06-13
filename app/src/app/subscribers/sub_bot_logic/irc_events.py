@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pkg_events import ChatMessageEvent
+from events import ChatMessageEvent
 
 IRC_MESSAGE_TYPE_TO_EVENT: dict[str, str] = {
     "sub": "subscribe",

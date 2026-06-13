@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import TOPIC_STT_SEGMENT, SttSegmentEvent
+from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
 
 def _sample_payload() -> dict:

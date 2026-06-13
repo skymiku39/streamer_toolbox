@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pkg_events import TOPIC_CHAT_REPLY, ChatReplyEvent
+from events import TOPIC_CHAT_REPLY, ChatReplyEvent
 from twitch_connector.dispatcher import ChatReplyDispatcher, UnsupportedPlatformError
 from twitch_connector.subscriber import ReplySubscriber
 from twitch_connector.twitch_sender import TwitchSendError

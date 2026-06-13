@@ -9,7 +9,7 @@ from ingress_twitch_eventsub.normalize import (
     eventsub_from_follow,
     eventsub_from_raid,
 )
-from pkg_events import TOPIC_CHAT_MESSAGE, eventsub_topic
+from events import TOPIC_CHAT_MESSAGE, eventsub_topic
 
 
 def _chat_message_fixture() -> SimpleNamespace:

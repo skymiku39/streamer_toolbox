@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 
-from pkg_stream_store import ACTIVE_SESSION_KEY, StreamTextStore
-from pkg_stream_store.models import TextRecord
+from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store.models import TextRecord
 
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import Summarizer

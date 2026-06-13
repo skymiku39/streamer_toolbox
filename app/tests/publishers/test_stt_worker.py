@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from ingress_twitch_audio.config import SttConfig
 from ingress_twitch_audio.stt_worker import STTWorker
-from pkg_safety import SttInputFilter
+from safety import SttInputFilter
 
 
 def _pcm_from_amplitude(amplitude: float, sample_count: int = 16000) -> bytes:

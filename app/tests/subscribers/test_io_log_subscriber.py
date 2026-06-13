@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pkg_events import TOPIC_CHAT_MESSAGE
+from events import TOPIC_CHAT_MESSAGE
 
 from sub_io_log.__main__ import IoLogSubscriber
 

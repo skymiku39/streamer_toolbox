@@ -5,12 +5,12 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
-from pkg_events import (
+from events import (
     TOPIC_CHARACTER_AUDIO_READY,
     CharacterAudioReadyEvent,
     CharacterTurnEvent,
 )
-from pkg_tts import VoiceSynthesizer
+from tts import VoiceSynthesizer
 
 
 class CharacterVoiceSubscriber:

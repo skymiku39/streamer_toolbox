@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 from app.processes.registry import register_subscriber
 from app.subscribers.stream_record_config import RecordConfig, routing_keys_for_mode
 from app.subscribers.stream_record_writer import StreamRecordWriter
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_bindings
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_STREAM_RECORD
-from pkg_stream_store import StreamTextStore
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_bindings
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_STREAM_RECORD
+from stream_store import StreamTextStore
 
 PROCESS_NAME = "sub-stream-record"
 STATS_INTERVAL_SECONDS = 30

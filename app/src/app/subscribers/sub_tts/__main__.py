@@ -8,13 +8,13 @@ import threading
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_TTS_CHAT_MESSAGE
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_TTS_CHAT_MESSAGE
 
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
-from pkg_bus.topology import QUEUE_TTS_CHAT_MESSAGE
-from pkg_events import TOPIC_CHAT_MESSAGE
-from pkg_tts import create_tts_engine
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
+from bus.topology import QUEUE_TTS_CHAT_MESSAGE
+from events import TOPIC_CHAT_MESSAGE
+from tts import create_tts_engine
 
 from sub_tts.filter import MessageFilter, MessageFilterConfig
 from sub_tts.queue_worker import TtsPlaybackQueue

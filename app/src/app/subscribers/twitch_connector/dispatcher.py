@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from pkg_events import ChatReplyEvent
+from events import ChatReplyEvent
 
 
 class ChatSender(Protocol):

@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime
 
-from pkg_events import SttSegmentEvent
+from events import SttSegmentEvent
 
 
 @dataclass(frozen=True)

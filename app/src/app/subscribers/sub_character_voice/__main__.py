@@ -17,13 +17,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_VOICE_TURN
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_VOICE_TURN
 
 
 
-from pkg_bus.config import rabbitmq_url, stream_exchange
+from bus.config import rabbitmq_url, stream_exchange
 
-from pkg_bus.rabbitmq import (
+from bus.rabbitmq import (
 
     connect_blocking,
 
@@ -35,11 +35,11 @@ from pkg_bus.rabbitmq import (
 
 )
 
-from pkg_bus.topology import QUEUE_CHARACTER_VOICE_TURN
+from bus.topology import QUEUE_CHARACTER_VOICE_TURN
 
-from pkg_events import TOPIC_CHARACTER_TURN
+from events import TOPIC_CHARACTER_TURN
 
-from pkg_tts import create_voice_synthesizer
+from tts import create_voice_synthesizer
 
 
 

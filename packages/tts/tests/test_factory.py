@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from pkg_tts import NoOpTtsEngine, create_tts_engine
-from pkg_tts.protocol import TtsEngine
+from tts import NoOpTtsEngine, create_tts_engine
+from tts.protocol import TtsEngine
 
 
 def test_create_noop_engine() -> None:
@@ -13,7 +13,7 @@ def test_create_noop_engine() -> None:
 
 
 def test_create_auto_non_windows_uses_noop(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("pkg_tts.factory.sys.platform", "linux")
+    monkeypatch.setattr("tts.factory.sys.platform", "linux")
     engine = create_tts_engine("auto")
     assert isinstance(engine, NoOpTtsEngine)
 

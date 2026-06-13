@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from pkg_events import TOPIC_STT_SEGMENT, SttSegmentEvent
+from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
 from sub_llm.context_buffer import SttContextBuffer
 

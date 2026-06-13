@@ -7,12 +7,12 @@ import sys
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from pkg_bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_STAGE
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_STAGE
 
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_multi
-from pkg_bus.topology import QUEUE_CHARACTER_STAGE
-from pkg_events import (
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_multi
+from bus.topology import QUEUE_CHARACTER_STAGE
+from events import (
     TOPIC_CHARACTER_AUDIO_READY,
     TOPIC_CHARACTER_EXPRESSION_READY,
     CharacterAudioReadyEvent,

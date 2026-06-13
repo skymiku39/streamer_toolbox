@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 
-from pkg_events import ChatMessageEvent
+from events import ChatMessageEvent
 
 from sub_visual.config import SubtitleConfig
 from sub_visual.filter import MessageFilter

@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 from ttvchat_lens import ChatMessage
 
 from ingress_ttv_read.mapper import map_chat_message, should_publish

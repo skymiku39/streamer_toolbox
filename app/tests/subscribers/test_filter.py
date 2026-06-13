@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pkg_events import ChatMessageEvent
+from events import ChatMessageEvent
 
 from sub_tts.filter import MessageFilter, MessageFilterConfig
 

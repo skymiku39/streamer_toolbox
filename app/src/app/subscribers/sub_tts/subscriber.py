@@ -4,7 +4,7 @@ import sys
 import threading
 from typing import Any
 
-from pkg_events import ChatMessageEvent
+from events import ChatMessageEvent
 
 from sub_tts.filter import MessageFilter
 from sub_tts.queue_worker import TtsPlaybackQueue

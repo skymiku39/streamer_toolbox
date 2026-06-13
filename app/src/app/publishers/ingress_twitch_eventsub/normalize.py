@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from pkg_events import ChatMessageEvent, EventSubEvent, TOPIC_CHAT_MESSAGE, eventsub_topic
+from events import ChatMessageEvent, EventSubEvent, TOPIC_CHAT_MESSAGE, eventsub_topic
 
 SCHEMA_VERSION = 1
 

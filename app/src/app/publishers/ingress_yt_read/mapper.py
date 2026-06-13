@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from tubechat_lens.reader import ChatMessage
 
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 SCHEMA_VERSION = 1
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pkg_events import EventSubEvent
+from events import EventSubEvent
 
 EVENT_CATEGORY: dict[str, str] = {
     "follow": "event",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pkg_events import ChatMessageEvent
-from pkg_tts.noop import NoOpTtsEngine
+from events import ChatMessageEvent
+from tts.noop import NoOpTtsEngine
 
 from sub_tts.filter import MessageFilter, MessageFilterConfig
 from sub_tts.queue_worker import TtsPlaybackQueue

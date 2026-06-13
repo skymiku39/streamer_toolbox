@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pkg_stream_store.models import TextRecord
+from stream_store.models import TextRecord
 
 from app.workers.memory_timeline import format_chat_timeline, format_stt_timeline
 

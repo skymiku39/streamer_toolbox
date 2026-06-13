@@ -9,13 +9,13 @@ import sys
 from dotenv import load_dotenv
 
 from app.processes.registry import register_publisher
-from pkg_bus.topology import DEFAULT_EXCHANGE
+from bus.topology import DEFAULT_EXCHANGE
 
 from identity_oauth import EnvTokenProvider
 from ingress_twitch_eventsub.bot import EventSubIngressBot
 from ingress_twitch_eventsub.publisher import MqEventPublisher
-from pkg_bus.config import rabbitmq_url, stream_exchange
-from pkg_bus.rabbitmq import connect_async, declare_topic_exchange
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_async, declare_topic_exchange
 
 PROCESS_NAME = "ingress-twitch-eventsub"
 logger = logging.getLogger(PROCESS_NAME)

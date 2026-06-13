@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlparse
 
-from pkg_events import ChatMessageEvent
+from events import ChatMessageEvent
 
 URL_PATTERN = re.compile(r"https?://[^\s<>\"']+")
 

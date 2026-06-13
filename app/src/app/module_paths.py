@@ -5,19 +5,19 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+APP_ROOT = Path(__file__).resolve().parent
 
 
 def ensure_legacy_module_paths() -> None:
     for name in ("subscribers", "publishers"):
-        path = str(ROOT / "app" / name)
+        path = str(APP_ROOT / name)
         if path not in sys.path:
             sys.path.insert(0, path)
 
 
 def legacy_pythonpath_env(env: dict[str, str] | None = None) -> dict[str, str]:
     merged = dict(env or os.environ)
-    extra = os.pathsep.join(str(ROOT / "app" / name) for name in ("subscribers", "publishers"))
+    extra = os.pathsep.join(str(APP_ROOT / name) for name in ("subscribers", "publishers"))
     current = merged.get("PYTHONPATH", "")
     if current:
         merged["PYTHONPATH"] = f"{extra}{os.pathsep}{current}"

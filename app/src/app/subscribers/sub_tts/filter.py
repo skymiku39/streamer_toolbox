@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from pkg_events import ChatMessageEvent
+from events import ChatMessageEvent
 
 _URL_PATTERN = re.compile(r"(https?://|www\.)", re.IGNORECASE)
 

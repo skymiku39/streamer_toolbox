@@ -11,7 +11,7 @@ import numpy as np
 
 from ingress_twitch_audio.config import SttConfig
 from ingress_twitch_audio.segment import TranscriptSegment
-from pkg_safety import SttInputFilter
+from safety import SttInputFilter
 
 if TYPE_CHECKING:
     from faster_whisper import WhisperModel

@@ -5,8 +5,8 @@ from typing import Protocol
 
 from aio_pika import Exchange
 
-from pkg_bus.rabbitmq import publish_topic
-from pkg_events import ChatMessageEvent, EventSubEvent
+from bus.rabbitmq import publish_topic
+from events import ChatMessageEvent, EventSubEvent
 
 logger = logging.getLogger(__name__)
 

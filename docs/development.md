@@ -100,19 +100,22 @@ uv run python -m app.workers --once --llm-backend gemini
 
 ```
 streamer_toolbox/
+├── pyproject.toml           # Workspace 定義
 ├── app/
-│   ├── main.py              # CLI 編排
-│   ├── publishers/          # Ingress（ingress_*）
-│   ├── subscribers/         # Sub（sub_*、twitch_connector）
-│   └── workers/             # 定時 worker（記憶層等）
-├── config/                  # 各 Sub 設定 JSON
+│   ├── pyproject.toml       # streamer-app 依賴
+│   ├── src/app/             # 主程式、processes、publishers、subscribers、workers
+│   └── tests/
+├── packages/
+│   ├── bus/                 # 原 pkg-bus
+│   ├── events/              # 原 pkg-events
+│   ├── identity-oauth/
+│   ├── safety/              # 原 pkg-safety
+│   ├── stream-store/        # 原 pkg-stream-store
+│   └── tts/                 # 原 pkg-tts
+├── config/
 ├── docs/
-├── pkg-events/              # 事件 schema
-├── pkg-bus/                 # RabbitMQ helpers
-├── pkg-stream-store/        # SQLite 記錄/記憶
-├── identity-oauth/
 ├── docker-compose.yml
-└── pyproject.toml
+└── ...
 ```
 
 ## 設計約束

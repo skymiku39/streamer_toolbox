@@ -5,24 +5,7 @@ description = "直播互動助手：設計文件與 stream-core 實作（Pub/Sub
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "aio-pika>=9.4.0",
-    "discord.py",
-    "faster-whisper>=1.1.0",
-    "identity-oauth",
-    "numpy>=1.24.0",
-    "obsws-python",
-    "pika>=1.3.0",
-    "pkg-bus",
-    "pkg-events",
-    "pkg-safety",
-    "pkg-stream-store",
-    "pkg-tts",
-    "python-dotenv>=1.0.0",
-    "streamlink>=7.0.0",
-    "ttvchat-lens",
-    "tubechat-lens",
-    "twitchio",
-    "websockets",
+    "streamer-app",
 ]
 
 [tool.uv]
@@ -31,23 +14,17 @@ package = false
 
 [tool.uv.workspace]
 members = [
-    "pkg-events",
-    "pkg-bus",
-    "pkg-safety",
-    "pkg-tts",
-    "pkg-stream-store",
-    "identity-oauth",
+    "app",
+    "packages/events",
+    "packages/bus",
+    "packages/safety",
+    "packages/tts",
+    "packages/stream-store",
+    "packages/identity-oauth",
 ]
 
 [tool.uv.sources]
-identity-oauth = { workspace = true }
-pkg-bus = { workspace = true }
-pkg-events = { workspace = true }
-pkg-safety = { workspace = true }
-pkg-stream-store = { workspace = true }
-pkg-tts = { workspace = true }
-ttvchat-lens = { path = "../ttv_chat" }
-tubechat-lens = { path = "../yt_chat" }
+streamer-app = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -57,24 +34,18 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = [
-    "pkg-events/tests",
-    "pkg-bus/tests",
-    "pkg-safety/tests",
-    "pkg-tts/tests",
-    "pkg-stream-store/tests",
-    "identity-oauth/tests",
+    "packages/events/tests",
+    "packages/bus/tests",
+    "packages/safety/tests",
+    "packages/tts/tests",
+    "packages/stream-store/tests",
+    "packages/identity-oauth/tests",
     "app/tests",
 ]
 pythonpath = [
-    ".",
-    "app/subscribers",
-    "app/publishers",
-    "pkg-events/src",
-    "pkg-bus/src",
-    "pkg-safety/src",
-    "pkg-tts/src",
-    "pkg-stream-store/src",
-    "identity-oauth/src",
+    "app/src",
+    "app/src/app/subscribers",
+    "app/src/app/publishers",
 ]
 
 [tool.ruff]
@@ -87,17 +58,16 @@ select = ["E", "F", "W", "I", "UP"]
 [tool.ruff.lint.isort]
 known-first-party = [
     "app",
+    "bus",
+    "events",
     "identity_oauth",
     "ingress_discord",
     "ingress_ttv_read",
     "ingress_twitch_audio",
     "ingress_twitch_eventsub",
     "ingress_yt_read",
-    "pkg_bus",
-    "pkg_events",
-    "pkg_safety",
-    "pkg_stream_store",
-    "pkg_tts",
+    "safety",
+    "stream_store",
     "sub_bot_logic",
     "sub_character_brain",
     "sub_character_face",
@@ -108,5 +78,6 @@ known-first-party = [
     "sub_show_overlay",
     "sub_tts",
     "sub_visual",
+    "tts",
     "twitch_connector",
 ]

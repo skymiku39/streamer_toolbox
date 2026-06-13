@@ -4,7 +4,7 @@ import threading
 import time
 from collections import deque
 
-from pkg_tts.protocol import TtsEngine
+from tts.protocol import TtsEngine
 
 
 class TtsPlaybackQueue:

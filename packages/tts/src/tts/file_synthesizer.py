@@ -3,7 +3,7 @@ from __future__ import annotations
 import wave
 from pathlib import Path
 
-from pkg_tts.synthesize import SynthesizedAudio
+from tts.synthesize import SynthesizedAudio
 
 SAMPLE_RATE = 22050
 CHANNELS = 1

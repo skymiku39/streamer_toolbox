@@ -1,4 +1,4 @@
-from pkg_bus import EventBus
+from bus import EventBus
 
 
 class _FakeBus:

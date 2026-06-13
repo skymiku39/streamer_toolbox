@@ -1,4 +1,4 @@
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 from sub_show_overlay.model import (
     OverlaySegment,

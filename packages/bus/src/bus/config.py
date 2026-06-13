@@ -1,6 +1,6 @@
 import os
 
-from pkg_bus.topology import DEFAULT_EXCHANGE
+from bus.topology import DEFAULT_EXCHANGE
 
 
 def rabbitmq_url() -> str:

@@ -2,7 +2,7 @@ import struct
 
 import pytest
 
-from pkg_safety import SttInputFilter, is_hallucination_text, pcm_rms
+from safety import SttInputFilter, is_hallucination_text, pcm_rms
 
 
 def _pcm_from_amplitude(amplitude: float, sample_count: int = 1600) -> bytes:

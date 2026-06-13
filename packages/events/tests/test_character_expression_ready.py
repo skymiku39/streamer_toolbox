@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import TOPIC_CHARACTER_EXPRESSION_READY, CharacterExpressionReadyEvent
+from events import TOPIC_CHARACTER_EXPRESSION_READY, CharacterExpressionReadyEvent
 
 
 def _sample_payload() -> dict:

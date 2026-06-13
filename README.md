@@ -5,7 +5,8 @@
 | 區塊 | 路徑 | 說明 |
 |------|------|------|
 | 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
-| 實作 | `app/`、`pkg-*`、`identity-oauth` | Pub/Sub 可執行程式（見 [development.md](docs/development.md)） |
+| 應用層 | `app/` | Pub/Sub 程序編排（`streamer-app`） |
+| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stream-store`、`tts`、`identity-oauth` |
 
 ## 快速開始（開發）
 

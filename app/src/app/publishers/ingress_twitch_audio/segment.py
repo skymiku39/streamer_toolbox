@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from pkg_events import TOPIC_STT_SEGMENT, SttSegmentEvent
+from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
 
 @dataclass(frozen=True)

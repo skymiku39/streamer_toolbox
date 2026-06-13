@@ -4,7 +4,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from pkg_stream_store.models import Summary, TextRecord
+from stream_store.models import Summary, TextRecord
 
 ACTIVE_SESSION_KEY = "active_session_id"
 

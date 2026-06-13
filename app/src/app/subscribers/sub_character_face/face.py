@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from pkg_events import (
+from events import (
     TOPIC_CHARACTER_EXPRESSION_READY,
     CharacterExpressionReadyEvent,
     CharacterTurnEvent,

@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from pkg_events import (
+from events import (
     TOPIC_CHARACTER_AUDIO_READY,
     TOPIC_CHARACTER_EXPRESSION_READY,
     CharacterAudioReadyEvent,

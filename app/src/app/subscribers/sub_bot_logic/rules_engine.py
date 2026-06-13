@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from pkg_events import (
+from events import (
     SOURCE_LOGIC_COMMANDS,
     SOURCE_LOGIC_EVENTS,
     SOURCE_LOGIC_KEYWORDS,

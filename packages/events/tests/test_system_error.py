@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pkg_events import TOPIC_SYSTEM_ERROR, SystemErrorEvent
+from events import TOPIC_SYSTEM_ERROR, SystemErrorEvent
 
 
 def _sample_payload() -> dict:

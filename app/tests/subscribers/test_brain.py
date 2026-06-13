@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pkg_events import TOPIC_CHARACTER_TURN, TOPIC_CHAT_REPLY
-from pkg_safety import BlocklistSafetyFilter, PassThroughSafetyFilter
+from events import TOPIC_CHARACTER_TURN, TOPIC_CHAT_REPLY
+from safety import BlocklistSafetyFilter, PassThroughSafetyFilter
 from sub_character_brain.brain import CharacterBrain
 from sub_character_brain.config import CharacterConfig
 from sub_character_brain.llm import CharacterResponse, RuleBasedCharacterLlm
@@ -119,7 +119,7 @@ def test_character_turn_round_trip() -> None:
 
     brain.handle(_chat_payload("!talk 我很開心"))
     _, payload = published[0]
-    from pkg_events import CharacterTurnEvent
+    from events import CharacterTurnEvent
 
     event = CharacterTurnEvent.from_dict(payload)
     assert event.emotion == "happy"

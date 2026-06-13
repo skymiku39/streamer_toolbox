@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
-from pkg_events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
-from pkg_stream_store import StreamTextStore
+from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
+from stream_store import StreamTextStore
 
 from app.subscribers.stream_record_config import RecordConfig
 from app.subscribers.stream_record_writer import StreamRecordWriter
@@ -42,10 +43,11 @@ def test_writer_resolves_session_per_channel(tmp_path: Path) -> None:
     store = StreamTextStore(db_path)
     config = RecordConfig(db_path=str(db_path), session_id=None, record_mode="chat")
     writer = StreamRecordWriter(store, config)
+    day = datetime.now(UTC).strftime("%Y%m%d")
     writer.handle(_payload(channel="caren_surfdemon", message_id="m1"))
     writer.handle(_payload(channel="lupulu0524", message_id="m2", content="第二則"))
-    caren = store.fetch_unsummarized_chat("caren_surfdemon_20260612")
-    lupulu = store.fetch_unsummarized_chat("lupulu0524_20260612")
+    caren = store.fetch_unsummarized_chat(f"caren_surfdemon_{day}")
+    lupulu = store.fetch_unsummarized_chat(f"lupulu0524_{day}")
     assert len(caren) == 1
     assert len(lupulu) == 1
     store.close()

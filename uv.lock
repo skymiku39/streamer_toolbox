@@ -8,13 +8,14 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "bus",
+    "events",
     "identity-oauth",
-    "pkg-bus",
-    "pkg-events",
-    "pkg-safety",
-    "pkg-stream-store",
-    "pkg-tts",
+    "safety",
+    "stream-store",
+    "streamer-app",
     "streamer-toolbox",
+    "tts",
 ]
 
 [[package]]
@@ -299,6 +300,23 @@ wheels = [
 ]
 
 [[package]]
+name = "bus"
+version = "0.1.0"
+source = { editable = "packages/bus" }
+dependencies = [
+    { name = "aio-pika" },
+    { name = "events" },
+    { name = "pika" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aio-pika", specifier = ">=9.4.0" },
+    { name = "events", editable = "packages/events" },
+    { name = "pika", specifier = ">=1.3.0" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.5.20"
 source = { registry = "https://pypi.org/simple" }
@@ -492,6 +510,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/ef/57/9a2d9abdabdc9db8e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/a7/17208c3b3f92319e7fad259f1c6d5a5baf8fd0654c54846ced329f83c3eb/discord_py-2.7.1-py3-none-any.whl", hash = "sha256:849dca2c63b171146f3a7f3f8acc04248098e9e6203412ce3cf2745f284f7439", size = 1227550, upload-time = "2026-03-03T18:40:44.492Z" },
 ]
+
+[[package]]
+name = "events"
+version = "0.1.0"
+source = { editable = "packages/events" }
 
 [[package]]
 name = "faster-whisper"
@@ -769,7 +792,7 @@ wheels = [
 [[package]]
 name = "identity-oauth"
 version = "0.1.0"
-source = { editable = "identity-oauth" }
+source = { editable = "packages/identity-oauth" }
 dependencies = [
     { name = "httpx" },
     { name = "python-dotenv" },
@@ -1216,58 +1239,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pkg-bus"
-version = "0.1.0"
-source = { editable = "pkg-bus" }
-dependencies = [
-    { name = "aio-pika" },
-    { name = "pika" },
-    { name = "pkg-events" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-events", editable = "pkg-events" },
-]
-
-[[package]]
-name = "pkg-events"
-version = "0.1.0"
-source = { editable = "pkg-events" }
-
-[[package]]
-name = "pkg-safety"
-version = "0.1.0"
-source = { editable = "pkg-safety" }
-dependencies = [
-    { name = "pkg-events" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pkg-events", editable = "pkg-events" }]
-
-[[package]]
-name = "pkg-stream-store"
-version = "0.1.0"
-source = { editable = "pkg-stream-store" }
-
-[[package]]
-name = "pkg-tts"
-version = "0.1.0"
-source = { editable = "pkg-tts" }
-
-[package.optional-dependencies]
-sapi5 = [
-    { name = "pywin32", marker = "sys_platform == 'win32'" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pywin32", marker = "sys_platform == 'win32' and extra == 'sapi5'", specifier = ">=306" }]
-provides-extras = ["sapi5"]
-
-[[package]]
 name = "pluggy"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1635,6 +1606,17 @@ wheels = [
 ]
 
 [[package]]
+name = "safety"
+version = "0.1.0"
+source = { editable = "packages/safety" }
+dependencies = [
+    { name = "events" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "events", editable = "packages/events" }]
+
+[[package]]
 name = "setuptools"
 version = "82.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1671,28 +1653,63 @@ wheels = [
 ]
 
 [[package]]
-name = "streamer-toolbox"
+name = "stream-store"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "packages/stream-store" }
+
+[[package]]
+name = "streamer-app"
+version = "0.1.0"
+source = { editable = "app" }
 dependencies = [
     { name = "aio-pika" },
+    { name = "bus" },
     { name = "discord-py" },
+    { name = "events" },
     { name = "faster-whisper" },
     { name = "identity-oauth" },
     { name = "numpy" },
     { name = "obsws-python" },
     { name = "pika" },
-    { name = "pkg-bus" },
-    { name = "pkg-events" },
-    { name = "pkg-safety" },
-    { name = "pkg-stream-store" },
-    { name = "pkg-tts" },
     { name = "python-dotenv" },
+    { name = "safety" },
+    { name = "stream-store" },
     { name = "streamlink" },
+    { name = "tts" },
     { name = "ttvchat-lens" },
     { name = "tubechat-lens" },
     { name = "twitchio" },
     { name = "websockets" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aio-pika", specifier = ">=9.4.0" },
+    { name = "bus", editable = "packages/bus" },
+    { name = "discord-py" },
+    { name = "events", editable = "packages/events" },
+    { name = "faster-whisper", specifier = ">=1.1.0" },
+    { name = "identity-oauth", editable = "packages/identity-oauth" },
+    { name = "numpy", specifier = ">=1.24.0" },
+    { name = "obsws-python" },
+    { name = "pika", specifier = ">=1.3.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "safety", editable = "packages/safety" },
+    { name = "stream-store", editable = "packages/stream-store" },
+    { name = "streamlink", specifier = ">=7.0.0" },
+    { name = "tts", editable = "packages/tts" },
+    { name = "ttvchat-lens", directory = "../ttv_chat" },
+    { name = "tubechat-lens", directory = "../yt_chat" },
+    { name = "twitchio" },
+    { name = "websockets" },
+]
+
+[[package]]
+name = "streamer-toolbox"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "streamer-app" },
 ]
 
 [package.dev-dependencies]
@@ -1702,26 +1719,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "aio-pika", specifier = ">=9.4.0" },
-    { name = "discord-py" },
-    { name = "faster-whisper", specifier = ">=1.1.0" },
-    { name = "identity-oauth", editable = "identity-oauth" },
-    { name = "numpy", specifier = ">=1.24.0" },
-    { name = "obsws-python" },
-    { name = "pika", specifier = ">=1.3.0" },
-    { name = "pkg-bus", editable = "pkg-bus" },
-    { name = "pkg-events", editable = "pkg-events" },
-    { name = "pkg-safety", editable = "pkg-safety" },
-    { name = "pkg-stream-store", editable = "pkg-stream-store" },
-    { name = "pkg-tts", editable = "pkg-tts" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "streamlink", specifier = ">=7.0.0" },
-    { name = "ttvchat-lens", directory = "../ttv_chat" },
-    { name = "tubechat-lens", directory = "../yt_chat" },
-    { name = "twitchio" },
-    { name = "websockets" },
-]
+requires-dist = [{ name = "streamer-app", editable = "app" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1822,6 +1820,20 @@ sdist = { url = "https://files.pythonhosted.org/packages/d1/3c/8b4358e81f2f2cfe7
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c7/19/eb640a397bba49ba49ef9dbe2e7e5c04202ba045b6ce2ec36e9cadc51e04/trio_websocket-0.12.2-py3-none-any.whl", hash = "sha256:df605665f1db533f4a386c94525870851096a223adcb97f72a07e8b4beba45b6", size = 21221, upload-time = "2025-02-25T05:16:57.545Z" },
 ]
+
+[[package]]
+name = "tts"
+version = "0.1.0"
+source = { editable = "packages/tts" }
+
+[package.optional-dependencies]
+sapi5 = [
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pywin32", marker = "sys_platform == 'win32' and extra == 'sapi5'", specifier = ">=306" }]
+provides-extras = ["sapi5"]
 
 [[package]]
 name = "ttvchat-lens"

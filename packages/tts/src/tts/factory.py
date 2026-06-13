@@ -4,10 +4,10 @@ import os
 import sys
 from pathlib import Path
 
-from pkg_tts.file_synthesizer import FileVoiceSynthesizer
-from pkg_tts.noop import NoOpTtsEngine
-from pkg_tts.protocol import TtsEngine
-from pkg_tts.synthesize import VoiceSynthesizer
+from tts.file_synthesizer import FileVoiceSynthesizer
+from tts.noop import NoOpTtsEngine
+from tts.protocol import TtsEngine
+from tts.synthesize import VoiceSynthesizer
 
 
 def create_tts_engine(backend: str | None = None) -> TtsEngine:
@@ -22,7 +22,7 @@ def create_tts_engine(backend: str | None = None) -> TtsEngine:
     if resolved == "noop":
         return NoOpTtsEngine()
     if resolved == "sapi5":
-        from pkg_tts.sapi5 import Sapi5TtsEngine
+        from tts.sapi5 import Sapi5TtsEngine
 
         return Sapi5TtsEngine()
 

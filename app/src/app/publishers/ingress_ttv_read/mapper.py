@@ -4,7 +4,7 @@ import hashlib
 from datetime import datetime
 from typing import Any
 
-from pkg_events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 from ttvchat_lens import ChatMessage
 
 _SKIP_MESSAGE_TYPES = frozenset(

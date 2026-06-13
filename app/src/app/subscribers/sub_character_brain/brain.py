@@ -5,7 +5,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
-from pkg_events import (
+from events import (
     SOURCE_CHARACTER_BRAIN,
     TOPIC_CHARACTER_TURN,
     TOPIC_CHAT_REPLY,
@@ -13,7 +13,7 @@ from pkg_events import (
     ChatMessageEvent,
     ChatReplyEvent,
 )
-from pkg_safety import SafetyFilter
+from safety import SafetyFilter
 
 from sub_character_brain.config import CharacterConfig
 from sub_character_brain.llm import CharacterLlm, MemoryTurn

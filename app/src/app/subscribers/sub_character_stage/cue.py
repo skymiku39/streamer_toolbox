@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pkg_events import CharacterAudioReadyEvent, CharacterExpressionReadyEvent
+from events import CharacterAudioReadyEvent, CharacterExpressionReadyEvent
 
 
 @dataclass(frozen=True)

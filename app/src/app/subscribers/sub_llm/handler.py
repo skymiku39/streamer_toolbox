@@ -4,7 +4,7 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
-from pkg_events import (
+from events import (
     SOURCE_LOGIC_LLM,
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
@@ -13,8 +13,8 @@ from pkg_events import (
     ChatReplyEvent,
     SttSegmentEvent,
 )
-from pkg_safety import SafetyFilter
-from pkg_safety.stt_input import is_hallucination_text
+from safety import SafetyFilter
+from safety.stt_input import is_hallucination_text
 
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer

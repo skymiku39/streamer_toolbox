@@ -16,7 +16,7 @@ configure_utf8_stdio()
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import create_summarizer
 from app.workers.memory_worker import MemoryWorker
-from pkg_stream_store import StreamTextStore
+from stream_store import StreamTextStore
 
 PROCESS_NAME = "sub-memory-worker"
 
