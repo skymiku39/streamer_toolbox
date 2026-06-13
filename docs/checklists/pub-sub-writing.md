@@ -484,6 +484,7 @@ LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini` 與 `
 - [x] 輸入閘門：`safety` 過濾觀眾輸入與 STT 片段
 - [x] LLM 呼叫抽象（Protocol），不綁死 Gemini（`OpenAiCompatibleLlmClient`）
 - [x] 輸出閘門：幻覺 / 敏感詞過濾後才 `publish chat.reply`
+- [x] 輸出格式化：`plain_text_for_chat` 去除 Markdown（粗體、連結、程式碼等），配合 `LLM_SYSTEM_PROMPT` 引導 LLM 輸出純文字
 - [x] `source: logic-llm`；經 `twitch-connector` 發話，不內嵌 Helix API
 - [x] 不與 `sub-bot-logic` 共用程式碼，僅共用 topic
 - [x] 單元測試：mock LLM + safety → reply payload

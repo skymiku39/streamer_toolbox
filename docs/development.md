@@ -80,6 +80,29 @@ uv run python -m app.subscribers.sub_io_log
 uv run python -m app.workers --once --llm-backend gemini
 ```
 
+### 產品 C：sub-llm 問答
+
+```powershell
+# 終端 1：聊天 ingress + LLM sub + connector（依 modules 啟用表調整）
+uv run python -m app.main run sub-llm twitch-connector ingress-ttv-read
+
+# 或直接跑 sub-llm（需 RabbitMQ 與其他 ingress 已發布 chat.message / stt.segment）
+uv run python -m app.subscribers.sub_llm --llm-backend template
+```
+
+`.env` 常用設定（完整清單見 `.env.example`）：
+
+| 變數 | 說明 |
+|------|------|
+| `LLM_TRIGGER_PREFIXES` | 觸發前綴（預設 `!ask`） |
+| `LLM_BACKEND` | `template` / `openai` / `gemini` |
+| `LLM_MAX_REPLY_LENGTH` | 回覆字元上限（預設 500） |
+| `LLM_SYSTEM_PROMPT` | 系統提示；預設要求勿用 Markdown，以純文字短句回覆 |
+| `LLM_CONTEXT_WINDOW_MINUTES` | STT 上下文時間窗（分鐘） |
+| `LLM_KNOWLEDGE_PATH` | 知識庫檔案或目錄（可選） |
+
+LLM 回覆在 `safety.filter_output` 之後會經 `plain_text_for_chat` 去除 Markdown，再截斷長度並發布 `chat.reply`。
+
 ### 記錄層 + 記憶層（Phase 1）
 
 ```powershell

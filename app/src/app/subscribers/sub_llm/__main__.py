@@ -8,8 +8,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
-
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import (
     connect_blocking,
@@ -17,7 +15,7 @@ from bus.rabbitmq import (
     publish_topic_blocking,
     setup_subscriber_queue_bindings,
 )
-from bus.topology import QUEUE_SUB_LLM
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
 from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_STT_SEGMENT
 from safety import BlocklistSafetyFilter
 
@@ -92,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
             payload=payload,
         )
         correlation = payload.get("correlation_id", "")[:8]
-        if topic == "chat.reply":
+        if topic == TOPIC_CHAT_REPLY:
             preview = str(payload.get("content", ""))[:80]
             print(
                 f"published {topic} correlation={correlation}: {preview}",

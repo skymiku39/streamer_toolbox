@@ -36,6 +36,7 @@ sequenceDiagram
         MQ->>Pre: 輸入檢查
         Pre->>LLM: prompt
         LLM->>Post: 原始文字
+        Post->>Post: plain_text_for_chat（去除 Markdown）
         Post->>MQ: chat.reply
     end
     MQ->>Send: subscribe chat.reply
@@ -47,8 +48,9 @@ sequenceDiagram
 |------|------|
 | 輸入 | injection、黑名單、頻率、權限 |
 | 輸出 | 違規、個資、長度；fallback 不送原文 |
+| 格式化 | `sub_llm.chat_format.plain_text_for_chat` 去除 Markdown，使回覆適合 Twitch 聊天室 |
 
-輸入參考 `twitch_api/tts/message_filter.py`；輸出為 `pkg-safety` 新建。
+輸入參考 `twitch_api/tts/message_filter.py`；輸出安全由 `safety` 負責；Markdown 剝除在 `sub-llm` 內（`LLM_SYSTEM_PROMPT` 引導 + 後處理雙層防護）。
 
 ## SOLID
 
