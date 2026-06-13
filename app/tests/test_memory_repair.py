@@ -28,7 +28,7 @@ def test_repair_session_channel_isolation(tmp_path: Path) -> None:
     )
     wrong_id = store.append_chat(
         session_id=session_id,
-        channel="lupulu0524",
+        channel="test_channel_beta",
         timestamp="2026-06-12T17:38:40+00:00",
         text="wrong room",
         author="u3",
@@ -55,7 +55,7 @@ def test_repair_session_channel_isolation(tmp_path: Path) -> None:
     assert bad_summary.id in report.deleted_summary_ids
     assert keep_id in report.reset_chat_record_ids
     assert store.fetch_unsummarized_chat(session_id, channel="skymiku39")
-    assert not store.fetch_unsummarized_chat(session_id, channel="lupulu0524")
-    assert store.fetch_unsummarized_chat("lupulu0524_20260612", channel="lupulu0524")
+    assert not store.fetch_unsummarized_chat(session_id, channel="test_channel_beta")
+    assert store.fetch_unsummarized_chat("test_channel_beta_20260612", channel="test_channel_beta")
     assert not any(summary.id == bad_summary.id for summary in store.list_summaries(session_id))
     store.close()

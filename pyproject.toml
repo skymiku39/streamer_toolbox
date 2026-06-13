@@ -23,6 +23,7 @@ streamer-app = { workspace = true }
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.0",
     "pytest>=9.0",
     "ruff>=0.11",
 ]

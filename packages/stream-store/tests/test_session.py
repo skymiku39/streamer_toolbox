@@ -13,15 +13,15 @@ from stream_store import (
 
 def test_checkpoint_key_per_channel() -> None:
     assert checkpoint_key_for_channel("Skymiku39") == "active_session_id:skymiku39"
-    assert checkpoint_key_for_channel("#jipandan") == "active_session_id:jipandan"
+    assert checkpoint_key_for_channel("#test_channel_delta") == "active_session_id:test_channel_delta"
 
 
 def test_resolve_session_id_from_channel_and_day() -> None:
     session_id = resolve_session_id(
-        channel="RamengYozaset",
+        channel="TestChannelGamma",
         day="20260612",
     )
-    assert session_id == "ramengyozaset_20260612"
+    assert session_id == "testchannelgamma_20260612"
 
 
 def test_resolve_session_id_ignores_mismatched_explicit() -> None:
@@ -33,11 +33,11 @@ def test_resolve_session_id_ignores_mismatched_explicit() -> None:
     assert session_id == "skymiku39_20260613"
 
     session_id = resolve_session_id(
-        channel="lupulu0524",
+        channel="test_channel_beta",
         explicit_session_id="skymiku39_20260613",
         day="20260612",
     )
-    assert session_id == "lupulu0524_20260612"
+    assert session_id == "test_channel_beta_20260612"
 
 
 def test_resolve_session_for_channel_uses_per_channel_checkpoint(tmp_path: Path) -> None:

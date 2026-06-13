@@ -1,0 +1,14 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: block-runtime-artifacts
+        name: block runtime data and secrets
+        entry: python scripts/pre_commit_block_runtime.py
+        language: system
+        pass_filenames: true
+        always_run: true

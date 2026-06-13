@@ -47,6 +47,29 @@ uv run pytest
 uv run ruff check .
 ```
 
+## Pre-commit（秘密與執行期資料掃描）
+
+初次設定後，每次 `git commit` 會自動執行 gitleaks 與 runtime 檔案阻擋（`.env`、`data/`、`*.db` 等）：
+
+```powershell
+uv sync
+uv run pre-commit install
+uv run pre-commit run --all-files
+```
+
+## 憑證輪替（隱私事件後建議）
+
+歷史掃描未發現 API key 進版控，但若曾擔心本機 `.env` 外洩，請手動輪替：
+
+| 變數 | 輪替方式 |
+|------|----------|
+| `TWITCH_CLIENT_SECRET` | [Twitch Developer Console](https://dev.twitch.tv/console) 重設 Client Secret |
+| `TWITCH_*_REFRESH_TOKEN` | 重新走 OAuth 授權，更新 `.env` |
+| `GOOGLE_AI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) 撤銷並建立新 key |
+| `DISCORD_BOT_TOKEN` | Discord Developer Portal 重設 Bot Token |
+
+輪替後刪除本機 `.tio.tokens.json`，重啟相關 process 讓新憑證生效。
+
 ## Phase 01 端對端實測
 
 ### 列出 process
