@@ -21,7 +21,7 @@ from safety import BlocklistSafetyFilter
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
 from sub_llm.config import LlmSubscriberConfig
-from sub_llm.context_buffer import SttContextBuffer
+from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
 
@@ -109,13 +109,19 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
+    bot_author_id = (os.environ.get("TWITCH_BOT_ID") or "").strip()
+    skip_author_ids = frozenset({bot_author_id}) if bot_author_id else frozenset()
+
     idempotency = IdempotencyStore(default_idempotency_db_path())
     subscriber = LlmSubscriber(
         config=config,
         llm=llm,
         safety=safety,
         knowledge=knowledge,
-        context_buffer=SttContextBuffer(window_minutes=config.context_window_minutes),
+        context_buffer=LiveContextBuffer(
+            window_minutes=config.context_window_minutes,
+            skip_author_ids=skip_author_ids,
+        ),
         publish=publish,
         idempotency=idempotency,
     )

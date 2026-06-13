@@ -14,7 +14,7 @@ class TemplateLlmClient:
     def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
         context_hint = ""
         if context.strip():
-            context_hint = "（已參考近期直播逐字稿）"
+            context_hint = "（已參考近期直播上下文）"
         knowledge_hint = ""
         if knowledge.strip():
             knowledge_hint = "（已參考知識庫）"

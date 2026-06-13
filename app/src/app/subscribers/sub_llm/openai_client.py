@@ -75,7 +75,7 @@ class OpenAiCompatibleLlmClient:
             messages.append({"role": "system", "content": self._system_prompt})
         user_sections: list[str] = []
         if context.strip():
-            user_sections.append(f"近期直播逐字稿：\n{context.strip()}")
+            user_sections.append(f"近期直播上下文：\n{context.strip()}")
         if knowledge.strip():
             user_sections.append(f"知識庫參考：\n{knowledge.strip()}")
         user_sections.append(f"觀眾問題：{question.strip()}")

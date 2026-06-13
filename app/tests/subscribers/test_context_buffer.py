@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
-from events import TOPIC_STT_SEGMENT, SttSegmentEvent
+from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
 
-from sub_llm.context_buffer import SttContextBuffer
+from sub_llm.context_buffer import ChatContextBuffer, LiveContextBuffer, SttContextBuffer
 
 
 def _segment(text: str, *, channel: str, offset_minutes: int = 0) -> SttSegmentEvent:
@@ -16,6 +16,26 @@ def _segment(text: str, *, channel: str, offset_minutes: int = 0) -> SttSegmentE
         text=text,
         timestamp=timestamp,
         start_sec=10.0,
+    )
+
+
+def _chat(
+    content: str,
+    *,
+    channel: str = "room_a",
+    author_name: str = "viewer",
+    author_id: str = "viewer-id",
+) -> ChatMessageEvent:
+    return ChatMessageEvent(
+        schema_version=1,
+        topic=TOPIC_CHAT_MESSAGE,
+        platform="twitch",
+        message_id=f"msg-{content[:8]}",
+        author_name=author_name,
+        author_id=author_id,
+        content=content,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        channel=channel,
     )
 
 
@@ -47,3 +67,34 @@ def test_context_text_isolated_by_channel() -> None:
     assert "B 房間語音" not in context_a
     assert "B 房間語音" in context_b
     assert "A 房間語音" not in context_b
+
+
+def test_chat_context_buffer_includes_recent_messages() -> None:
+    buffer = ChatContextBuffer(window_minutes=5)
+    buffer.add_message(_chat("你好", channel="room_a"))
+    buffer.add_message(_chat("再見", channel="room_a"))
+    context = buffer.context_text("room_a")
+    assert "viewer: 你好" in context
+    assert "viewer: 再見" in context
+
+
+def test_chat_context_buffer_skips_bot_author_id() -> None:
+    buffer = ChatContextBuffer(window_minutes=5, skip_author_ids=frozenset({"bot-id"}))
+    buffer.add_message(_chat("bot 回覆", author_id="bot-id"))
+    buffer.add_message(_chat("觀眾發言", author_id="viewer-id"))
+    context = buffer.context_text("room_a")
+    assert "bot 回覆" not in context
+    assert "觀眾發言" in context
+
+
+def test_live_context_buffer_merges_stt_and_chat() -> None:
+    buffer = LiveContextBuffer(window_minutes=5, skip_author_ids=frozenset({"bot-id"}))
+    buffer.add_segment(_segment("主播說話", channel="room_a"))
+    buffer.add_chat_message(_chat("觀眾聊天", channel="room_a", author_id="viewer-id"))
+    context = buffer.context_text("room_a")
+    stt_count, chat_count, context_len = buffer.stats("room_a")
+    assert "主播說話" in context
+    assert "觀眾聊天" in context
+    assert stt_count == 1
+    assert chat_count == 1
+    assert context_len > 0

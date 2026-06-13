@@ -9,7 +9,7 @@ from events import (
 from safety import PassThroughSafetyFilter
 
 from sub_llm.config import LlmSubscriberConfig
-from sub_llm.context_buffer import SttContextBuffer
+from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import BUSY_REPLY, LlmSubscriber
 from sub_llm.knowledge import EmptyKnowledgeStore
 from sub_llm.llm import TemplateLlmClient
@@ -57,7 +57,7 @@ def test_chat_trigger_publishes_chat_reply() -> None:
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -79,7 +79,7 @@ def test_stt_segment_accumulates_context_for_reply() -> None:
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -87,7 +87,26 @@ def test_stt_segment_accumulates_context_for_reply() -> None:
     subscriber.handle(_chat_payload("!ask 剛剛說什麼？"))
 
     assert len(published) == 1
-    assert "逐字稿" in published[0][1]["content"]
+    assert "近期直播上下文" in published[0][1]["content"]
+
+
+def test_chat_messages_accumulate_context_for_reply() -> None:
+    published: list[tuple[str, dict]] = []
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_chat_payload("LNG Live 是實況團體"))
+    subscriber.handle(_chat_payload("!ask 誰是 LNG"))
+
+    assert len(published) == 1
+    assert "近期直播上下文" in published[0][1]["content"]
 
 
 def test_stt_context_does_not_leak_across_channels() -> None:
@@ -98,7 +117,7 @@ def test_stt_context_does_not_leak_across_channels() -> None:
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -117,7 +136,7 @@ def test_non_trigger_chat_is_ignored() -> None:
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -132,7 +151,7 @@ def test_busy_lock_returns_busy_reply() -> None:
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -157,7 +176,7 @@ def test_reply_strips_markdown_for_chat() -> None:
         llm=_MarkdownLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -174,7 +193,7 @@ def test_hallucination_stt_segment_is_ignored() -> None:
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
     )
 
@@ -205,7 +224,7 @@ def test_duplicate_message_id_is_ignored(tmp_path) -> None:
         llm=llm,
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
         idempotency=store,
     )
@@ -231,7 +250,7 @@ def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -
         llm=llm,
         safety=PassThroughSafetyFilter(),
         knowledge=EmptyKnowledgeStore(),
-        context_buffer=SttContextBuffer(window_minutes=5),
+        context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
         idempotency=store,
     )

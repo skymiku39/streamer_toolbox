@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime
 
-from events import SttSegmentEvent
+from events import ChatMessageEvent, SttSegmentEvent
 from stream_store.session import normalize_channel
 
 
@@ -13,6 +13,13 @@ class BufferedSegment:
     text: str
     timestamp: datetime
     start_sec: float | None
+
+
+@dataclass(frozen=True)
+class BufferedChatLine:
+    author: str
+    text: str
+    timestamp: datetime
 
 
 class SttContextBuffer:
@@ -50,6 +57,11 @@ class SttContextBuffer:
             lines.append(f"[{label}] {segment.text}")
         return "\n".join(lines)
 
+    def count(self, channel: str) -> int:
+        key = normalize_channel(channel)
+        with self._lock:
+            return len(self._segments_by_channel.get(key, []))
+
     def _prune_locked(self, channel: str) -> None:
         segments = self._segments_by_channel.get(channel)
         if not segments:
@@ -58,3 +70,103 @@ class SttContextBuffer:
         self._segments_by_channel[channel] = [
             segment for segment in segments if segment.timestamp.timestamp() >= cutoff
         ]
+
+
+class ChatContextBuffer:
+    """依 channel 分區累積近期聊天室訊息（不含 bot 自身發話）。"""
+
+    def __init__(
+        self,
+        *,
+        window_minutes: int = 5,
+        skip_author_ids: frozenset[str] = frozenset(),
+        max_lines: int = 80,
+    ) -> None:
+        self._window_seconds = max(1, window_minutes) * 60
+        self._skip_author_ids = skip_author_ids
+        self._max_lines = max(1, max_lines)
+        self._lines_by_channel: dict[str, list[BufferedChatLine]] = {}
+        self._lock = threading.Lock()
+
+    def add_message(self, event: ChatMessageEvent) -> None:
+        author_id = (event.author_id or "").strip()
+        if author_id and author_id in self._skip_author_ids:
+            return
+        text = event.content.strip()
+        if not text:
+            return
+        channel = normalize_channel(event.channel or "")
+        author = (event.author_name or event.login or "viewer").strip()
+        line = BufferedChatLine(
+            author=author,
+            text=text,
+            timestamp=datetime.fromisoformat(event.timestamp),
+        )
+        with self._lock:
+            bucket = self._lines_by_channel.setdefault(channel, [])
+            bucket.append(line)
+            self._prune_locked(channel)
+
+    def context_text(self, channel: str) -> str:
+        key = normalize_channel(channel)
+        with self._lock:
+            lines = list(self._lines_by_channel.get(key, []))
+        if not lines:
+            return ""
+        rendered = [f"【近期聊天室（{key}）】"]
+        for line in lines:
+            rendered.append(f"{line.author}: {line.text}")
+        return "\n".join(rendered)
+
+    def count(self, channel: str) -> int:
+        key = normalize_channel(channel)
+        with self._lock:
+            return len(self._lines_by_channel.get(key, []))
+
+    def _prune_locked(self, channel: str) -> None:
+        lines = self._lines_by_channel.get(channel)
+        if not lines:
+            return
+        cutoff = lines[-1].timestamp.timestamp() - self._window_seconds
+        pruned = [line for line in lines if line.timestamp.timestamp() >= cutoff]
+        if len(pruned) > self._max_lines:
+            pruned = pruned[-self._max_lines :]
+        self._lines_by_channel[channel] = pruned
+
+
+class LiveContextBuffer:
+    """合併 STT 逐字稿與聊天室短期記憶。"""
+
+    def __init__(
+        self,
+        *,
+        window_minutes: int = 5,
+        skip_author_ids: frozenset[str] = frozenset(),
+    ) -> None:
+        self._stt = SttContextBuffer(window_minutes=window_minutes)
+        self._chat = ChatContextBuffer(
+            window_minutes=window_minutes,
+            skip_author_ids=skip_author_ids,
+        )
+
+    def add_segment(self, event: SttSegmentEvent) -> None:
+        self._stt.add_segment(event)
+
+    def add_chat_message(self, event: ChatMessageEvent) -> None:
+        self._chat.add_message(event)
+
+    def context_text(self, channel: str) -> str:
+        parts = [
+            part
+            for part in (
+                self._stt.context_text(channel),
+                self._chat.context_text(channel),
+            )
+            if part
+        ]
+        return "\n\n".join(parts)
+
+    def stats(self, channel: str) -> tuple[int, int, int]:
+        stt_count = self._stt.count(channel)
+        chat_count = self._chat.count(channel)
+        return stt_count, chat_count, len(self.context_text(channel))
