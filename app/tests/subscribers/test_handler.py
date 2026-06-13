@@ -137,6 +137,27 @@ def test_busy_lock_returns_busy_reply() -> None:
     assert published[1][1]["content"] == BUSY_REPLY
 
 
+class _MarkdownLlmClient:
+    def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+        return "**重點**：這是*測試*回覆"
+
+
+def test_reply_strips_markdown_for_chat() -> None:
+    published: list[tuple[str, dict]] = []
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=_MarkdownLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=SttContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_chat_payload("!ask 測試"))
+
+    assert published[0][1]["content"] == "重點：這是測試回覆"
+
+
 def test_hallucination_stt_segment_is_ignored() -> None:
     published: list[tuple[str, dict]] = []
 

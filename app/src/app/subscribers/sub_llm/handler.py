@@ -16,6 +16,7 @@ from events import (
 from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
 
+from sub_llm.chat_format import plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
 from sub_llm.knowledge import KnowledgeStore
@@ -85,6 +86,9 @@ class LlmSubscriber:
             )
             filtered_reply = self._safety.filter_output(raw_reply)
             if filtered_reply is None:
+                return
+            filtered_reply = plain_text_for_chat(filtered_reply)
+            if not filtered_reply:
                 return
             if len(filtered_reply) > self._config.reply_max_length:
                 limit = self._config.reply_max_length
