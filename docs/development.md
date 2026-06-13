@@ -128,6 +128,14 @@ LLM 回覆在 `safety.filter_output` 之後會經 `plain_text_for_chat` 去除 M
 
 **避免連發：** 同一頻道只跑一組 ingress / sub-llm / twitch-connector；系統已以 SQLite `IdempotencyStore`（預設共用 `STREAM_DB_PATH`）對 `message_id` 去重，但多開 process 仍會浪費 LLM 配額，請勿重複啟動。
 
+跨 process 去重自測（Windows 請用腳本，勿用 `multiprocessing.Pool` 搭配 `python -c`）：
+
+```powershell
+uv run python scripts/verify_dedup.py
+```
+
+成功時輸出 `VERIFICATION_PASS wins_per_layer=1`。
+
 ### 記錄層 + 記憶層（Phase 1）
 
 ```powershell
