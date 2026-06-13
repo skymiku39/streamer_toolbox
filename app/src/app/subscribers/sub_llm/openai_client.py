@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
 from typing import Any
 
-
+from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
 
 
@@ -73,16 +74,30 @@ class OpenAiCompatibleLlmClient:
         )
 
     def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
-        messages: list[dict[str, str]] = []
-        if self._system_prompt:
-            messages.append({"role": "system", "content": self._system_prompt})
-        user_sections: list[str] = []
-        if context.strip():
-            user_sections.append(f"近期直播上下文：\n{context.strip()}")
-        if knowledge.strip():
-            user_sections.append(f"知識庫參考：\n{knowledge.strip()}")
-        user_sections.append(f"觀眾問題：{question.strip()}")
-        messages.append({"role": "user", "content": "\n\n".join(user_sections)})
+        messages = build_ask_messages(
+            question,
+            context=context,
+            knowledge=knowledge,
+            system_prompt=self._system_prompt,
+        )
+        if os.environ.get("LLM_DEBUG_PROMPT", "").strip().lower() in {"1", "true", "yes", "on"}:
+            analysis = analyze_prompt_payload(
+                question,
+                context=context,
+                knowledge=knowledge,
+                system_prompt=self._system_prompt,
+            )
+            print(
+                "[sub-llm] prompt "
+                f"context_len={analysis['context_len']} "
+                f"knowledge_len={analysis['knowledge_len']} "
+                f"stt={analysis['has_stt_marker']} "
+                f"chat={analysis['has_chat_marker']} "
+                f"static_kb={analysis['has_static_kb_marker']} "
+                f"memory={analysis['has_memory_marker']}",
+                file=sys.stderr,
+                flush=True,
+            )
 
         payload = {
             "model": self._model,
