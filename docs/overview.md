@@ -32,6 +32,8 @@ flowchart LR
 | [references.md](references.md) | 姊妹專案、參考程式碼、Sub/Ingress 對照、twitch_api 遷移 |
 | [references/llm-twitchat.md](references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
 | [use-cases/](use-cases/) | 各產品時序圖 |
+| [architecture/identity-auth.md](architecture/identity-auth.md) | **授權與身分設計**（Helix / 雙帳號 / streamlink） |
+| [architecture/stream-memory-pipeline.md](architecture/stream-memory-pipeline.md) | L1/L2 記憶管線 |
 | [checklists/pub-sub-writing.md](checklists/pub-sub-writing.md) | Pub/Sub 各 package 撰寫清單 |
 
 ## 三種圖表
@@ -51,7 +53,7 @@ flowchart LR
 | **C** | LLM BOT + 雙閘門安全層 | [03-llm-bot.md](use-cases/03-llm-bot.md) |
 | **D** | 虛擬角色（文字+TTS+表情+OBS） | [05-character.md](use-cases/05-character.md) |
 
-橫切：[04-oauth.md](use-cases/04-oauth.md)（產品 B/C/D 需 Twitch 發話/EventSub 時）
+橫切：[04-oauth.md](use-cases/04-oauth.md)（摘要）→ [architecture/identity-auth.md](architecture/identity-auth.md)（完整設計）
 
 ## 架構分層
 

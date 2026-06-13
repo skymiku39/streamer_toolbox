@@ -111,6 +111,8 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `sub-memory-worker` |
 | `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
 
+設計詳見 [architecture/identity-auth.md](architecture/identity-auth.md)。
+
 抽取時機見 [solid.md](solid.md#何時抽共用-package)。
 
 ## Subscriber 模組（`app/src/app/subscribers/`）
