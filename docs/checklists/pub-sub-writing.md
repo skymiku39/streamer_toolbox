@@ -334,7 +334,8 @@ L2 記憶層：定時讀未摘要 chat / stt → 寫 `summaries` 表。實作於
 | 發布 | — |
 | 依賴 | `stream-store` |
 | 設定 | `STREAM_DB_PATH`, `MEMORY_INTERVAL_MINUTES`, `MEMORY_LLM_BACKEND`, `RECORD_MODE` |
-| CLI | `uv run python -m app.workers` / `--once` |
+| CLI | `uv run python -m app.workers` / `--once` / `--trigger` |
+| 觸發 Topic | `memory.summarize.request` → 常駐 worker 立即跑一輪摘要 |
 
 **撰寫清單**
 

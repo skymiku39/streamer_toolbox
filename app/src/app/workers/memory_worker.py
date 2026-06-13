@@ -21,26 +21,26 @@ class MemoryWorker:
         self._config = config
         self._summarizer = summarizer
 
-    def run_once(self) -> int:
-        session_id = self._resolve_session_id()
-        if session_id is None:
+    def run_once(self, *, session_id: str | None = None) -> int:
+        resolved_session_id = session_id or self._resolve_session_id()
+        if resolved_session_id is None:
             print("[memory-worker] no session yet; waiting for records", file=sys.stderr)
             return 0
 
         if self._config.record_mode == "both":
-            return self._summarize_both_aligned(session_id)
+            return self._summarize_both_aligned(resolved_session_id)
 
         processed = 0
         if self._config.include_chat:
             processed += self._summarize_source(
-                session_id,
+                resolved_session_id,
                 source="chat",
                 fetch=self._store.fetch_unsummarized_chat,
                 summarize=self._summarizer.summarize_chat,
             )
         if self._config.include_stt:
             processed += self._summarize_source(
-                session_id,
+                resolved_session_id,
                 source="stt",
                 fetch=self._store.fetch_unsummarized_stt,
                 summarize=self._summarizer.summarize_stt,

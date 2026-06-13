@@ -95,6 +95,7 @@ L2 記憶層的作法：
 | `STREAM_DB_PATH` | `data/stream_text.db` | SQLite 路徑 |
 | `STREAM_SESSION_ID` | （自動） | 可选手動指定場次 ID |
 | `MEMORY_INTERVAL_MINUTES` | `30` | 摘要週期（常駐 worker 每隔幾分鐘執行一次） |
+| `MEMORY_TRIGGER_LISTEN` | `true` | 是否監聽 `memory.summarize.request` 觸發立即摘要 |
 | `MEMORY_LLM_BACKEND` | `template` | `template` 或 `openai`/`gemini` |
 | `STT_*` | 見 `.env.example` | `ingress-twitch-audio` 用 |
 
@@ -103,8 +104,12 @@ L2 記憶層的作法：
 ```powershell
 docker compose up -d
 uv run python -m app.main run ingress-ttv-read ingress-twitch-audio sub-stream-record
-# 另開終端
+# 另開終端（定時 30 分 + MQ 觸發）
 uv run python -m app.workers --llm-backend gemini
+# 需要立即摘要時（另開終端）
+uv run python -m app.workers --trigger
+# 指定 session 觸發
+uv run python -m app.workers --trigger --session-id your_session_id
 ```
 
 `.env` 需設定 `RECORD_MODE=both` 與 `TWITCH_CHANNEL`（STT 與 IRC 共用頻道）。
