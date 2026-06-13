@@ -127,6 +127,13 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 | `LLM_CHROMA_DIR` | Chroma 持久化目錄（`LLM_KNOWLEDGE_BACKEND=chroma` 時） |
 | `LLM_CHROMA_QUERY_LIMIT` | Chroma 每次查詢回傳片段數（預設 3） |
 
+首次啟用 Chroma 時，先將 `config/knowledge/{TWITCH_CHANNEL}.md` 複製到 `data/knowledge/`：
+
+```powershell
+powershell -NoProfile -File scripts/setup_knowledge.ps1
+uv run python scripts/verify_chroma_knowledge.py
+```
+
 LLM 回覆在 `safety.filter_output` 之後會經 `plain_text_for_chat` 去除 Markdown，再截斷長度並發布 `chat.reply`。
 
 **避免連發：** 同一頻道只跑一組 ingress / sub-llm / twitch-connector。系統以兩層防護：
