@@ -13,7 +13,7 @@ from app.module_paths import ensure_legacy_module_paths
 ensure_legacy_module_paths()
 configure_utf8_stdio()
 
-from app.workers.memory_config import MemoryWorkerConfig
+from app.workers.memory_config import DEFAULT_MEMORY_INTERVAL_MINUTES, MemoryWorkerConfig
 from app.workers.memory_summarizer import create_summarizer
 from app.workers.memory_worker import MemoryWorker
 from stream_store import StreamTextStore
@@ -38,7 +38,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--interval-minutes",
         type=int,
-        default=int(os.environ.get("MEMORY_INTERVAL_MINUTES", "5")),
+        default=int(
+            os.environ.get("MEMORY_INTERVAL_MINUTES", str(DEFAULT_MEMORY_INTERVAL_MINUTES))
+        ),
     )
     parser.add_argument(
         "--once",

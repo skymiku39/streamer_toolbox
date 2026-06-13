@@ -94,7 +94,7 @@ L2 記憶層的作法：
 | `RECORD_MODE` | `chat` | `chat` / `stt` / `both` |
 | `STREAM_DB_PATH` | `data/stream_text.db` | SQLite 路徑 |
 | `STREAM_SESSION_ID` | （自動） | 可选手動指定場次 ID |
-| `MEMORY_INTERVAL_MINUTES` | `5` | 摘要週期 |
+| `MEMORY_INTERVAL_MINUTES` | `30` | 摘要週期（常駐 worker 每隔幾分鐘執行一次） |
 | `MEMORY_LLM_BACKEND` | `template` | `template` 或 `openai`/`gemini` |
 | `STT_*` | 見 `.env.example` | `ingress-twitch-audio` 用 |
 
