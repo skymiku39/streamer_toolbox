@@ -206,6 +206,35 @@ class StreamTextStore:
         )
         self._conn.commit()
 
+    def unmark_summarized(self, record_ids: list[int]) -> None:
+        if not record_ids:
+            return
+        placeholders = ",".join("?" for _ in record_ids)
+        self._conn.execute(
+            f"UPDATE text_records SET summarized = 0 WHERE id IN ({placeholders})",
+            record_ids,
+        )
+        self._conn.commit()
+
+    def delete_summary(self, summary_id: int) -> bool:
+        cursor = self._conn.execute(
+            "DELETE FROM summaries WHERE id = ?",
+            (summary_id,),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def relocate_records(self, record_ids: list[int], *, target_session_id: str) -> int:
+        if not record_ids:
+            return 0
+        placeholders = ",".join("?" for _ in record_ids)
+        cursor = self._conn.execute(
+            f"UPDATE text_records SET session_id = ? WHERE id IN ({placeholders})",
+            (target_session_id, *record_ids),
+        )
+        self._conn.commit()
+        return cursor.rowcount
+
     def save_summary(
         self,
         *,

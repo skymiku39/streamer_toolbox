@@ -32,6 +32,8 @@ from app.workers.memory_scheduler import run_scheduled_worker
 
 from app.workers.memory_publisher import create_summary_publisher
 
+from app.workers.memory_summarizer import create_summarizer
+
 from app.workers.memory_trigger import (
 
     MemoryTriggerHandle,

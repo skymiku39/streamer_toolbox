@@ -117,3 +117,50 @@ def test_fetch_unsummarized_filters_by_channel(tmp_path: Path) -> None:
     assert len(room_b) == 1
     assert room_b[0].text == "B only"
     store.close()
+
+
+def test_delete_summary_and_unmark_summarized(tmp_path: Path) -> None:
+    store = StreamTextStore(tmp_path / "test.db")
+    session_id = "sess-1"
+    record_id = store.append_chat(
+        session_id=session_id,
+        channel="room",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="hello",
+        author="u",
+        message_id="m1",
+    )
+    store.mark_summarized([record_id])
+    summary = store.save_summary(
+        session_id=session_id,
+        period_start="2026-06-12T10:00:00+00:00",
+        period_end="2026-06-12T10:00:00+00:00",
+        source="chat",
+        content="summary",
+        record_count=1,
+    )
+    assert store.delete_summary(summary.id)
+    store.unmark_summarized([record_id])
+    assert store.fetch_unsummarized_chat(session_id)
+    store.close()
+
+
+def test_relocate_records(tmp_path: Path) -> None:
+    store = StreamTextStore(tmp_path / "test.db")
+    wrong_session = "room_a_20260612"
+    record_id = store.append_chat(
+        session_id=wrong_session,
+        channel="room_b",
+        timestamp="2026-06-12T10:00:00+00:00",
+        text="misplaced",
+        author="u",
+        message_id="m1",
+    )
+    target = "room_b_20260612"
+    store.ensure_session(target, channel="room_b")
+    assert store.relocate_records([record_id], target_session_id=target) == 1
+    assert not store.fetch_unsummarized_chat(wrong_session, channel="room_b")
+    relocated = store.fetch_unsummarized_chat(target, channel="room_b")
+    assert len(relocated) == 1
+    assert relocated[0].text == "misplaced"
+    store.close()
