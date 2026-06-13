@@ -7,6 +7,7 @@ import sys
 
 from dotenv import load_dotenv
 
+from app.debug_agent_log import agent_debug_log
 from app.processes.registry import register_publisher
 from bus.topology import DEFAULT_EXCHANGE
 
@@ -24,11 +25,38 @@ async def run(channel: str) -> None:
     connection = await connect_async(rabbitmq_url())
     mq_channel = await connection.channel()
     exchange = await declare_topic_exchange(mq_channel, stream_exchange())
-    idempotency = IdempotencyStore(default_idempotency_db_path())
+    dedup_db_path = default_idempotency_db_path()
+    idempotency = IdempotencyStore(dedup_db_path)
 
     async def publish(payload: dict) -> None:
         message_id = str(payload.get("message_id", "")).strip()
-        if message_id and not idempotency.claim(NAMESPACE_CHAT_MESSAGE, message_id):
+        content = str(payload.get("content", "")).strip()
+        is_ask = content.lower().startswith("!ask")
+        if is_ask:
+            claim_ok = (
+                idempotency.claim(NAMESPACE_CHAT_MESSAGE, message_id)
+                if message_id
+                else True
+            )
+            agent_debug_log(
+                "ingress_ttv_read/__main__.py:publish",
+                "ingress !ask publish attempt",
+                {
+                    "message_id": message_id,
+                    "author": payload.get("author_name", ""),
+                    "dedup_db": dedup_db_path,
+                    "claim_ok": claim_ok,
+                },
+                hypothesis_id="H1",
+            )
+            if message_id and not claim_ok:
+                print(
+                    f"skip duplicate chat.message message_id={message_id[:8]}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return
+        elif message_id and not idempotency.claim(NAMESPACE_CHAT_MESSAGE, message_id):
             print(
                 f"skip duplicate chat.message message_id={message_id[:8]}",
                 file=sys.stderr,
@@ -36,12 +64,18 @@ async def run(channel: str) -> None:
             )
             return
         await publish_topic(exchange, TOPIC_CHAT_MESSAGE, payload)
-        message_id = payload.get("message_id", "")[:8]
+        message_id_short = payload.get("message_id", "")[:8]
         author = payload.get("author_name", "")
         ch = payload.get("channel", "")
-        content = str(payload.get("content", "")).strip()
         preview = content if len(content) <= 60 else f"{content[:57]}..."
-        print(f"published {message_id} #{ch} {author}: {preview}", flush=True)
+        if is_ask:
+            agent_debug_log(
+                "ingress_ttv_read/__main__.py:publish",
+                "ingress !ask published to MQ",
+                {"message_id": str(payload.get("message_id", "")), "channel": ch},
+                hypothesis_id="H1",
+            )
+        print(f"published {message_id_short} #{ch} {author}: {preview}", flush=True)
 
     print(
         f"Listening to #{channel.lstrip('#')} via ttvchat_lens (anonymous IRC)",

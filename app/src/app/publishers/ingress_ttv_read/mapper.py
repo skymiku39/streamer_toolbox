@@ -20,9 +20,8 @@ _SKIP_MESSAGE_TYPES = frozenset(
 
 
 def _fallback_message_id(msg: ChatMessage, channel: str) -> str:
-    base = (
-        f"{channel}:{msg.message_type}:{msg.author_id}:{msg.timestamp.isoformat()}:{msg.message}"
-    )
+    """Stable fallback when IRC lacks ``id`` tag (must not include timestamp)."""
+    base = f"{channel}:{msg.message_type}:{msg.author_id}:{msg.message}"
     digest = hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
     return f"irc-{digest}"
 

@@ -15,6 +15,8 @@ from events import (
 )
 from stream_store.idempotency import IdempotencyStore
 
+from app.debug_agent_log import agent_debug_log
+
 from twitch_connector.dispatcher import ChatReplyDispatcher, UnsupportedPlatformError
 from twitch_connector.twitch_sender import TwitchSendError
 
@@ -48,10 +50,23 @@ class ReplySubscriber:
             return
 
         dedup_key = self._dedup_key(event)
-        if self._idempotency is not None and dedup_key and not self._idempotency.claim(
-            NAMESPACE_CHAT_REPLY,
-            dedup_key,
-        ):
+        claim_ok = True
+        if self._idempotency is not None and dedup_key:
+            claim_ok = self._idempotency.claim(NAMESPACE_CHAT_REPLY, dedup_key)
+        agent_debug_log(
+            "twitch_connector/subscriber.py:handle",
+            "connector chat.reply dispatch attempt",
+            {
+                "dedup_key": dedup_key,
+                "claim_ok": claim_ok,
+                "source": event.source,
+                "correlation_id": event.correlation_id,
+                "content_preview": event.content[:80],
+                "dedup_db": str(getattr(self._idempotency, "path", "")),
+            },
+            hypothesis_id="H3",
+        )
+        if self._idempotency is not None and dedup_key and not claim_ok:
             print(
                 f"skip duplicate chat.reply key={dedup_key[:24]}",
                 file=sys.stderr,
@@ -63,6 +78,16 @@ class ReplySubscriber:
         for attempt in range(1, self._max_retries + 1):
             try:
                 self._dispatcher.dispatch(event)
+                agent_debug_log(
+                    "twitch_connector/subscriber.py:handle",
+                    "connector sent chat.reply",
+                    {
+                        "dedup_key": dedup_key,
+                        "source": event.source,
+                        "correlation_id": event.correlation_id,
+                    },
+                    hypothesis_id="H5",
+                )
                 print(
                     f"sent #{event.channel} ({event.source}): {event.content[:80]}",
                     flush=True,

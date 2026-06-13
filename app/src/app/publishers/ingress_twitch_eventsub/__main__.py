@@ -15,9 +15,12 @@ from identity_oauth import MultiAccountTokenProvider
 from ingress_twitch_eventsub.bot import EventSubIngressBot
 from ingress_twitch_eventsub.publisher import MqEventPublisher
 from bus.config import rabbitmq_url, stream_exchange
-from bus.rabbitmq import connect_async, declare_topic_exchange
+from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
+from events import TOPIC_CHAT_MESSAGE
+from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
 PROCESS_NAME = "ingress-twitch-eventsub"
+NAMESPACE_CHAT_MESSAGE = "ingress.chat.message"
 logger = logging.getLogger(PROCESS_NAME)
 
 
@@ -47,7 +50,21 @@ async def run(channel: str) -> None:
     connection = await connect_async(rabbitmq_url())
     mq_channel = await connection.channel()
     exchange = await declare_topic_exchange(mq_channel, stream_exchange())
-    publisher = MqEventPublisher(exchange)
+    dedup_db_path = default_idempotency_db_path()
+    idempotency = IdempotencyStore(dedup_db_path)
+
+    async def publish_chat(payload: dict) -> None:
+        message_id = str(payload.get("message_id", "")).strip()
+        if message_id and not idempotency.claim(NAMESPACE_CHAT_MESSAGE, message_id):
+            print(
+                f"skip duplicate chat.message message_id={message_id[:8]}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return
+        await publish_topic(exchange, TOPIC_CHAT_MESSAGE, payload)
+
+    publisher = MqEventPublisher(exchange, publish_chat=publish_chat)
 
     normalized_channel = channel.lstrip("#")
     bot = EventSubIngressBot(
@@ -72,6 +89,7 @@ async def run(channel: str) -> None:
     try:
         await bot.start()
     finally:
+        idempotency.close()
         if connection.is_closed is False:
             await connection.close()
 

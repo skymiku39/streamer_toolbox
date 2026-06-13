@@ -15,13 +15,21 @@ from sub_llm.knowledge import EmptyKnowledgeStore
 from sub_llm.llm import TemplateLlmClient
 
 
-def _chat_payload(content: str, *, channel: str = "demo_channel") -> dict:
+def _chat_payload(
+    content: str,
+    *,
+    channel: str = "demo_channel",
+    message_id: str = "msg-1",
+    author_name: str = "viewer",
+    author_id: str | None = "viewer-id",
+) -> dict:
     return ChatMessageEvent(
         schema_version=1,
         topic=TOPIC_CHAT_MESSAGE,
         platform="twitch",
-        message_id="msg-1",
-        author_name="viewer",
+        message_id=message_id,
+        author_name=author_name,
+        author_id=author_id,
         content=content,
         timestamp="2026-06-12T17:00:00+08:00",
         channel=channel,
@@ -205,6 +213,31 @@ def test_duplicate_message_id_is_ignored(tmp_path) -> None:
     payload = _chat_payload("!ask 重複測試")
     subscriber.handle(payload)
     subscriber.handle(payload)
+
+    assert llm.calls == 1
+    assert len(published) == 1
+    store.close()
+
+
+def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -> None:
+    from stream_store.idempotency import IdempotencyStore
+
+    published: list[tuple[str, dict]] = []
+    llm = _CountingLlmClient()
+    store = IdempotencyStore(tmp_path / "dedup.db")
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=SttContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        idempotency=store,
+    )
+
+    subscriber.handle(_chat_payload("!ask 同一題", message_id="msg-a"))
+    subscriber.handle(_chat_payload("!ask 同一題", message_id="msg-b"))
 
     assert llm.calls == 1
     assert len(published) == 1

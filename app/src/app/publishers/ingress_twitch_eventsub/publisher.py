@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Protocol
 
 from aio_pika import Exchange
@@ -18,11 +19,21 @@ class EventPublisher(Protocol):
 
 
 class MqEventPublisher:
-    def __init__(self, exchange: Exchange) -> None:
+    def __init__(
+        self,
+        exchange: Exchange,
+        *,
+        publish_chat: Callable[[dict], Awaitable[None]] | None = None,
+    ) -> None:
         self._exchange = exchange
+        self._publish_chat = publish_chat
 
     async def publish_chat(self, event: ChatMessageEvent) -> None:
-        await publish_topic(self._exchange, event.topic, event.to_dict())
+        payload = event.to_dict()
+        if self._publish_chat is not None:
+            await self._publish_chat(payload)
+        else:
+            await publish_topic(self._exchange, event.topic, payload)
         logger.info(
             "published chat.message %s #%s %s",
             event.message_id[:8],

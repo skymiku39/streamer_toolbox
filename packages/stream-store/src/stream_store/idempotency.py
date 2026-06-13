@@ -20,11 +20,12 @@ CREATE INDEX IF NOT EXISTS idx_idempotency_claimed_at
 
 
 def default_idempotency_db_path() -> str:
-    return (
+    raw = (
         os.environ.get("EVENT_DEDUP_DB_PATH")
         or os.environ.get("STREAM_DB_PATH")
         or "data/stream_text.db"
     )
+    return str(Path(raw).expanduser().resolve())
 
 
 class IdempotencyStore:

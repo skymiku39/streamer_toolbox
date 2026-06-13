@@ -116,6 +116,23 @@ def test_missing_message_id_generates_fallback() -> None:
     assert event.message_id.startswith("irc-")
 
 
+def test_fallback_message_id_is_stable_without_timestamp() -> None:
+    early = _text_message(
+        message_id="",
+        message="!ask 測試",
+        timestamp=datetime(2026, 6, 12, 9, 0, 0, tzinfo=UTC),
+    )
+    late = _text_message(
+        message_id="",
+        message="!ask 測試",
+        timestamp=datetime(2026, 6, 12, 9, 5, 0, tzinfo=UTC),
+    )
+    first = map_chat_message(early, "skymiku39")
+    second = map_chat_message(late, "skymiku39")
+    assert first is not None and second is not None
+    assert first.message_id == second.message_id
+
+
 def test_empty_author_name_falls_back_to_anonymous() -> None:
     msg = _text_message(author_name="")
     event = map_chat_message(msg, "skymiku39")
