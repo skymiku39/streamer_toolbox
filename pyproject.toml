@@ -58,6 +58,7 @@ known-first-party = [
     "identity_oauth",
     "ingress_discord",
     "ingress_ttv_read",
+    "ingress_local_audio",
     "ingress_twitch_audio",
     "ingress_twitch_eventsub",
     "ingress_yt_read",

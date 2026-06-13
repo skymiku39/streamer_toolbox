@@ -15,6 +15,7 @@ dependencies = [
     "pika>=1.3.0",
     "python-dotenv>=1.0.0",
     "safety",
+    "sounddevice>=0.5.0",
     "stream-store",
     "streamlink>=7.0.0",
     "ttvchat-lens",
