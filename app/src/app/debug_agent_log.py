@@ -6,7 +6,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-_DEBUG_LOG = Path(__file__).resolve().parents[3] / "debug-7e40df.log"
+_DEBUG_LOG = Path(os.environ.get("DEBUG_LOG_PATH", "debug-7e40df.log")).expanduser()
+if not _DEBUG_LOG.is_absolute():
+    _DEBUG_LOG = (Path.cwd() / _DEBUG_LOG).resolve()
 _SESSION_ID = "7e40df"
 
 

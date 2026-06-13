@@ -18,6 +18,7 @@ from app.processes.chat_ingress import (
     IRC_FALLBACK_PROCESS,
     parse_chat_ingress_status,
 )
+from app.processes.process_lock import acquire, locked_names, release
 from app.processes.registry import registry
 
 SHUTDOWN_TIMEOUT_SECONDS = 10
@@ -55,6 +56,9 @@ def _start_process(
         bufsize=1,
         env=utf8_subprocess_env(legacy_pythonpath_env()),
     )
+    if not acquire(spec.name, process.pid):
+        process.terminate()
+        raise RuntimeError(f"failed to acquire process lock for {spec.name}")
     thread = threading.Thread(
         target=_prefix_stream,
         args=(process.stdout, spec.name, sys.stdout),
@@ -173,6 +177,24 @@ def run_processes(
         chat_fallback=chat_fallback,
     )
 
+    planned_specs: list[ProcessSpec] = list(remaining_specs)
+    if eventsub_spec is not None:
+        planned_specs.append(eventsub_spec)
+    if fallback_spec is not None:
+        planned_specs.append(fallback_spec)
+    already_running = locked_names([spec.name for spec in planned_specs])
+    if already_running:
+        print(
+            "[runner] 以下 process 已在執行中，請先停止後再啟動："
+            f" {', '.join(already_running)}",
+            file=sys.stderr,
+        )
+        print(
+            "[runner] 可執行：powershell -File scripts/stop_all.ps1",
+            file=sys.stderr,
+        )
+        return 1
+
     processes: list[tuple[ProcessSpec, subprocess.Popen[str]]] = []
     shutdown_requested = False
     exit_code = 0
@@ -186,11 +208,12 @@ def run_processes(
             if process.poll() is None:
                 print(f"[runner] Stopping {spec.name}...", file=sys.stderr)
                 process.terminate()
-        for _, process in processes:
+        for spec, process in processes:
             try:
                 process.wait(timeout=SHUTDOWN_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
                 process.kill()
+            release(spec.name, process.pid)
 
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
@@ -212,7 +235,12 @@ def run_processes(
             processes.append((fallback_spec, fallback_process))
 
     for spec in remaining_specs:
-        processes.append((spec, _start_process(spec)))
+        try:
+            processes.append((spec, _start_process(spec)))
+        except RuntimeError as exc:
+            print(f"[runner] {exc}", file=sys.stderr)
+            shutdown()
+            return 1
 
     while processes:
         if shutdown_requested:
@@ -227,6 +255,7 @@ def run_processes(
             return_code = process.poll()
             if return_code is None:
                 continue
+            release(spec.name, process.pid)
             if return_code != 0:
                 print(
                     f"[runner] Process {spec.name} exited with code {return_code}",
