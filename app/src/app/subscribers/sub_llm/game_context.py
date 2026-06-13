@@ -6,29 +6,6 @@ from game_info import GameInfoProvider, IgdbGameInfoProvider, format_game_info_f
 
 from sub_llm.context_buffer import LiveContextBuffer
 
-_GAME_QUESTION_MARKERS = (
-    "遊戲",
-    "玩什麼",
-    "在玩",
-    "好玩",
-    "評分",
-    "分數",
-    "評價",
-    "介紹",
-    "劇情",
-    "類型",
-    "哪款",
-    "什麼遊戲",
-    "哪個遊戲",
-    "這遊戲",
-    "這款",
-    "game",
-    "rating",
-    "review",
-    "metacritic",
-    "steam",
-)
-
 _NON_GAME_CATEGORIES = frozenset(
     {
         "just chatting",
@@ -73,15 +50,15 @@ def is_playable_game_category(game_name: str) -> bool:
 
 
 def should_enrich_game_context(question: str, game_name: str) -> bool:
-    """判斷是否應附加遊戲評分／簡介到 prompt。"""
+    """判斷是否應附加遊戲評分／簡介到 prompt。
+
+    直播中且為可玩遊戲分類時一律附加，讓 LLM 回答任何問題時都能參考正在玩的遊戲背景。
+    """
+    del question
     normalized_game = game_name.strip()
     if not normalized_game or not is_playable_game_category(normalized_game):
         return False
-    lowered_question = question.lower()
-    game_lower = normalized_game.lower()
-    if game_lower in lowered_question:
-        return True
-    return any(marker in lowered_question for marker in _GAME_QUESTION_MARKERS)
+    return True
 
 
 def resolve_live_game_name(context_buffer: LiveContextBuffer, channel: str) -> str | None:
