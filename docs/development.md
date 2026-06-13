@@ -47,15 +47,20 @@ uv run pytest
 uv run ruff check .
 ```
 
-## Pre-commit（秘密與執行期資料掃描）
+## Pre-commit（秘密、執行期資料與 commit 格式）
 
-初次設定後，每次 `git commit` 會自動執行 gitleaks 與 runtime 檔案阻擋（`.env`、`data/`、`*.db` 等）：
+初次設定後，每次 `git commit` 會自動執行：
+
+- gitleaks 與 runtime 檔案阻擋（`.env`、`data/`、`*.db` 等）
+- **commit 訊息格式**（僅允許 `type: emoji [AI] subject`）
 
 ```powershell
 uv sync
 uv run pre-commit install
 uv run pre-commit run --all-files
 ```
+
+commit 訊息範例：`feat: ✨ [AI] 新增 ingress-twitch-stream 並餵入 sub-llm 直播 metadata`
 
 ## 憑證輪替（隱私事件後建議）
 
@@ -121,7 +126,14 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 | `LLM_BACKEND` | `template` / `openai` / `gemini` |
 | `LLM_MAX_REPLY_LENGTH` | 回覆字元上限（預設 500） |
 | `LLM_SYSTEM_PROMPT` | 系統提示；預設要求勿用 Markdown，以純文字短句回覆 |
-| `LLM_CONTEXT_WINDOW_MINUTES` | STT 上下文時間窗（分鐘） |
+| `LLM_CONTEXT_WINDOW_MINUTES` | STT / 聊天短期上下文（分鐘，預設 **15**） |
+| `LLM_BOT_REPLY_WINDOW_MINUTES` | Bot 近期問答 buffer 時間窗（預設 30；**不寫入 RAG**） |
+| `LLM_BOT_REPLY_MAX_PAIRS` | Bot 近期問答保留則數（預設 5） |
+| `LLM_MEMORY_FROM_DB` | 是否啟用 L2 摘要 Chroma RAG（`kb_memory`，預設 `true`） |
+| `LLM_MEMORY_SUMMARY_LIMIT` | 同步至 Chroma 的摘要筆數上限 |
+| `LLM_STARTUP_ANNOUNCEMENT` | 程序啟動是否發 LLM 問候至聊天室（預設 `true`） |
+| `LLM_GAME_INFO_ENABLED` | 直播中是否注入 IGDB 遊戲資料（預設 `true`） |
+| `LLM_GAME_INFO_CACHE_TTL_SECONDS` | IGDB 查詢快取秒數（預設 3600） |
 | `LLM_KNOWLEDGE_PATH` | 知識庫檔案或目錄（可選） |
 | `LLM_KNOWLEDGE_BACKEND` | 知識庫後端，**僅支援 `chroma`**（Chroma 向量 RAG；`file` 關鍵字後端已停用） |
 | `LLM_CHROMA_DIR` | Chroma 持久化目錄（靜態知識 + L2 摘要向量索引） |
@@ -211,6 +223,7 @@ streamer_toolbox/
 │   ├── identity-oauth/
 │   ├── safety/              # 原 pkg-safety
 │   ├── stream-store/        # 原 pkg-stream-store
+│   ├── game-info/           # IGDB 遊戲資料
 │   └── tts/                 # 原 pkg-tts
 ├── config/
 ├── docs/

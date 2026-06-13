@@ -42,6 +42,16 @@ sequenceDiagram
     MQ->>Send: subscribe chat.reply
 ```
 
+## 上下文與記憶（已實作）
+
+`sub-llm` 組裝 prompt 時合併多層來源（詳見 [stream-memory-pipeline.md](../architecture/stream-memory-pipeline.md)）：
+
+1. **短期 buffer**：`stream.metadata`、STT、聊天、`Bot 近期問答`（不進 RAG）
+2. **Chroma RAG**：靜態知識 + L2 摘要
+3. **IGDB**：直播中可玩遊戲分類時注入遊戲資料
+
+啟動時若 Gemini 推理端點失敗，仍發布降級宣告（Degraded Mode）。
+
 ## 雙閘門
 
 | 閘門 | 檢查 |

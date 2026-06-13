@@ -108,7 +108,8 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `bus` | `packages/bus/` | `EventBus` Protocol；RabbitMQ adapter | `events` | ingress、所有 sub、app |
 | `tts` | `packages/tts/` | `TtsEngine` Protocol；SAPI5 實作 | 無平台依賴 | `sub-tts`, `sub-character-voice` |
 | `safety` | `packages/safety/` | `SafetyFilter` Protocol；輸入/輸出實作 | `events` | `sub-llm`, `sub-character-brain` |
-| `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `sub-memory-worker` |
+| `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `app.workers`, `sub-llm` RAG |
+| `game-info` | `packages/game-info/` | IGDB 遊戲評分／簡介查詢 | 無 | `sub-llm`（直播中注入 prompt） |
 | `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
 
 設計詳見 [architecture/identity-auth.md](architecture/identity-auth.md)。

@@ -6,7 +6,7 @@
 |------|------|------|
 | 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
 | 應用層 | `app/` | Pub/Sub 程序編排（`streamer-app`） |
-| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stream-store`、`tts`、`identity-oauth` |
+| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stream-store`、`tts`、`identity-oauth`、`game-info` |
 
 ## 快速開始（開發）
 

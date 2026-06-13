@@ -107,7 +107,7 @@
 | `sub-visual` | `chat.message` | — | ○ | ○ | — |
 | `sub-tts` | `chat.message` | — | ○ | ○ | — |
 | `sub-bot-logic` | `chat.message`, `eventsub.*` | — | ● | ● | — |
-| `sub-llm` | `chat.message`, `stt.segment` | — | — | ● | — |
+| `sub-llm` | `chat.message`, `stt.segment`, `stream.metadata` | — | — | ● | — |
 | `sub-io-log` | `chat.message`（診斷） | ○ | ○ | ○ | ○ |
 | `sub-character-brain` | `chat.message` | — | — | — | ● |
 | `sub-character-voice` | `character.turn` | — | — | — | ● |
@@ -124,7 +124,7 @@
 A: ingress-read → MQ → sub-show
 B: oauth → ingress-eventsub → MQ → sub-bot → connector
    （降級: ingress-ttv-read 取代 eventsub）
-C: B + ingress-twitch-audio + sub-llm
+C: B + ingress-twitch-audio + ingress-twitch-stream + sub-llm + twitch-connector
 D: ingress → MQ → character-brain → character.turn → (voice + face) → stage → OBS
    可選: brain → chat.reply → connector；可選: sub-show 顯示彈幕
 ```

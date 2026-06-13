@@ -1,16 +1,16 @@
 # 直播文字記錄與記憶管線
 
-聊天室觸發問答（指令層）與 Web UI **不在本階段範圍**。本文件描述四層架構，並標記目前實作進度。
+聊天室觸發問答（`!ask`）與 Memory Board Web UI 已接入；本文件描述 L0～L4 資料流與記憶分層。
 
 ## 四層架構
 
 | 層 | 路徑 | 職責 | 狀態 |
 |----|------|------|------|
 | L0 Ingress | `app/publishers/` | 讀平台 → publish MQ | 已有 |
-| L1 記錄 | `app/subscribers/stream_record.py` | `chat.message` / `stt.segment` → SQLite | **Phase 2** |
-| L2 記憶 | `app/workers/` | 定期摘要 → `summaries` 表 | **Phase 2** |
-| L3 指令 | （規劃） | `!ask` → 查 DB/RAG → LLM → `chat.reply` | 未實作 |
-| L4 LLM | （規劃） | 無狀態推理 | 未實作 |
+| L1 記錄 | `app/subscribers/stream_record.py` | `chat.message` / `stt.segment` → SQLite | **已實作** |
+| L2 記憶 | `app/workers/` | 定期摘要 → `summaries` 表 → Chroma `kb_memory` | **已實作** |
+| L3 指令 | `app/subscribers/sub_llm/` | `!ask` → RAG/IGDB 上下文 → LLM → `chat.reply` | **已實作** |
+| L4 LLM | `sub_llm/llm.py` | 無狀態推理（template / openai / gemini） | **已實作** |
 
 共用持久化：`stream-store`（`packages/stream-store/`，SQLite schema + CRUD）。
 
@@ -20,11 +20,34 @@
 flowchart LR
     IRC["ingress-ttv-read"] -->|chat.message| MQ[("RabbitMQ")]
     Audio["ingress-twitch-audio"] -->|stt.segment| MQ
-    MQ --> Rec["app.subscribers.stream_record"]
+    Meta["ingress-twitch-stream"] -->|stream.metadata| MQ
+    MQ --> Rec["sub-stream-record"]
     Rec --> DB[("stream-store<br/>SQLite")]
     Worker["app.workers<br/>定時"] --> DB
     Worker --> Sum[("summaries 表")]
+    Sum -.同步.-> Chroma[("Chroma kb_memory")]
+    MQ --> LLM["sub-llm"]
+    StaticKB["data/knowledge"] -.upsert.-> ChromaGlobal[("Chroma kb_global")]
+    Chroma --> LLM
+    ChromaGlobal --> LLM
+    LLM -->|chat.reply| MQ
 ```
+
+## L3 問答上下文（`sub-llm`）
+
+| 來源 | 機制 | 時間尺度 |
+|------|------|----------|
+| 直播狀態 | 訂閱 `stream.metadata` → 記憶體 buffer | 最新一筆 |
+| STT 逐字稿 | 訂閱 `stt.segment` | `LLM_CONTEXT_WINDOW_MINUTES`（預設 15） |
+| 聊天室 | 訂閱 `chat.message`（跳過 `TWITCH_BOT_ID`） | 同上 |
+| Bot 近期問答 | 程序內 buffer（問答成對，**不寫入 RAG**） | `LLM_BOT_REPLY_WINDOW_MINUTES`（預設 30），最多 `LLM_BOT_REPLY_MAX_PAIRS` 則 |
+| 靜態知識 | Chroma `kb_global` ← `LLM_KNOWLEDGE_PATH` | 向量 RAG |
+| 直播摘要 | Chroma `kb_memory` ← SQLite `summaries` | 向量 RAG，依 `period_end` 由新到舊 |
+| 遊戲資料 | `packages/game-info`（IGDB，直播中可玩分類時注入） | API + 快取 |
+
+Prompt 來源優先順序（`LLM_SYSTEM_PROMPT`）：**直播狀態 > 逐字稿/聊天 > Bot 近期問答 > 遊戲資料 > 知識庫摘要**。
+
+啟動時若 LLM 推理端點不可用，仍發布降級宣告至 `chat.reply`（Degraded Mode 說明）；詳見 `sub_llm/startup_announcement.py`。
 
 ## `RECORD_MODE`
 
@@ -107,8 +130,11 @@ L2 記憶層的作法：
 
 ```powershell
 docker compose up -d
-uv run python -m app.main run ingress-ttv-read ingress-twitch-audio sub-stream-record
-# 另開終端（定時 30 分 + MQ 觸發）
+# 終端 1：ingress（含 stream.metadata）
+uv run python -m app.main run --stack ingress
+# 終端 2：LLM + connector
+uv run python -m app.main run --stack llm
+# 終端 3：L2 摘要 worker（定時 30 分 + MQ 觸發）
 uv run python -m app.workers --llm-backend gemini
 # 需要立即摘要時（另開終端）
 uv run python -m app.workers --trigger
@@ -121,6 +147,4 @@ uv run python -m app.main run sub-memory-board
 # 瀏覽器開 http://127.0.0.1:8765/
 ```
 
-`.env` 需設定 `RECORD_MODE=both` 與 `TWITCH_CHANNEL`（STT 與 IRC 共用頻道）。
-
-指令層待 OAuth 就緒後再接。
+`.env` 需設定 `RECORD_MODE=both` 與 `TWITCH_CHANNEL`（STT 與 IRC 共用頻道）。`!ask` 需同時跑 `--stack ingress` 與 `--stack llm`（含 `twitch-connector`）。

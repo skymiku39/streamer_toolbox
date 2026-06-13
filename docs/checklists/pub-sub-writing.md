@@ -467,25 +467,30 @@ L2 摘要檢視：本機 HTTP Board + 可選訂閱 `memory.summary.ready` 刷新
 
 ### `sub-llm` ✅
 
-LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini` 與 `FileKnowledgeStore` / `ChromaKnowledgeStore`。
+LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini`；知識庫**僅** `LLM_KNOWLEDGE_BACKEND=chroma`（`ChromaKnowledgeStore` + `ChromaSummaryKnowledgeStore`；`file` 後端已停用）。
 
 | 項目 | 內容 |
 |------|------|
-| 訂閱 | `chat.message`, `stt.segment` |
+| 訂閱 | `chat.message`, `stt.segment`, `stream.metadata` |
 | 發布 | `chat.reply` |
-| 依賴 | `events`, `bus`, `safety`（雙閘門） |
+| 依賴 | `events`, `bus`, `safety`, `stream-store`（RAG 同步）, `game-info`（IGDB，可選） |
 | 參考 | [`llm_twitchat`](../../llm_twitchat) `services/stream_session.py`, `memory/knowledge.py` |
 
 **撰寫清單**
 
-- [x] 觸發條件（如 `!ask`、redemption）可配置
-- [x] 訂閱 `stt.segment` 累積時間窗上下文（不內嵌 streamlink）
-- [x] 知識庫 / RAG 留於本 Sub 內部（`FileKnowledgeStore` 輕量版；`ChromaKnowledgeStore` 向量版）
+- [x] 觸發條件（如 `!ask`）可配置
+- [x] 訂閱 `stt.segment`、`chat.message` 累積短期上下文（`LiveContextBuffer`）
+- [x] 訂閱 `stream.metadata` 注入直播狀態（需 `--stack ingress`）
+- [x] Bot 近期問答 buffer（問答成對，不寫入 Chroma，避免自我污染）
+- [x] Chroma RAG：靜態知識（`kb_global`）+ L2 摘要（`kb_memory`，依 `period_end` 排序）
+- [x] 直播中 IGDB 遊戲資料注入（`packages/game-info`）
+- [x] 啟動宣告：LLM 成功則問候；失敗則降級模式（Degraded Mode）專業說明
 - [x] 輸入閘門：`safety` 過濾觀眾輸入與 STT 片段
 - [x] LLM 呼叫抽象（Protocol），不綁死 Gemini（`OpenAiCompatibleLlmClient`）
 - [x] 輸出閘門：幻覺 / 敏感詞過濾後才 `publish chat.reply`
 - [x] 輸出格式化：`plain_text_for_chat` 去除 Markdown（粗體、連結、程式碼等），配合 `LLM_SYSTEM_PROMPT` 引導 LLM 輸出純文字
 - [x] `source: logic-llm`；經 `twitch-connector` 發話，不內嵌 Helix API
+- [x] 程序單例鎖（`data/process-locks/`）+ SQLite 冪等去重
 - [x] 不與 `sub-bot-logic` 共用程式碼，僅共用 topic
 - [x] 單元測試：mock LLM + safety → reply payload
 
