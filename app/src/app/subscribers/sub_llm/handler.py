@@ -75,6 +75,14 @@ class LlmSubscriber:
     def _handle_stream_metadata(self, payload: dict[str, Any]) -> None:
         event = StreamMetadataEvent.from_dict(payload)
         self._context_buffer.update_stream_metadata(event)
+        game = event.game_name or "-"
+        title_preview = (event.title or "-")[:40]
+        print(
+            f"[sub-llm] stream.metadata live={event.is_live} "
+            f"game={game} title={title_preview}",
+            file=sys.stderr,
+            flush=True,
+        )
 
     def _handle_stt_segment(self, payload: dict[str, Any]) -> None:
         event = SttSegmentEvent.from_dict(payload)
@@ -132,6 +140,14 @@ class LlmSubscriber:
                 file=sys.stderr,
                 flush=True,
             )
+            if not has_stream:
+                print(
+                    "[sub-llm] 警告：尚無 stream.metadata。"
+                    "請在另一終端執行 "
+                    "`uv run python -m app.main run --stack ingress`",
+                    file=sys.stderr,
+                    flush=True,
+                )
             knowledge = self._knowledge.query(filtered_question, channel=channel)
             raw_reply = self._llm.ask(
                 filtered_question,

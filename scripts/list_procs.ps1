@@ -36,6 +36,7 @@ Write-Output "--- Total $total ---"
 $keyModules = @(
     'ingress_ttv_read',
     'ingress_twitch_audio',
+    'ingress_twitch_stream',
     'sub_llm',
     'twitch_connector',
     'stream_record',

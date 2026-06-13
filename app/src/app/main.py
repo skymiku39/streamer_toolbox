@@ -11,6 +11,7 @@ configure_utf8_stdio()
 
 from app.processes.registry import registry
 from app.processes.runner import run_processes
+from app.processes.stacks import PROCESS_STACKS, resolve_stack
 from app.publishers import discover_publishers
 from app.subscribers import discover_subscribers
 
@@ -42,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
     group = run_parser.add_mutually_exclusive_group()
     group.add_argument("--publishers", action="store_true", help="Run all publishers")
     group.add_argument("--subscribers", action="store_true", help="Run all subscribers")
+    stack_names = ", ".join(sorted(PROCESS_STACKS))
+    group.add_argument(
+        "--stack",
+        choices=sorted(PROCESS_STACKS),
+        help=f"Run a predefined process set ({stack_names})",
+    )
 
     return parser
 
@@ -67,18 +74,37 @@ def cmd_list() -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    if args.publishers:
-        specs = registry.all_publishers()
-    elif args.subscribers:
-        specs = registry.all_subscribers()
-    elif args.names:
+    if args.stack:
         try:
-            specs = registry.resolve(args.names)
+            names = resolve_stack(args.stack)
         except KeyError as exc:
             print(exc, file=sys.stderr)
             return 1
+    elif args.publishers:
+        specs = registry.all_publishers()
+        return run_processes(specs, chat_fallback=args.chat_fallback)
+    elif args.subscribers:
+        specs = registry.all_subscribers()
+        return run_processes(specs, chat_fallback=args.chat_fallback)
+    elif args.names:
+        names = list(args.names)
     else:
         specs = registry.all_processes()
+        return run_processes(specs, chat_fallback=args.chat_fallback)
+
+    try:
+        specs = registry.resolve(names)
+    except KeyError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+
+    if args.stack == "llm":
+        print(
+            "[runner] 提示：sub-llm 需搭配終端 1 執行 "
+            "`uv run python -m app.main run --stack ingress` "
+            "才會收到 stream.metadata（標題／遊戲）。",
+            file=sys.stderr,
+        )
 
     if not specs:
         print("No matching processes found.", file=sys.stderr)

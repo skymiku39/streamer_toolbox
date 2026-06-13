@@ -155,11 +155,11 @@ powershell -NoProfile -File scripts/stop_all.ps1
 關閉服務請用 **Ctrl+C**，不要直接關終端視窗。建議固定兩個終端：
 
 ```powershell
-# 終端 1
-uv run python -m app.main run ingress-ttv-read ingress-twitch-audio ingress-twitch-stream sub-stream-record
+# 終端 1（ingress 含 stream.metadata）
+uv run python -m app.main run --stack ingress
 
-# 終端 2
-uv run python -m app.main run sub-llm twitch-connector
+# 終端 2（LLM + connector）
+uv run python -m app.main run --stack llm
 ```
 
 跨 process 去重自測（Windows 請用腳本，勿用 `multiprocessing.Pool` 搭配 `python -c`）：
