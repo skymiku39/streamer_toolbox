@@ -80,11 +80,16 @@ def main() -> int:
 
     report: dict = {
         "channel": channel,
-        "backend": os.environ.get("LLM_KNOWLEDGE_BACKEND"),
+        "backend": os.environ.get("LLM_KNOWLEDGE_BACKEND", "chroma"),
         "memory_from_db": os.environ.get("LLM_MEMORY_FROM_DB"),
         "buffer_stats": {"stt": stt_count, "chat": chat_count, "context_len": context_len},
         "scenarios": [],
     }
+
+    backend = (report["backend"] or "chroma").strip().lower()
+    if backend != "chroma":
+        print(f"[verify] ERROR: LLM_KNOWLEDGE_BACKEND 必須為 chroma（RAG），目前為 {backend!r}", file=sys.stderr)
+        return 1
 
     all_ok = True
     for question, label in scenarios:

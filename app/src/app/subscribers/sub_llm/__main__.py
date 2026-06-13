@@ -128,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT} "
-        f"(backend={args.llm_backend!r}, triggers={config.trigger_prefixes!r})",
+        f"(backend={args.llm_backend!r}, knowledge=RAG/chroma, triggers={config.trigger_prefixes!r})",
         file=sys.stderr,
         flush=True,
     )

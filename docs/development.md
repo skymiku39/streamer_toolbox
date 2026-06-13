@@ -123,10 +123,10 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 | `LLM_SYSTEM_PROMPT` | 系統提示；預設要求勿用 Markdown，以純文字短句回覆 |
 | `LLM_CONTEXT_WINDOW_MINUTES` | STT 上下文時間窗（分鐘） |
 | `LLM_KNOWLEDGE_PATH` | 知識庫檔案或目錄（可選） |
-| `LLM_KNOWLEDGE_BACKEND` | 靜態知識庫後端：`file`（關鍵字）或 `chroma`（向量 RAG） |
-| `LLM_CHROMA_DIR` | Chroma 持久化目錄（`LLM_KNOWLEDGE_BACKEND=chroma` 時） |
-| `LLM_CHROMA_QUERY_LIMIT` | 靜態知識庫 Chroma 查詢片段數（預設 3） |
-| `LLM_CHROMA_MEMORY_QUERY_LIMIT` | L2 摘要向量檢索回傳片段數（`LLM_KNOWLEDGE_BACKEND=chroma` 時，預設 5） |
+| `LLM_KNOWLEDGE_BACKEND` | 知識庫後端，**僅支援 `chroma`**（Chroma 向量 RAG；`file` 關鍵字後端已停用） |
+| `LLM_CHROMA_DIR` | Chroma 持久化目錄（靜態知識 + L2 摘要向量索引） |
+| `LLM_CHROMA_QUERY_LIMIT` | 靜態知識庫 RAG 回傳片段數（預設 3） |
+| `LLM_CHROMA_MEMORY_QUERY_LIMIT` | L2 摘要 RAG 回傳片段數（預設 5） |
 
 首次啟用 Chroma 時，先將 `config/knowledge/{TWITCH_CHANNEL}.md` 複製到 `data/knowledge/`：
 

@@ -47,7 +47,7 @@ class CompositeKnowledgeStore:
 
 
 class SummaryKnowledgeStore:
-    """從 L2 summaries 表讀取同 channel 對應 session 的 chat/stt 摘要。"""
+    """從 L2 summaries 表讀取同 channel 對應 session 的 chat/stt 摘要（非 RAG，僅供測試）。"""
 
     def __init__(
         self,
