@@ -24,6 +24,7 @@ from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.llm import LlmClient
+from sub_llm.debug_agent_log import agent_log
 from sub_llm.triggers import TriggerMatcher
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
@@ -79,8 +80,28 @@ class LlmSubscriber:
 
     def _handle_chat_message(self, payload: dict[str, Any]) -> None:
         event = ChatMessageEvent.from_dict(payload)
+        # region agent log
+        agent_log(
+            hypothesis_id="H3",
+            location="handler.py:_handle_chat_message:entry",
+            message="chat.message received",
+            data={
+                "content_preview": (event.content or "")[:80],
+                "message_id": (event.message_id or "")[:12],
+                "channel": event.channel or "",
+            },
+        )
+        # endregion
         question = self._triggers.extract_question(event.content)
         if question is None:
+            # region agent log
+            agent_log(
+                hypothesis_id="H3",
+                location="handler.py:_handle_chat_message:no_trigger",
+                message="trigger not matched",
+                data={"content_preview": (event.content or "")[:80]},
+            )
+            # endregion
             return
 
         filtered_question = self._safety.filter_input(question)
@@ -95,6 +116,14 @@ class LlmSubscriber:
                     file=sys.stderr,
                     flush=True,
                 )
+                # region agent log
+                agent_log(
+                    hypothesis_id="H4",
+                    location="handler.py:skip_ask_content_dedup",
+                    message="skipped duplicate ask content",
+                    data={"message_id": event.message_id[:12]},
+                )
+                # endregion
                 return
 
         if self._idempotency is not None and not self._idempotency.claim(
@@ -106,6 +135,14 @@ class LlmSubscriber:
                 file=sys.stderr,
                 flush=True,
             )
+            # region agent log
+            agent_log(
+                hypothesis_id="H4",
+                location="handler.py:skip_message_id_dedup",
+                message="skipped duplicate message_id",
+                data={"message_id": event.message_id[:12]},
+            )
+            # endregion
             return
 
         if not self._busy.acquire(blocking=False):
@@ -116,6 +153,18 @@ class LlmSubscriber:
             channel = event.channel or ""
             context = self._context_buffer.context_text(channel)
             knowledge = self._knowledge.query(filtered_question, channel=channel)
+            # region agent log
+            agent_log(
+                hypothesis_id="H5",
+                location="handler.py:before_llm_ask",
+                message="calling llm",
+                data={
+                    "question_len": len(filtered_question),
+                    "knowledge_len": len(knowledge),
+                    "channel": channel,
+                },
+            )
+            # endregion
             raw_reply = self._llm.ask(
                 filtered_question,
                 context=context,
@@ -131,6 +180,17 @@ class LlmSubscriber:
                 limit = self._config.reply_max_length
                 filtered_reply = filtered_reply[: limit - 3] + "..."
             self._publish_reply(event, filtered_reply)
+            # region agent log
+            agent_log(
+                hypothesis_id="H5",
+                location="handler.py:reply_published",
+                message="chat.reply published",
+                data={
+                    "reply_len": len(filtered_reply),
+                    "message_id": event.message_id[:12],
+                },
+            )
+            # endregion
         finally:
             self._busy.release()
 

@@ -15,6 +15,7 @@ from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from events import TOPIC_CHAT_MESSAGE
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
+from sub_llm.debug_agent_log import agent_log
 
 PROCESS_NAME = "ingress-ttv-read"
 NAMESPACE_CHAT_MESSAGE = "ingress.chat.message"
@@ -32,6 +33,19 @@ async def run(channel: str) -> None:
         content = str(payload.get("content", "")).strip()
         is_ask = content.lower().startswith("!ask")
         if is_ask:
+            # region agent log
+            agent_log(
+                hypothesis_id="H2",
+                location="ingress_ttv_read:publish:ask_seen",
+                message="!ask message from IRC",
+                data={
+                    "message_id": message_id[:12],
+                    "author": str(payload.get("author_name", "")),
+                    "channel": str(payload.get("channel", "")),
+                    "content_preview": content[:80],
+                },
+            )
+            # endregion
             claim_ok = (
                 idempotency.claim(NAMESPACE_CHAT_MESSAGE, message_id)
                 if message_id
@@ -43,6 +57,14 @@ async def run(channel: str) -> None:
                     file=sys.stderr,
                     flush=True,
                 )
+                # region agent log
+                agent_log(
+                    hypothesis_id="H4",
+                    location="ingress_ttv_read:skip_dedup",
+                    message="ingress skipped duplicate !ask",
+                    data={"message_id": message_id[:12]},
+                )
+                # endregion
                 return
         elif message_id and not idempotency.claim(NAMESPACE_CHAT_MESSAGE, message_id):
             print(
@@ -52,6 +74,15 @@ async def run(channel: str) -> None:
             )
             return
         await publish_topic(exchange, TOPIC_CHAT_MESSAGE, payload)
+        if is_ask:
+            # region agent log
+            agent_log(
+                hypothesis_id="H2",
+                location="ingress_ttv_read:published",
+                message="!ask published to MQ",
+                data={"message_id": message_id[:12]},
+            )
+            # endregion
         message_id_short = payload.get("message_id", "")[:8]
         author = payload.get("author_name", "")
         ch = payload.get("channel", "")

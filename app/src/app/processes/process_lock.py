@@ -21,6 +21,15 @@ def _lock_path(process_name: str, lock_dir: Path | None = None) -> Path:
 def pid_is_alive(pid: int) -> bool:
     if pid <= 0:
         return False
+    if sys.platform == "win32":
+        import ctypes
+
+        process_query_limited = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(process_query_limited, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
     try:
         os.kill(pid, 0)
     except OSError:
@@ -93,15 +102,25 @@ def acquire_process_lock(
     lock_dir: Path | None = None,
 ) -> Iterator[None]:
     pid = os.getpid()
-    if not acquire(process_name, pid, lock_dir=lock_dir):
-        holder = _locked_pid(process_name, lock_dir=lock_dir)
-        holder_text = f"（PID {holder}）" if holder is not None else ""
+    holder = _locked_pid(process_name, lock_dir=lock_dir)
+    if holder is not None and holder != pid:
+        holder_text = f"（PID {holder}）"
         print(
             f"process '{process_name}' 已在執行{holder_text}。"
             f"請先 Ctrl+C 關閉舊程序，或執行 scripts/stop_all.ps1",
             file=sys.stderr,
         )
         raise SystemExit(1)
+    if holder is None and not acquire(process_name, pid, lock_dir=lock_dir):
+        holder = _locked_pid(process_name, lock_dir=lock_dir)
+        if holder is not None and holder != pid:
+            holder_text = f"（PID {holder}）"
+            print(
+                f"process '{process_name}' 已在執行{holder_text}。"
+                f"請先 Ctrl+C 關閉舊程序，或執行 scripts/stop_all.ps1",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
     try:
         yield
     finally:

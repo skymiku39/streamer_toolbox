@@ -23,3 +23,17 @@ def test_stale_lock_is_replaced(tmp_path, monkeypatch) -> None:
     assert is_locked("sub-llm") is True
     release("sub-llm", os.getpid())
     assert acquire("sub-llm", 99999) is True
+
+
+def test_acquire_process_lock_allows_same_pid_holder(tmp_path, monkeypatch) -> None:
+    """鎖檔已記錄本程序 PID 時，應視為持有者並繼續執行。"""
+    monkeypatch.chdir(tmp_path)
+    pid = os.getpid()
+    assert acquire("sub-llm", pid) is True
+
+    from app.processes.process_lock import acquire_process_lock
+
+    with acquire_process_lock("sub-llm"):
+        assert is_locked("sub-llm") is True
+
+    release("sub-llm", pid)

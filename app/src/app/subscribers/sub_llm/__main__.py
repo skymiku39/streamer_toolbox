@@ -24,6 +24,7 @@ from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
+from sub_llm.debug_agent_log import agent_log
 
 PROCESS_NAME = "sub-llm"
 DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
@@ -126,6 +127,18 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
         flush=True,
     )
+    # region agent log
+    agent_log(
+        hypothesis_id="H1",
+        location="sub_llm:main:started",
+        message="sub-llm process listening",
+        data={
+            "backend": args.llm_backend,
+            "triggers": list(config.trigger_prefixes),
+            "knowledge_path": args.knowledge_path or "",
+        },
+    )
+    # endregion
     try:
         consume_messages(channel, QUEUE_SUB_LLM, subscriber.handle)
     except KeyboardInterrupt:

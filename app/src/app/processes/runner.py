@@ -18,7 +18,7 @@ from app.processes.chat_ingress import (
     IRC_FALLBACK_PROCESS,
     parse_chat_ingress_status,
 )
-from app.processes.process_lock import acquire, locked_names, release
+from app.processes.process_lock import locked_names, release
 from app.processes.registry import registry
 
 SHUTDOWN_TIMEOUT_SECONDS = 10
@@ -56,9 +56,6 @@ def _start_process(
         bufsize=1,
         env=utf8_subprocess_env(legacy_pythonpath_env()),
     )
-    if not acquire(spec.name, process.pid):
-        process.terminate()
-        raise RuntimeError(f"failed to acquire process lock for {spec.name}")
     thread = threading.Thread(
         target=_prefix_stream,
         args=(process.stdout, spec.name, sys.stdout),
@@ -213,7 +210,7 @@ def run_processes(
                 process.wait(timeout=SHUTDOWN_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
                 process.kill()
-            release(spec.name, process.pid)
+            release(spec.name)
 
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
@@ -255,7 +252,7 @@ def run_processes(
             return_code = process.poll()
             if return_code is None:
                 continue
-            release(spec.name, process.pid)
+            release(spec.name)
             if return_code != 0:
                 print(
                     f"[runner] Process {spec.name} exited with code {return_code}",
