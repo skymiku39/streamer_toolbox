@@ -36,8 +36,17 @@ def test_chroma_summary_store_queries_by_session(
     set_active_session_for_channel(store, channel="room_a", session_id="room_a_20260612")
     set_active_session_for_channel(store, channel="room_b", session_id="room_b_20260612")
 
+    older_doc = "[chat] 2026-06-12T10:00:00+00:00 .. 2026-06-12T10:05:00+00:00\n舊梗"
+    newer_doc = "[chat] 2026-06-12T10:30:00+00:00 .. 2026-06-12T10:35:00+00:00\n觀眾在問 777 梗"
+
     mock_collection = MagicMock()
-    mock_collection.query.return_value = {"documents": [["觀眾在問 777 梗"]]}
+    mock_collection.query.return_value = {
+        "documents": [[older_doc, newer_doc]],
+        "metadatas": [[
+            {"period_end": "2026-06-12T10:05:00+00:00"},
+            {"period_end": "2026-06-12T10:35:00+00:00"},
+        ]],
+    }
     mock_client = MagicMock()
     mock_client.get_or_create_collection.return_value = mock_collection
     chromadb = MagicMock()
@@ -48,8 +57,11 @@ def test_chroma_summary_store_queries_by_session(
     snippet = knowledge.query("777 是什麼", channel="room_a")
 
     assert "【近期直播摘要】" in snippet
-    assert "777" in snippet
+    assert "依時間由新到舊" in snippet
+    assert snippet.index("777") < snippet.index("舊梗")
     mock_collection.upsert.assert_called_once()
+    upsert_metas = mock_collection.upsert.call_args.kwargs["metadatas"]
+    assert upsert_metas[0]["period_end"] == "2026-06-12T10:05:00+00:00"
     mock_collection.query.assert_called_once()
     where = mock_collection.query.call_args.kwargs["where"]
     assert where == {"session_id": "room_a_20260612"}

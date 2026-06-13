@@ -22,6 +22,77 @@ class BufferedChatLine:
     timestamp: datetime
 
 
+@dataclass(frozen=True)
+class BufferedBotReply:
+    text: str
+    reply_to_author: str
+    timestamp: datetime
+
+
+class BotReplyContextBuffer:
+    """保存 bot 近期回覆，供 LLM 延續同一對話脈絡（不寫入 RAG）。"""
+
+    def __init__(
+        self,
+        *,
+        window_minutes: int = 30,
+        max_lines: int = 20,
+    ) -> None:
+        self._window_seconds = max(1, window_minutes) * 60
+        self._max_lines = max(1, max_lines)
+        self._replies_by_channel: dict[str, list[BufferedBotReply]] = {}
+        self._lock = threading.Lock()
+
+    def add_reply(
+        self,
+        channel: str,
+        text: str,
+        *,
+        reply_to_author: str = "",
+        timestamp: datetime | None = None,
+    ) -> None:
+        content = text.strip()
+        if not content:
+            return
+        key = normalize_channel(channel)
+        reply = BufferedBotReply(
+            text=content,
+            reply_to_author=reply_to_author.strip(),
+            timestamp=timestamp or datetime.now().astimezone(),
+        )
+        with self._lock:
+            bucket = self._replies_by_channel.setdefault(key, [])
+            bucket.append(reply)
+            self._prune_locked(key)
+
+    def context_text(self, channel: str) -> str:
+        key = normalize_channel(channel)
+        with self._lock:
+            replies = list(self._replies_by_channel.get(key, []))
+        if not replies:
+            return ""
+        lines = [f"【Bot 近期回覆（{key}）】"]
+        for reply in replies:
+            target = f"（回覆 {reply.reply_to_author}）" if reply.reply_to_author else ""
+            lines.append(f"bot{target}: {reply.text}")
+        return "\n".join(lines)
+
+    def count(self, channel: str) -> int:
+        key = normalize_channel(channel)
+        with self._lock:
+            return len(self._replies_by_channel.get(key, []))
+
+    def _prune_locked(self, channel: str) -> None:
+        replies = self._replies_by_channel.get(channel)
+        if not replies:
+            return
+        cutoff = replies[-1].timestamp.timestamp() - self._window_seconds
+        pruned = [reply for reply in replies if reply.timestamp.timestamp() >= cutoff]
+        if len(pruned) > self._max_lines:
+            pruned = pruned[-self._max_lines :]
+        self._replies_by_channel[channel] = pruned
+
+
 class SttContextBuffer:
     """依 channel 分區累積 stt.segment，供 LLM 取近期上下文。"""
 
@@ -193,18 +264,24 @@ class StreamMetadataBuffer:
 
 
 class LiveContextBuffer:
-    """合併直播 metadata、STT 逐字稿與聊天室短期記憶。"""
+    """合併直播 metadata、STT 逐字稿、聊天室與 bot 近期回覆。"""
 
     def __init__(
         self,
         *,
         window_minutes: int = 5,
         skip_author_ids: frozenset[str] = frozenset(),
+        bot_reply_window_minutes: int | None = None,
+        bot_reply_max_lines: int = 20,
     ) -> None:
         self._stt = SttContextBuffer(window_minutes=window_minutes)
         self._chat = ChatContextBuffer(
             window_minutes=window_minutes,
             skip_author_ids=skip_author_ids,
+        )
+        self._bot_replies = BotReplyContextBuffer(
+            window_minutes=bot_reply_window_minutes or max(window_minutes * 3, 15),
+            max_lines=bot_reply_max_lines,
         )
         self._stream = StreamMetadataBuffer()
 
@@ -217,6 +294,19 @@ class LiveContextBuffer:
     def add_chat_message(self, event: ChatMessageEvent) -> None:
         self._chat.add_message(event)
 
+    def add_bot_reply(
+        self,
+        channel: str,
+        content: str,
+        *,
+        reply_to_author: str = "",
+    ) -> None:
+        self._bot_replies.add_reply(
+            channel,
+            content,
+            reply_to_author=reply_to_author,
+        )
+
     def context_text(self, channel: str) -> str:
         parts = [
             part
@@ -224,16 +314,24 @@ class LiveContextBuffer:
                 self._stream.context_text(channel),
                 self._stt.context_text(channel),
                 self._chat.context_text(channel),
+                self._bot_replies.context_text(channel),
             )
             if part
         ]
         return "\n\n".join(parts)
 
-    def stats(self, channel: str) -> tuple[int, int, int, bool]:
+    def stats(self, channel: str) -> tuple[int, int, int, int, bool]:
         stt_count = self._stt.count(channel)
         chat_count = self._chat.count(channel)
+        bot_reply_count = self._bot_replies.count(channel)
         has_stream = self._stream.has_metadata(channel)
-        return stt_count, chat_count, len(self.context_text(channel)), has_stream
+        return (
+            stt_count,
+            chat_count,
+            bot_reply_count,
+            len(self.context_text(channel)),
+            has_stream,
+        )
 
     def live_game_name(self, channel: str) -> str | None:
         return self._stream.live_game_name(channel)

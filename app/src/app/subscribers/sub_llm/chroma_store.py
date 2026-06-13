@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sub_llm.knowledge import iter_text_documents
+from sub_llm.memory_ranking import rank_memory_snippets
 
 logger = logging.getLogger(__name__)
 
@@ -270,7 +271,13 @@ class ChromaSummaryKnowledgeStore:
                 f"[{summary.source}] {summary.period_start} .. {summary.period_end}\n"
                 f"{summary.content.strip()}"
             )
-            metadatas.append({"session_id": session_id, "source": summary.source})
+            metadatas.append(
+                {
+                    "session_id": session_id,
+                    "source": summary.source,
+                    "period_end": summary.period_end,
+                }
+            )
 
         self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
         self._write_memory_fingerprint(session_id, fingerprint)
@@ -302,14 +309,15 @@ class ChromaSummaryKnowledgeStore:
                 where={"session_id": session_id},
             )
             documents = (result.get("documents") or [[]])[0]
+            metadatas = (result.get("metadatas") or [[]])[0]
         except Exception as exc:
             logger.debug("Chroma 記憶查詢失敗: %s", exc)
             return ""
 
-        unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
+        unique = rank_memory_snippets(documents, metadatas)
         if not unique:
             return ""
-        text = "【近期直播摘要】\n" + "\n".join(unique)
+        text = "【近期直播摘要】（依時間由新到舊）\n" + "\n".join(unique)
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."

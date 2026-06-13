@@ -92,13 +92,25 @@ def test_live_context_buffer_merges_stt_and_chat() -> None:
     buffer.add_segment(_segment("主播說話", channel="room_a"))
     buffer.add_chat_message(_chat("觀眾聊天", channel="room_a", author_id="viewer-id"))
     context = buffer.context_text("room_a")
-    stt_count, chat_count, context_len, has_stream = buffer.stats("room_a")
+    stt_count, chat_count, bot_reply_count, context_len, has_stream = buffer.stats("room_a")
     assert "主播說話" in context
     assert "觀眾聊天" in context
     assert stt_count == 1
     assert chat_count == 1
+    assert bot_reply_count == 0
     assert context_len > 0
     assert has_stream is False
+
+
+def test_live_context_buffer_includes_bot_replies() -> None:
+    buffer = LiveContextBuffer(window_minutes=5, bot_reply_window_minutes=30)
+    buffer.add_bot_reply("room_a", "我們在玩 DND", reply_to_author="alice")
+    context = buffer.context_text("room_a")
+    _, _, bot_reply_count, _, _ = buffer.stats("room_a")
+    assert "【Bot 近期回覆" in context
+    assert "DND" in context
+    assert "alice" in context
+    assert bot_reply_count == 1
 
 
 def test_live_context_buffer_includes_stream_metadata() -> None:
@@ -124,7 +136,7 @@ def test_live_context_buffer_includes_stream_metadata() -> None:
         )
     )
     context = buffer.context_text("room_a")
-    _, _, _, has_stream = buffer.stats("room_a")
+    _, _, _, _, has_stream = buffer.stats("room_a")
     assert has_stream is True
     assert "【直播狀態" in context
     assert "打 Boss" in context

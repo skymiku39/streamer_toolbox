@@ -138,10 +138,12 @@ class LlmSubscriber:
         try:
             channel = event.channel or ""
             context = self._context_buffer.context_text(channel)
-            stt_count, chat_count, context_len, has_stream = self._context_buffer.stats(channel)
+            stt_count, chat_count, bot_reply_count, context_len, has_stream = (
+                self._context_buffer.stats(channel)
+            )
             print(
                 f"[sub-llm] context stream={has_stream} stt={stt_count} "
-                f"chat={chat_count} chars={context_len}",
+                f"chat={chat_count} bot_replies={bot_reply_count} chars={context_len}",
                 file=sys.stderr,
                 flush=True,
             )
@@ -198,3 +200,9 @@ class LlmSubscriber:
             correlation_id=trigger.message_id,
         )
         self._publish(TOPIC_CHAT_REPLY, reply.to_dict())
+        reply_to = (trigger.author_name or trigger.login or "").strip()
+        self._context_buffer.add_bot_reply(
+            trigger.channel or "",
+            content,
+            reply_to_author=reply_to,
+        )

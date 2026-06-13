@@ -301,6 +301,42 @@ def test_duplicate_message_id_is_ignored(tmp_path) -> None:
     store.close()
 
 
+def test_bot_reply_appears_in_follow_up_ask_context() -> None:
+    captured: list[str] = []
+
+    class CapturingLlm:
+        def ask(
+            self,
+            question: str,
+            *,
+            context: str,
+            knowledge: str = "",
+            game_reference: str = "",
+        ) -> str:
+            captured.append(context)
+            if len(captured) == 1:
+                return "我們正在玩 DND 第五版"
+            return "延續上一題"
+
+    published: list[tuple[str, dict]] = []
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=CapturingLlm(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5, bot_reply_window_minutes=30),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_chat_payload("!ask 我們在玩什麼？", author_name="alice"))
+    subscriber.handle(_chat_payload("!ask 剛剛那個遊戲規則版本？", message_id="msg-2"))
+
+    assert len(published) == 2
+    assert "【Bot 近期回覆" in captured[1]
+    assert "DND" in captured[1]
+    assert "alice" in captured[1]
+
+
 def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -> None:
     from stream_store.idempotency import IdempotencyStore
 

@@ -25,6 +25,7 @@ from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
 from sub_llm.game_context import create_game_info_provider
+from sub_llm.startup_announcement import publish_startup_announcement
 
 PROCESS_NAME = "sub-llm"
 DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
@@ -116,15 +117,17 @@ def main(argv: list[str] | None = None) -> int:
     idempotency = IdempotencyStore(default_idempotency_db_path())
     game_info = create_game_info_provider()
     game_info_mode = "igdb" if game_info is not None else "disabled"
+    context_buffer = LiveContextBuffer(
+        window_minutes=config.context_window_minutes,
+        skip_author_ids=skip_author_ids,
+        bot_reply_window_minutes=config.bot_reply_window_minutes,
+    )
     subscriber = LlmSubscriber(
         config=config,
         llm=llm,
         safety=safety,
         knowledge=knowledge,
-        context_buffer=LiveContextBuffer(
-            window_minutes=config.context_window_minutes,
-            skip_author_ids=skip_author_ids,
-        ),
+        context_buffer=context_buffer,
         publish=publish,
         idempotency=idempotency,
         game_info=game_info,
@@ -137,6 +140,13 @@ def main(argv: list[str] | None = None) -> int:
         f"game_info={game_info_mode!r}, triggers={config.trigger_prefixes!r})",
         file=sys.stderr,
         flush=True,
+    )
+    publish_startup_announcement(
+        llm=llm,
+        safety=safety,
+        config=config,
+        publish=publish,
+        context_buffer=context_buffer,
     )
     try:
         consume_messages(channel, QUEUE_SUB_LLM, subscriber.handle)
