@@ -82,6 +82,8 @@ class EventSubIngressBot(commands.Bot):
         bot_id: str,
         token: str,
         refresh_token: str,
+        channel_token: str | None = None,
+        channel_refresh_token: str | None = None,
         channels: list[str],
         broadcaster_id: str,
         broadcaster_type: str,
@@ -96,6 +98,8 @@ class EventSubIngressBot(commands.Bot):
         )
         self.user_access_token = token
         self.user_refresh_token = refresh_token
+        self._channel_access_token = channel_token or token
+        self._channel_refresh_token = channel_refresh_token or refresh_token
         self.broadcaster_id = broadcaster_id
         self.broadcaster_type = broadcaster_type
         self.bot_channels = channels
@@ -106,6 +110,11 @@ class EventSubIngressBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         await self.add_token(self.user_access_token, self.user_refresh_token)
+        if (
+            self._channel_access_token != self.user_access_token
+            or self._channel_refresh_token != self.user_refresh_token
+        ):
+            await self.add_token(self._channel_access_token, self._channel_refresh_token)
         await self._register_all_subscriptions()
 
     async def _register_all_subscriptions(self) -> None:

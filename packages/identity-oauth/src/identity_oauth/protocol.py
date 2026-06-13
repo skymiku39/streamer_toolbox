@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Literal, Protocol
+
+AccountRole = Literal["channel", "bot"]
 
 
 @dataclass(frozen=True)
@@ -31,4 +33,4 @@ class TokenProvider(Protocol):
     @property
     def broadcaster_type(self) -> str: ...
 
-    async def get_credentials(self) -> OAuthCredentials: ...
+    async def get_credentials(self, role: AccountRole = "bot") -> OAuthCredentials: ...

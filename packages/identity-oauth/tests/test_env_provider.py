@@ -30,6 +30,15 @@ def test_get_credentials_uses_env_access_token() -> None:
 
 
 def test_refresh_requires_refresh_token() -> None:
-    provider = EnvTokenProvider(environ=_env(TWITCH_ACCESS_TOKEN="", TWITCH_REFRESH_TOKEN=""))
-    with pytest.raises(RuntimeError, match="TWITCH_REFRESH_TOKEN"):
+    provider = EnvTokenProvider(
+        environ=_env(
+            TWITCH_ACCESS_TOKEN="",
+            TWITCH_REFRESH_TOKEN="",
+            TWITCH_CHANNEL_ACCESS_TOKEN="",
+            TWITCH_BOT_ACCESS_TOKEN="",
+            TWITCH_CHANNEL_REFRESH_TOKEN="",
+            TWITCH_BOT_REFRESH_TOKEN="",
+        ),
+    )
+    with pytest.raises(RuntimeError, match="TWITCH_BOT"):
         asyncio.run(provider.get_credentials())

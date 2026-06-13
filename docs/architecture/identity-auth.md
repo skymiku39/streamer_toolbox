@@ -186,43 +186,27 @@ toolbox **不**依賴 `twitch_api` runtime；只對齊 **key 命名** 與 refres
 
 ## 6. `identity-oauth` 套件設計
 
-### 6.1 現況（v0.1）
+### 6.1 現況（v0.2）
 
 ```
 packages/identity-oauth/
-├── protocol.py          # OAuthCredentials, TokenProvider Protocol
-├── env_provider.py      # 單組 env + refresh
-├── sync_provider.py     # SyncEnvTokenProvider（connector 用）
-└── __main__.py          # CLI 狀態檢查
+├── protocol.py              # AccountRole, OAuthCredentials, TokenProvider
+├── token_refresh.py         # 共用 refresh 邏輯
+├── single_account.py        # TWITCH_SINGLE_ACCOUNT 鏡射
+├── multi_account_provider.py # channel + bot profiles（主實作）
+├── env_provider.py          # EnvTokenProvider 別名（向後相容）
+├── sync_provider.py         # SyncEnvTokenProvider(role=...)
+└── __main__.py              # CLI --role channel|bot
 ```
 
-**限制：**
+**已支援：**
 
-- 僅一組 `TWITCH_ACCESS_TOKEN` / `TWITCH_REFRESH_TOKEN`
-- EventSub 與 connector 共用同一 refresh 結果
-- 無 `AccountRole` 選擇
+- `get_credentials(role="channel"|"bot")`
+- `TWITCH_CHANNEL_REFRESH_TOKEN` / `TWITCH_BOT_REFRESH_TOKEN` + legacy fallback
+- `TWITCH_SINGLE_ACCOUNT=true` 時 bot 鏡射 channel
+- EventSub 注入 bot + channel 雙 token；connector 使用 `role="bot"`
 
-### 6.2 目標態（v0.2 規劃）
-
-```python
-# protocol.py（擴充概念）
-AccountRole = Literal["channel", "bot"]
-
-class TokenProvider(Protocol):
-    async def get_credentials(self, role: AccountRole = "bot") -> OAuthCredentials: ...
-```
-
-```
-packages/identity-oauth/
-├── protocol.py
-├── env_provider.py              # 保留：單組 fallback
-├── multi_account_provider.py    # 新增：channel + bot profiles
-├── single_account.py            # 鏡射邏輯
-├── sync_provider.py             # get_credentials(role=...)
-└── streamlink_token.py          # 可選：只讀 TWITCH_STREAMLINK_AUTH_TOKEN
-```
-
-**`OAuthCredentials` 欄位語意（依 role 填充）：**
+### 6.2 `OAuthCredentials` 欄位語意
 
 | 欄位 | channel 角色 | bot 角色 |
 |------|--------------|----------|
@@ -315,8 +299,8 @@ toolbox **不提供** GUI 授權（現階段）。請使用 [`twitch_api`](../..
 
 | Phase | 內容 | 影響模組 |
 |-------|------|----------|
-| **A**（優先） | `MultiAccountTokenProvider` + env 對齊 twitch_api | `identity-oauth`, EventSub, connector |
-| **B** | `TWITCH_SINGLE_ACCOUNT` 鏡射 | `identity-oauth` |
+| **A** | `MultiAccountTokenProvider` + env 對齊 twitch_api | ✅ 已完成 |
+| **B** | `TWITCH_SINGLE_ACCOUNT` 鏡射 | ✅ 已完成 |
 | **C** | `ingress-twitch-audio` 可選 `TWITCH_STREAMLINK_AUTH_TOKEN` | `live_audio.py` |
 | **D** | `identity-oauth` CLI：`--role channel\|bot` 驗證 | `__main__.py` |
 | **E**（可選） | 將 `twitch_api` OAuthManager 邏輯完全搬入 package，GUI 改呼叫 toolbox CLI | 跨 repo |

@@ -76,8 +76,8 @@ flowchart LR
 
 | 項目 | 狀態 |
 |------|------|
-| 單組 `EnvTokenProvider` + refresh | ✅ |
-| EventSub / connector 注入 | ✅ |
-| 雙帳號 channel + bot | 📋 見 [identity-auth.md §10](../architecture/identity-auth.md#10-實作路線圖) |
+| 單組 env fallback + 雙帳號 `MultiAccountTokenProvider` | ✅ |
+| EventSub 雙 token / connector `role=bot` | ✅ |
+| 雙帳號 channel + bot | ✅ |
 | Streamlink 可選 OAuth | 📋 |
 | `ingress-local-audio`（免 Twitch auth） | ✅ |

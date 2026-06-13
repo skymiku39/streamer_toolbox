@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from app.processes.registry import register_publisher
 from bus.topology import DEFAULT_EXCHANGE
 
-from identity_oauth import EnvTokenProvider
+from identity_oauth import MultiAccountTokenProvider
 from ingress_twitch_eventsub.bot import EventSubIngressBot
 from ingress_twitch_eventsub.publisher import MqEventPublisher
 from bus.config import rabbitmq_url, stream_exchange
@@ -22,21 +22,25 @@ logger = logging.getLogger(PROCESS_NAME)
 
 
 async def run(channel: str) -> None:
-    token_provider = EnvTokenProvider()
-    creds = await token_provider.get_credentials()
+    token_provider = MultiAccountTokenProvider()
+    channel_creds = await token_provider.get_credentials("channel")
+    bot_creds = await token_provider.get_credentials("bot")
 
-    missing = [
-        name
-        for name, value in {
-            "TWITCH_CLIENT_ID": creds.client_id,
-            "TWITCH_CLIENT_SECRET": creds.client_secret,
-            "TWITCH_BOT_ID": creds.bot_id,
-            "TWITCH_BROADCASTER_ID": creds.broadcaster_id,
-            "TWITCH_ACCESS_TOKEN": creds.access_token,
-            "TWITCH_REFRESH_TOKEN": creds.refresh_token,
-        }.items()
-        if not value
-    ]
+    missing: list[str] = []
+    if not channel_creds.client_id:
+        missing.append("TWITCH_CLIENT_ID")
+    if not channel_creds.client_secret:
+        missing.append("TWITCH_CLIENT_SECRET")
+    if not channel_creds.broadcaster_id:
+        missing.append("TWITCH_BROADCASTER_ID")
+    if not bot_creds.bot_id:
+        missing.append("TWITCH_BOT_ID")
+    if not channel_creds.access_token:
+        missing.append(
+            "channel access token (TWITCH_CHANNEL_REFRESH_TOKEN or TWITCH_REFRESH_TOKEN)",
+        )
+    if not bot_creds.access_token:
+        missing.append("bot access token (TWITCH_BOT_REFRESH_TOKEN or TWITCH_REFRESH_TOKEN)")
     if missing:
         raise RuntimeError(f"Missing required OAuth env: {', '.join(missing)}")
 
@@ -47,14 +51,16 @@ async def run(channel: str) -> None:
 
     normalized_channel = channel.lstrip("#")
     bot = EventSubIngressBot(
-        client_id=creds.client_id,
-        client_secret=creds.client_secret,
-        bot_id=creds.bot_id,
-        token=creds.access_token,
-        refresh_token=creds.refresh_token,
+        client_id=channel_creds.client_id,
+        client_secret=channel_creds.client_secret,
+        bot_id=bot_creds.bot_id,
+        token=bot_creds.access_token,
+        refresh_token=bot_creds.refresh_token,
+        channel_token=channel_creds.access_token,
+        channel_refresh_token=channel_creds.refresh_token,
         channels=[normalized_channel],
-        broadcaster_id=creds.broadcaster_id,
-        broadcaster_type=creds.broadcaster_type,
+        broadcaster_id=channel_creds.broadcaster_id,
+        broadcaster_type=channel_creds.broadcaster_type,
         publisher=publisher,
     )
 

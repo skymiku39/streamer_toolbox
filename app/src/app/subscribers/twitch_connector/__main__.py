@@ -22,7 +22,7 @@ from events import TOPIC_CHAT_REPLY, TOPIC_SYSTEM_ERROR
 from twitch_connector.dispatcher import ChatReplyDispatcher
 from twitch_connector.subscriber import ReplySubscriber
 from twitch_connector.throttle import MessageThrottle
-from twitch_connector.token_provider import EnvTokenProvider
+from identity_oauth import SyncEnvTokenProvider
 from twitch_connector.twitch_sender import TwitchChatSender
 
 PROCESS_NAME = "twitch-connector"
@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    token_provider = EnvTokenProvider()
+    token_provider = SyncEnvTokenProvider(role="bot")
     try:
         token_provider.validate()
     except ValueError as exc:

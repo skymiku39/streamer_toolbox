@@ -18,9 +18,14 @@ def _env(**overrides: str) -> dict[str, str]:
 
 
 def test_sync_provider_exposes_connector_fields() -> None:
-    from identity_oauth.env_provider import EnvTokenProvider
+    from identity_oauth.multi_account_provider import MultiAccountTokenProvider
 
-    provider = SyncEnvTokenProvider(EnvTokenProvider(environ=_env()))
+    provider = SyncEnvTokenProvider(
+        MultiAccountTokenProvider(
+            environ=_env(TWITCH_BOT_ACCESS_TOKEN="access-token", TWITCH_ACCESS_TOKEN=""),
+        ),
+        role="bot",
+    )
     provider.validate()
     assert provider.client_id() == "client-id"
     assert provider.access_token() == "access-token"
@@ -28,8 +33,11 @@ def test_sync_provider_exposes_connector_fields() -> None:
 
 
 def test_validate_requires_bot_id() -> None:
-    from identity_oauth.env_provider import EnvTokenProvider
+    from identity_oauth.multi_account_provider import MultiAccountTokenProvider
 
-    provider = SyncEnvTokenProvider(EnvTokenProvider(environ=_env(TWITCH_BOT_ID="")))
+    provider = SyncEnvTokenProvider(
+        MultiAccountTokenProvider(environ=_env(TWITCH_BOT_ID="")),
+        role="bot",
+    )
     with pytest.raises(ValueError, match="TWITCH_BOT_ID"):
         provider.validate()
