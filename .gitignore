@@ -28,6 +28,7 @@ htmlcov/
 
 # Runtime logs
 logs/
+debug-*.log
 
 # Runtime data (SQLite, exports)
 data/

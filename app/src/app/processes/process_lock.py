@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
 _LOCK_DIR = Path("data/process-locks")
+_thread_held = threading.local()
 
 
 def _resolve_lock_dir(lock_dir: Path | None) -> Path:
@@ -16,6 +18,14 @@ def _resolve_lock_dir(lock_dir: Path | None) -> Path:
 def _lock_path(process_name: str, lock_dir: Path | None = None) -> Path:
     safe = process_name.replace("/", "_").replace("\\", "_")
     return (_resolve_lock_dir(lock_dir) / f"{safe}.pid").resolve()
+
+
+def _held_names() -> set[str]:
+    held = getattr(_thread_held, "names", None)
+    if held is None:
+        held = set()
+        _thread_held.names = held
+    return held
 
 
 def pid_is_alive(pid: int) -> bool:
@@ -68,11 +78,23 @@ def _locked_pid(process_name: str, *, lock_dir: Path | None = None) -> int | Non
 
 
 def acquire(process_name: str, pid: int, *, lock_dir: Path | None = None) -> bool:
+    """原子建立 lock 檔；若已有存活持有者則回傳 False。"""
     base = _resolve_lock_dir(lock_dir)
     base.mkdir(parents=True, exist_ok=True)
-    if is_locked(process_name, lock_dir=lock_dir):
+    path = _lock_path(process_name, lock_dir)
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        holder = _locked_pid(process_name, lock_dir=lock_dir)
+        if holder is None:
+            return acquire(process_name, pid, lock_dir=lock_dir)
         return False
-    _lock_path(process_name, lock_dir).write_text(str(pid), encoding="utf-8")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(str(pid))
+    except OSError:
+        path.unlink(missing_ok=True)
+        return False
     return True
 
 
@@ -102,6 +124,15 @@ def acquire_process_lock(
     lock_dir: Path | None = None,
 ) -> Iterator[None]:
     pid = os.getpid()
+    held = _held_names()
+    if process_name in held:
+        print(
+            f"process '{process_name}' 已在目前程序中持有鎖。"
+            f"請先 Ctrl+C 關閉舊程序，或執行 scripts/stop_all.ps1",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
     holder = _locked_pid(process_name, lock_dir=lock_dir)
     if holder is not None and holder != pid:
         holder_text = f"（PID {holder}）"
@@ -121,7 +152,10 @@ def acquire_process_lock(
                 file=sys.stderr,
             )
             raise SystemExit(1)
+
+    held.add(process_name)
     try:
         yield
     finally:
+        held.discard(process_name)
         release(process_name, pid, lock_dir=lock_dir)
