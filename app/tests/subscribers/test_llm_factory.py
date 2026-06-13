@@ -26,7 +26,7 @@ def test_create_llm_client_openai_from_env(monkeypatch) -> None:
 
 
 def test_create_llm_client_gemini_uses_google_ai_env(monkeypatch) -> None:
-    monkeypatch.setenv("LLM_BACKEND", "gemini")
+    monkeypatch.delenv("LLM_BACKEND", raising=False)
     monkeypatch.setenv("GOOGLE_AI_API_KEY", "google-key")
     monkeypatch.setenv("GOOGLE_AI_MODEL", "gemini-2.5-flash")
     client = create_llm_client("gemini")

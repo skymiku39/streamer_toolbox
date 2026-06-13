@@ -30,9 +30,11 @@ class OpenAiCompatibleLlmClient:
         self._timeout_sec = timeout_sec
 
     @classmethod
-    def from_env(cls) -> OpenAiCompatibleLlmClient:
-        backend = (os.environ.get("LLM_BACKEND", "openai") or "openai").lower()
-        if backend == "gemini":
+    def from_env(cls, *, backend: str | None = None) -> OpenAiCompatibleLlmClient:
+        selected = (
+            backend or os.environ.get("LLM_BACKEND", "openai") or "openai"
+        ).lower()
+        if selected == "gemini":
             base_url = os.environ.get(
                 "LLM_API_BASE",
                 "https://generativelanguage.googleapis.com/v1beta/openai",
@@ -55,7 +57,7 @@ class OpenAiCompatibleLlmClient:
             model = (os.environ.get("LLM_MODEL") or "gpt-4o-mini").strip()
         system_prompt = (os.environ.get("LLM_SYSTEM_PROMPT") or "").strip()
         if not api_key:
-            if backend == "gemini":
+            if selected == "gemini":
                 raise ValueError(
                     "GOOGLE_AI_API_KEY (或 LLM_API_KEY / GEMINI_API_KEY) is required"
                 )

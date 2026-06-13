@@ -27,7 +27,7 @@ def create_llm_client(backend: str | None = None) -> LlmClient:
     if selected == "template":
         return TemplateLlmClient()
     if selected in {"openai", "gemini"}:
-        return OpenAiCompatibleLlmClient.from_env()
+        return OpenAiCompatibleLlmClient.from_env(backend=selected)
     raise ValueError(f"unsupported LLM_BACKEND: {selected!r}")
 
 
