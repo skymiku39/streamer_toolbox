@@ -74,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="直播間 channel（--active 時用於解析 session；預設 TWITCH_CHANNEL）",
     )
+    parser.add_argument(
+        "--limit",
         type=int,
         default=100,
         help="摘要顯示上限",
