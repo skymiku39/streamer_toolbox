@@ -12,6 +12,7 @@ from sub_llm.chat_format import plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.llm import LlmClient
+from sub_llm.startup_messages import build_degraded_startup_announcement
 
 _STARTUP_SYSTEM_PROMPT = (
     "你是 Twitch 直播聊天室的 AI 助手，剛完成上線。"
@@ -46,6 +47,7 @@ def publish_startup_announcement(
     config: LlmSubscriberConfig,
     publish: Callable[[str, dict], None],
     context_buffer: LiveContextBuffer | None = None,
+    backend: str | None = None,
 ) -> bool:
     """程序就緒後發布 LLM 生成的啟用上線訊息至 chat.reply。"""
     if not startup_announcement_enabled():
@@ -72,7 +74,11 @@ def publish_startup_announcement(
             file=sys.stderr,
             flush=True,
         )
-        return False
+        raw_reply = build_degraded_startup_announcement(
+            channel=channel,
+            backend=backend,
+            error=exc,
+        )
 
     filtered_reply = safety.filter_output(plain_text_for_chat(raw_reply))
     if not filtered_reply:

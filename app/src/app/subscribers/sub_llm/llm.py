@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from sub_llm.startup_messages import build_template_startup_announcement
+
 
 class LlmClient(Protocol):
     def ask(
@@ -52,7 +54,4 @@ class TemplateLlmClient:
         trigger_prefixes: tuple[str, ...],
     ) -> str:
         del trigger_prefixes
-        return (
-            f"叮咚～AI 小助手已開機！在 {channel} 聊天室待命，"
-            f"有問題可以用問號指令問我喔～"
-        )
+        return build_template_startup_announcement(channel=channel)

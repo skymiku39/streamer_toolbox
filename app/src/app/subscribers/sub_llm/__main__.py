@@ -149,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         config=config,
         publish=publish,
         context_buffer=context_buffer,
+        backend=args.llm_backend,
     )
     try:
         consume_messages(channel, QUEUE_SUB_LLM, subscriber.handle)
