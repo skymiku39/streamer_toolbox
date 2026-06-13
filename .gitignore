@@ -12,6 +12,7 @@ Thumbs.db
 # Env / secrets
 .env
 *.pem
+.tio.tokens.json
 
 # Python
 .venv/
