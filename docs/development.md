@@ -126,7 +126,30 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 
 LLM 回覆在 `safety.filter_output` 之後會經 `plain_text_for_chat` 去除 Markdown，再截斷長度並發布 `chat.reply`。
 
-**避免連發：** 同一頻道只跑一組 ingress / sub-llm / twitch-connector；系統已以 SQLite `IdempotencyStore`（預設共用 `STREAM_DB_PATH`）對 `message_id` 去重，但多開 process 仍會浪費 LLM 配額，請勿重複啟動。
+**避免連發：** 同一頻道只跑一組 ingress / sub-llm / twitch-connector。系統以兩層防護：
+
+1. **PID 單例鎖**（`data/process-locks/{name}.pid`）：每個 publisher/subscriber/worker 啟動時若同名 process 已在跑，會立即退出並提示；`app.main run` 也會在 spawn 前檢查。
+2. **SQLite 冪等去重**（`IdempotencyStore`，預設共用 `STREAM_DB_PATH`）：同一 `message_id` 只 publish / 觸發 LLM / 送 Twitch 一次。
+
+**維運腳本（Windows PowerShell）：**
+
+```powershell
+# 列出目前 streamer 相關 Python 程序（關鍵模組應各 1 個）
+powershell -NoProfile -File scripts/list_procs.ps1
+
+# 清掉殘留程序（重複多開、直接關終端未 Ctrl+C 時）
+powershell -NoProfile -File scripts/stop_all.ps1
+```
+
+關閉服務請用 **Ctrl+C**，不要直接關終端視窗。建議固定兩個終端：
+
+```powershell
+# 終端 1
+uv run python -m app.main run ingress-ttv-read ingress-twitch-audio sub-stream-record
+
+# 終端 2
+uv run python -m app.main run sub-llm twitch-connector
+```
 
 跨 process 去重自測（Windows 請用腳本，勿用 `multiprocessing.Pool` 搭配 `python -c`）：
 

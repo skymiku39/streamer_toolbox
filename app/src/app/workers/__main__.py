@@ -198,112 +198,64 @@ def main(argv: list[str] | None = None) -> int:
 
 
 
-    config = MemoryWorkerConfig(
+    from app.processes.process_lock import acquire_process_lock
 
-        db_path=args.db_path,
+    with acquire_process_lock(PROCESS_NAME):
+        config = MemoryWorkerConfig(
+            db_path=args.db_path,
+            session_id=session_id,
+            channel=(args.channel or config.channel or "").strip() or None,
+            interval_minutes=args.interval_minutes,
+            llm_backend=args.llm_backend,
+            batch_limit=config.batch_limit,
+            record_mode=config.record_mode,
+        )
 
-        session_id=session_id,
+        try:
+            summarizer = create_summarizer(config.llm_backend)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
 
-        channel=(args.channel or config.channel or "").strip() or None,
+        store = StreamTextStore(config.db_path)
+        worker = MemoryWorker(
+            store,
+            config,
+            summarizer,
+            summary_publisher=create_summary_publisher(),
+        )
+        trigger_listen = not args.no_trigger_listen and _env_bool("MEMORY_TRIGGER_LISTEN", True)
 
-        interval_minutes=args.interval_minutes,
+        print(
+            f"{PROCESS_NAME} db={config.db_path} session={config.session_id or '(auto)'} "
+            f"mode={config.record_mode} interval={config.interval_minutes}m "
+            f"backend={config.llm_backend} trigger_listen={trigger_listen}",
+            file=sys.stderr,
+            flush=True,
+        )
 
-        llm_backend=args.llm_backend,
+        trigger_handle = MemoryTriggerHandle()
+        listener: MemoryTriggerListener | None = None
+        if trigger_listen and not args.once and not args.until_empty:
+            listener = MemoryTriggerListener(trigger_handle)
+            listener.start()
 
-        batch_limit=config.batch_limit,
+        try:
+            if args.until_empty:
+                while worker.run_once():
+                    pass
+                return 0
+            if args.once:
+                worker.run_once()
+                return 0
 
-        record_mode=config.record_mode,
-
-    )
-
-
-
-    try:
-
-        summarizer = create_summarizer(config.llm_backend)
-
-    except ValueError as exc:
-
-        print(str(exc), file=sys.stderr)
-
-        return 1
-
-
-
-    store = StreamTextStore(config.db_path)
-
-    worker = MemoryWorker(
-        store,
-        config,
-        summarizer,
-        summary_publisher=create_summary_publisher(),
-    )
-
-    trigger_listen = not args.no_trigger_listen and _env_bool("MEMORY_TRIGGER_LISTEN", True)
-
-
-
-    print(
-
-        f"{PROCESS_NAME} db={config.db_path} session={config.session_id or '(auto)'} "
-
-        f"mode={config.record_mode} interval={config.interval_minutes}m "
-
-        f"backend={config.llm_backend} trigger_listen={trigger_listen}",
-
-        file=sys.stderr,
-
-        flush=True,
-
-    )
-
-
-
-    trigger_handle = MemoryTriggerHandle()
-
-    listener: MemoryTriggerListener | None = None
-
-    if trigger_listen and not args.once and not args.until_empty:
-
-        listener = MemoryTriggerListener(trigger_handle)
-
-        listener.start()
-
-
-
-    try:
-
-        if args.until_empty:
-
-            while worker.run_once():
-
-                pass
-
-            return 0
-
-        if args.once:
-
-            worker.run_once()
-
-            return 0
-
-
-
-        interval_sec = max(1, config.interval_minutes) * 60
-
-        run_scheduled_worker(worker, trigger_handle, interval_sec=interval_sec)
-
-    except KeyboardInterrupt:
-
-        print("Shutting down...", file=sys.stderr)
-
-    finally:
-
-        store.close()
-
-    return 0
-
-
+            interval_sec = max(1, config.interval_minutes) * 60
+            run_scheduled_worker(worker, trigger_handle, interval_sec=interval_sec)
+        except KeyboardInterrupt:
+            print("Shutting down...", file=sys.stderr)
+        finally:
+            store.close()
+        return 0
 
 
 

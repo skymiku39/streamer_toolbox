@@ -1,5 +1,6 @@
 from collections.abc import Callable, Iterable
-from typing import TypeVar
+from functools import wraps
+from typing import Any, TypeVar
 
 from app.processes.base import ProcessSpec, PublisherSpec, SubscriberSpec
 
@@ -59,6 +60,13 @@ def register_publisher(
     description: str,
 ) -> Callable[[F], F]:
     def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            from app.processes.process_lock import acquire_process_lock
+
+            with acquire_process_lock(name):
+                return func(*args, **kwargs)
+
         registry.register_publisher(
             PublisherSpec(
                 name=name,
@@ -68,7 +76,7 @@ def register_publisher(
                 exchange=exchange,
             )
         )
-        return func
+        return wrapped  # type: ignore[return-value]
 
     return decorator
 
@@ -80,6 +88,13 @@ def register_subscriber(
     description: str,
 ) -> Callable[[F], F]:
     def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            from app.processes.process_lock import acquire_process_lock
+
+            with acquire_process_lock(name):
+                return func(*args, **kwargs)
+
         registry.register_subscriber(
             SubscriberSpec(
                 name=name,
@@ -90,6 +105,6 @@ def register_subscriber(
                 queue=queue,
             )
         )
-        return func
+        return wrapped  # type: ignore[return-value]
 
     return decorator
