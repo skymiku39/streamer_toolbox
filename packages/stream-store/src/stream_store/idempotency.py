@@ -70,6 +70,17 @@ class IdempotencyStore:
         self._conn.commit()
         return cursor.rowcount > 0
 
+    def release(self, namespace: str, key: str) -> None:
+        normalized_namespace = namespace.strip()
+        normalized_key = key.strip()
+        if not normalized_namespace or not normalized_key:
+            return
+        self._conn.execute(
+            "DELETE FROM idempotency_keys WHERE namespace = ? AND key = ?",
+            (normalized_namespace, normalized_key),
+        )
+        self._conn.commit()
+
     def _purge_expired(self) -> None:
         cutoff = (datetime.now(UTC) - timedelta(seconds=self._ttl_seconds)).isoformat()
         self._conn.execute("DELETE FROM idempotency_keys WHERE claimed_at < ?", (cutoff,))

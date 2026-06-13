@@ -45,7 +45,7 @@ flowchart LR
 | 直播摘要 | Chroma `kb_memory` ← SQLite `summaries` | 向量 RAG，依 `period_end` 由新到舊 |
 | 遊戲資料 | `packages/game-info`（IGDB，直播中可玩分類時注入） | API + 快取 |
 
-Prompt 來源優先順序（`LLM_SYSTEM_PROMPT`）：**直播狀態 > 逐字稿/聊天 > Bot 近期問答 > 遊戲資料 > 知識庫摘要**。
+Prompt 來源優先順序（`LLM_SYSTEM_PROMPT` 預設）：**直播狀態 > 逐字稿/聊天 > Bot 近期問答 > 遊戲資料 > 知識庫 > 通識**；上下文沒提到時仍須作答，勿只回「沒提到」。
 
 啟動時若 LLM 推理端點不可用，仍發布降級宣告至 `chat.reply`（Degraded Mode 說明）；詳見 `sub_llm/startup_announcement.py`。
 

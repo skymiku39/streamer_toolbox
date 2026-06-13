@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 from dotenv import load_dotenv
@@ -100,15 +101,44 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.stack == "llm":
         print(
-            "[runner] 提示：sub-llm 需搭配終端 1 執行 "
-            "`uv run python -m app.main run --stack ingress` "
-            "才會收到 stream.metadata（標題／遊戲）。",
+            "[runner] 提示：此 stack 不含聊天 ingress。"
+            "請在另一終端執行 "
+            "`uv run python -m app.main run --stack ingress`，"
+            "否則收不到 chat.message（!ask 不會觸發）"
+            "與 stream.metadata（標題／遊戲）。",
             file=sys.stderr,
         )
 
     if not specs:
         print("No matching processes found.", file=sys.stderr)
         return 1
+
+    if args.stack:
+        from app.processes.process_lock import acquire, release, stack_lock_name
+
+        lock_name = stack_lock_name(args.stack)
+        if not acquire(lock_name, os.getpid()):
+            print(
+                f"[runner] stack {args.stack!r} 已在執行中，請先停止後再啟動。",
+                file=sys.stderr,
+            )
+            print(
+                "[runner] 可執行：powershell -File scripts/stop_all.ps1",
+                file=sys.stderr,
+            )
+            return 1
+        from app.processes.python_exec import uses_base_python_executable
+
+        if uses_base_python_executable():
+            print(
+                f"[runner] stack={args.stack!r} runner_pid={os.getpid()} "
+                f"(若工作管理員看到兩個 python，外層為 uv/venv 啟動器，可忽略)",
+                file=sys.stderr,
+            )
+        try:
+            return run_processes(specs, chat_fallback=args.chat_fallback)
+        finally:
+            release(lock_name, os.getpid())
 
     return run_processes(specs, chat_fallback=args.chat_fallback)
 

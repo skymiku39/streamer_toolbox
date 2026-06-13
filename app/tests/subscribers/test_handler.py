@@ -96,6 +96,31 @@ def test_bot_author_trigger_is_ignored() -> None:
     assert published == []
 
 
+def test_bot_login_trigger_is_ignored() -> None:
+    published: list[tuple[str, dict]] = []
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        skip_trigger_logins=frozenset({"mybot"}),
+    )
+
+    subscriber.handle(
+        _chat_payload(
+            "!ask 這是 BOT 自己的訊息",
+            message_id="msg-bot-2",
+            author_name="MyBot",
+            author_id=None,
+        )
+    )
+
+    assert published == []
+
+
 def test_stt_segment_accumulates_context_for_reply() -> None:
     published: list[tuple[str, dict]] = []
 
@@ -235,6 +260,37 @@ def test_busy_lock_returns_busy_reply() -> None:
 
     assert len(published) == 2
     assert published[1][1]["content"] == BUSY_REPLY
+
+
+def test_busy_reply_releases_idempotency_for_retry(tmp_path) -> None:
+    from stream_store.idempotency import IdempotencyStore
+
+    published: list[tuple[str, dict]] = []
+    llm = _CountingLlmClient()
+    store = IdempotencyStore(tmp_path / "dedup.db")
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        idempotency=store,
+    )
+
+    assert subscriber._busy.acquire(blocking=False)
+    subscriber.handle(_chat_payload("!ask busy test", message_id="msg-busy-1"))
+    assert len(published) == 1
+    assert published[0][1]["content"] == BUSY_REPLY
+
+    subscriber._busy.release()
+    subscriber.handle(_chat_payload("!ask busy test", message_id="msg-busy-2"))
+
+    assert llm.calls == 1
+    assert len(published) == 2
+    assert published[1][1]["content"] != BUSY_REPLY
+    store.close()
 
 
 class _MarkdownLlmClient:
@@ -384,4 +440,38 @@ def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -
 
     assert llm.calls == 1
     assert len(published) == 1
+    store.close()
+
+
+def test_failed_output_releases_idempotency_for_retry(tmp_path) -> None:
+    from safety import SafetyFilter
+    from stream_store.idempotency import IdempotencyStore
+
+    class BlockOutputSafety(SafetyFilter):
+        def filter_input(self, text: str) -> str | None:
+            return text
+
+        def filter_output(self, text: str) -> str | None:
+            return None
+
+    published: list[tuple[str, dict]] = []
+    llm = _CountingLlmClient()
+    store = IdempotencyStore(tmp_path / "dedup.db")
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=BlockOutputSafety(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        idempotency=store,
+    )
+
+    payload = _chat_payload("!ask 重試測試")
+    subscriber.handle(payload)
+    subscriber.handle(payload)
+
+    assert llm.calls == 2
+    assert published == []
     store.close()

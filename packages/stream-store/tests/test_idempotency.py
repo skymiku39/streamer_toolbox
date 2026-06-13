@@ -29,3 +29,14 @@ def test_claim_with_empty_key_is_noop(tmp_path: Path) -> None:
     assert store.claim("ingress.chat.message", "") is True
 
     store.close()
+
+
+def test_release_allows_reclaim(tmp_path: Path) -> None:
+    store = IdempotencyStore(tmp_path / "dedup.db")
+
+    assert store.claim("sub_llm.chat.trigger", "msg-1") is True
+    assert store.claim("sub_llm.chat.trigger", "msg-1") is False
+    store.release("sub_llm.chat.trigger", "msg-1")
+    assert store.claim("sub_llm.chat.trigger", "msg-1") is True
+
+    store.close()

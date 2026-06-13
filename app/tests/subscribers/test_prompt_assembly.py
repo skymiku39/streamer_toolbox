@@ -11,6 +11,7 @@ def test_build_ask_messages_includes_game_reference_section() -> None:
     user = next(m["content"] for m in messages if m["role"] == "user")
     assert "遊戲資料參考：" in user
     assert "Bad North" in user
+    assert "【回答方式】" in user
     assert user.index("知識庫參考：") < user.index("遊戲資料參考：") < user.index("觀眾問題：")
 
 

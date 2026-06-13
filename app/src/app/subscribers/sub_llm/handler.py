@@ -44,11 +44,20 @@ def _ask_content_dedup_key(event: ChatMessageEvent, question: str) -> str:
     return f"{bucket}:{channel}:{author}:{question.strip().lower()}"
 
 
-def _is_skipped_trigger_author(event: ChatMessageEvent, skip_author_ids: frozenset[str]) -> bool:
-    if not skip_author_ids:
-        return False
-    author_id = (event.author_id or "").strip()
-    return bool(author_id and author_id in skip_author_ids)
+def _is_skipped_trigger_author(
+    event: ChatMessageEvent,
+    skip_author_ids: frozenset[str],
+    skip_logins: frozenset[str],
+) -> bool:
+    if skip_author_ids:
+        author_id = (event.author_id or "").strip()
+        if author_id and author_id in skip_author_ids:
+            return True
+    if skip_logins:
+        login = (event.login or event.author_name or "").strip().lower()
+        if login and login in skip_logins:
+            return True
+    return False
 
 
 class LlmSubscriber:
@@ -64,6 +73,7 @@ class LlmSubscriber:
         idempotency: IdempotencyStore | None = None,
         game_info: GameInfoProvider | None = None,
         skip_trigger_author_ids: frozenset[str] = frozenset(),
+        skip_trigger_logins: frozenset[str] = frozenset(),
     ) -> None:
         self._config = config
         self._llm = llm
@@ -74,6 +84,7 @@ class LlmSubscriber:
         self._idempotency = idempotency
         self._game_info = game_info
         self._skip_trigger_author_ids = skip_trigger_author_ids
+        self._skip_trigger_logins = skip_trigger_logins
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -115,7 +126,11 @@ class LlmSubscriber:
         if question is None:
             return
 
-        if _is_skipped_trigger_author(event, self._skip_trigger_author_ids):
+        if _is_skipped_trigger_author(
+            event,
+            self._skip_trigger_author_ids,
+            self._skip_trigger_logins,
+        ):
             print(
                 f"[sub-llm] skip bot trigger message_id={event.message_id[:8]}",
                 file=sys.stderr,
@@ -127,6 +142,9 @@ class LlmSubscriber:
         if filtered_question is None:
             return
 
+        content_key: str | None = None
+        content_claimed = False
+        trigger_claimed = False
         if self._idempotency is not None:
             content_key = _ask_content_dedup_key(event, filtered_question)
             if not self._idempotency.claim(NAMESPACE_ASK_CONTENT, content_key):
@@ -136,23 +154,25 @@ class LlmSubscriber:
                     flush=True,
                 )
                 return
+            content_claimed = True
+            if not self._idempotency.claim(NAMESPACE_CHAT_TRIGGER, event.message_id):
+                self._idempotency.release(NAMESPACE_ASK_CONTENT, content_key)
+                print(
+                    f"[sub-llm] skip duplicate trigger message_id={event.message_id[:8]}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return
+            trigger_claimed = True
 
-        if self._idempotency is not None and not self._idempotency.claim(
-            NAMESPACE_CHAT_TRIGGER,
-            event.message_id,
-        ):
-            print(
-                f"[sub-llm] skip duplicate trigger message_id={event.message_id[:8]}",
-                file=sys.stderr,
-                flush=True,
-            )
-            return
-
-        if not self._busy.acquire(blocking=False):
-            self._publish_reply(event, BUSY_REPLY, question=filtered_question)
-            return
-
+        published = False
+        busy_acquired = False
         try:
+            if not self._busy.acquire(blocking=False):
+                self._publish_reply(event, BUSY_REPLY, question=filtered_question)
+                return
+
+            busy_acquired = True
             channel = event.channel or ""
             context = self._context_buffer.context_text(channel)
             stt_count, chat_count, bot_reply_count, context_len, has_stream = (
@@ -201,8 +221,18 @@ class LlmSubscriber:
                 limit = self._config.reply_max_length
                 filtered_reply = filtered_reply[: limit - 3] + "..."
             self._publish_reply(event, filtered_reply, question=filtered_question)
+            published = True
         finally:
-            self._busy.release()
+            if busy_acquired:
+                self._busy.release()
+            if not published and self._idempotency is not None:
+                if content_claimed and content_key is not None:
+                    self._idempotency.release(NAMESPACE_ASK_CONTENT, content_key)
+                if trigger_claimed:
+                    self._idempotency.release(
+                        NAMESPACE_CHAT_TRIGGER,
+                        event.message_id,
+                    )
 
     def _publish_reply(
         self,

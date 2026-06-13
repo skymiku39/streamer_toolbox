@@ -4,7 +4,16 @@ import os
 
 import pytest
 
-from app.processes.process_lock import acquire, acquire_process_lock, is_locked, locked_names, pid_is_alive, release
+from app.processes.process_lock import (
+    acquire,
+    acquire_process_lock,
+    is_locked,
+    locked_names,
+    pid_is_alive,
+    release,
+    stack_lock_name,
+    _lock_path,
+)
 
 
 def test_pid_is_alive_current_process() -> None:
@@ -61,3 +70,31 @@ def test_acquire_process_lock_allows_same_pid_holder(tmp_path, monkeypatch) -> N
         assert is_locked("sub-llm") is True
 
     release("sub-llm", pid)
+
+
+def test_stack_lock_names_use_separate_files(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    lock_dir = tmp_path / "locks"
+    llm_name = stack_lock_name("llm")
+    ingress_name = stack_lock_name("ingress")
+    assert llm_name == "stack_llm"
+    assert ingress_name == "stack_ingress"
+    assert _lock_path(llm_name, lock_dir) != _lock_path(ingress_name, lock_dir)
+    assert acquire(llm_name, 100, lock_dir=lock_dir) is True
+    assert acquire(ingress_name, 200, lock_dir=lock_dir) is True
+    assert len(list(lock_dir.glob("*.pid"))) == 2
+    holder = os.getpid()
+    release(llm_name, 100, lock_dir=lock_dir)
+    assert acquire(llm_name, holder, lock_dir=lock_dir) is True
+    assert acquire(llm_name, holder, lock_dir=lock_dir) is False
+    release(llm_name, holder, lock_dir=lock_dir)
+    release(ingress_name, 200, lock_dir=lock_dir)
+
+
+def test_legacy_stack_colon_name_is_sanitized(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    lock_dir = tmp_path / "locks"
+    assert _lock_path("stack:llm", lock_dir).name == "stack_llm.pid"
+    assert acquire("stack:llm", 100, lock_dir=lock_dir) is True
+    assert (lock_dir / "stack_llm.pid").is_file()
+    release("stack:llm", 100, lock_dir=lock_dir)

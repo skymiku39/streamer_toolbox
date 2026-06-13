@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from sub_llm.prompts import resolve_system_prompt
 
+_ANSWER_GUIDANCE = (
+    "【回答方式】直接回答觀眾問題，語氣自然。"
+    "上下文沒提到的，最多一句帶過，仍須用知識庫、遊戲資料或通識補足；"
+    "勿反覆「直播中…」，勿只說沒提到就結束。"
+)
+
 
 def build_ask_messages(
     question: str,
@@ -25,6 +31,7 @@ def build_ask_messages(
         user_sections.append(f"知識庫參考：\n{knowledge.strip()}")
     if game_reference.strip():
         user_sections.append(f"遊戲資料參考：\n{game_reference.strip()}")
+    user_sections.append(_ANSWER_GUIDANCE)
     user_sections.append(f"觀眾問題：{question.strip()}")
     messages.append({"role": "user", "content": "\n\n".join(user_sections)})
     return messages
@@ -81,6 +88,6 @@ def analyze_prompt_payload(
         "has_static_kb_marker": "【實況主知識庫】" in knowledge_body,
         "has_memory_marker": "【近期直播摘要】" in knowledge_body,
         "has_game_reference_marker": "【遊戲資料參考：" in game_body,
-        "has_general_knowledge_hint": "本身的常識" in system_content,
+        "has_general_knowledge_hint": "通識" in system_content,
         "messages": messages,
     }

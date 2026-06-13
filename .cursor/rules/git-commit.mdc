@@ -14,8 +14,23 @@ type: emoji [AI] subject
 範例：`feat: ✨ [AI] 新增 ingress-twitch-stream 並餵入 sub-llm 直播 metadata`
 
 - 正文使用**繁體中文**，聚焦「為何變更」
-- **禁止**使用 `[AI 自動提交]` 前綴
+- 僅允許上述 `type: emoji [AI] subject` 格式
 - **僅在使用者明確要求時**才 commit
 - 不提交 `.env`、憑證、token 等機密檔案
+- `pre-commit` 的 `commit-msg` hook 會拒絕不符合格式的訊息
 
-Type 與 emoji 對照見使用者全域規則 `conventional-commits.mdc`。
+## Type 對照表
+
+| Type | Emoji | 使用時機 |
+|------|-------|----------|
+| feat | ✨ | 新功能、新行為 |
+| fix | 🐛 | 修正錯誤行為 |
+| perf | ⚡️ | 效能優化 |
+| test | ✅ | 測試新增或調整 |
+| docs | 📝 | README、.md 等文件 |
+| refactor | ♻️ | 不改功能與修 bug 的架構調整 |
+| style | 💄 | 格式、空白、命名風格 |
+| revert | 🔙 | git revert 等 |
+| build | 📦 | 建置流程、依賴 |
+| ci | 👷 | pipeline、workflow |
+| chore | ⚙️ | 瑣碎工作、IDE 設定等 |

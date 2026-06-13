@@ -25,10 +25,11 @@ from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
 from sub_llm.game_context import create_game_info_provider
-from sub_llm.startup_announcement import publish_startup_announcement
+from sub_llm.startup_announcement import publish_startup_announcement, resolve_announcement_channel
 
 PROCESS_NAME = "sub-llm"
 DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
+NAMESPACE_STARTUP = "sub_llm.startup"
 
 
 def _load_config(config_path: Path | None) -> LlmSubscriberConfig:
@@ -76,10 +77,10 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     connection = connect_blocking(rabbitmq_url())
-    channel = connection.channel()
+    mq_channel = connection.channel()
     exchange_name = stream_exchange()
     setup_subscriber_queue_bindings(
-        channel,
+        mq_channel,
         exchange_name=exchange_name,
         queue_name=QUEUE_SUB_LLM,
         routing_keys=[TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA],
@@ -87,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
 
     def publish(topic: str, payload: dict) -> None:
         publish_topic_blocking(
-            channel,
+            mq_channel,
             exchange_name=exchange_name,
             routing_key=topic,
             payload=payload,
@@ -112,7 +113,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     bot_author_id = (os.environ.get("TWITCH_BOT_ID") or "").strip()
+    bot_login = (os.environ.get("TWITCH_BOT_LOGIN") or "").strip().lower()
     skip_author_ids = frozenset({bot_author_id}) if bot_author_id else frozenset()
+    skip_logins = frozenset({bot_login}) if bot_login else frozenset()
 
     idempotency = IdempotencyStore(default_idempotency_db_path())
     game_info = create_game_info_provider()
@@ -133,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         idempotency=idempotency,
         game_info=game_info,
         skip_trigger_author_ids=skip_author_ids,
+        skip_trigger_logins=skip_logins,
     )
 
     print(
@@ -143,19 +147,31 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
         flush=True,
     )
-    publish_startup_announcement(
-        llm=llm,
-        safety=safety,
-        config=config,
-        publish=publish,
-        context_buffer=context_buffer,
-        backend=args.llm_backend,
-    )
+    twitch_channel = resolve_announcement_channel()
+    startup_claimed = False
+    if twitch_channel and idempotency.claim(NAMESPACE_STARTUP, twitch_channel.lower()):
+        startup_claimed = True
+        publish_startup_announcement(
+            llm=llm,
+            safety=safety,
+            config=config,
+            publish=publish,
+            context_buffer=context_buffer,
+            backend=args.llm_backend,
+        )
+    elif twitch_channel:
+        print(
+            "[sub-llm] startup announcement skipped: duplicate sub-llm instance",
+            file=sys.stderr,
+            flush=True,
+        )
     try:
-        consume_messages(channel, QUEUE_SUB_LLM, subscriber.handle)
+        consume_messages(mq_channel, QUEUE_SUB_LLM, subscriber.handle)
     except KeyboardInterrupt:
         print("Shutting down...", file=sys.stderr)
     finally:
+        if startup_claimed and twitch_channel:
+            idempotency.release(NAMESPACE_STARTUP, twitch_channel.lower())
         idempotency.close()
         if connection.is_open:
             connection.close()

@@ -9,14 +9,27 @@ from pathlib import Path
 
 _LOCK_DIR = Path("data/process-locks")
 _thread_held = threading.local()
+_WINDOWS_UNSAFE_LOCK_CHARS = frozenset(':\\/*?"<>|')
 
 
 def _resolve_lock_dir(lock_dir: Path | None) -> Path:
     return lock_dir if lock_dir is not None else _LOCK_DIR
 
 
-def _lock_path(process_name: str, lock_dir: Path | None = None) -> Path:
+def _sanitize_lock_name(process_name: str) -> str:
+    """Windows 不允許 `:` 等字元；`stack:llm` 會變成 ADS 檔 `stack`，導致鎖失效。"""
     safe = process_name.replace("/", "_").replace("\\", "_")
+    for char in _WINDOWS_UNSAFE_LOCK_CHARS:
+        safe = safe.replace(char, "_")
+    return safe.strip("_") or "unnamed"
+
+
+def stack_lock_name(stack: str) -> str:
+    return _sanitize_lock_name(f"stack_{stack.strip().lower()}")
+
+
+def _lock_path(process_name: str, lock_dir: Path | None = None) -> Path:
+    safe = _sanitize_lock_name(process_name)
     return (_resolve_lock_dir(lock_dir) / f"{safe}.pid").resolve()
 
 

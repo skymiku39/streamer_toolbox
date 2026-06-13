@@ -5,7 +5,8 @@ def test_resolve_system_prompt_uses_default_when_empty(monkeypatch) -> None:
     monkeypatch.delenv("LLM_SYSTEM_PROMPT", raising=False)
     monkeypatch.setenv("LLM_GENERAL_KNOWLEDGE", "true")
     prompt = resolve_system_prompt()
-    assert "本身的常識" in prompt
+    assert "通識" in prompt
+    assert "不要套公式" in prompt
     assert prompt == DEFAULT_LLM_SYSTEM_PROMPT
 
 

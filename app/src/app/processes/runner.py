@@ -6,8 +6,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 
-from app.console_encoding import configure_utf8_stdio, utf8_subprocess_env, write_stdio
-from app.module_paths import legacy_pythonpath_env
+from app.console_encoding import configure_utf8_stdio, write_stdio
 from app.processes.base import ProcessSpec
 from app.processes.chat_ingress import (
     CHAT_FALLBACK_EXIT_CODE,
@@ -18,7 +17,9 @@ from app.processes.chat_ingress import (
     IRC_FALLBACK_PROCESS,
     parse_chat_ingress_status,
 )
+from app.processes.child_supervisor import popen_preexec_fn, track_child, terminate_tracked_children
 from app.processes.process_lock import locked_names, release
+from app.processes.python_exec import subprocess_python_env, subprocess_python_executable
 from app.processes.registry import registry
 
 SHUTDOWN_TIMEOUT_SECONDS = 10
@@ -47,15 +48,17 @@ def _start_process(
     on_line: LineCallback | None = None,
 ) -> subprocess.Popen[str]:
     process = subprocess.Popen(
-        [sys.executable, "-m", spec.module],
+        [subprocess_python_executable(), "-m", spec.module],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         encoding="utf-8",
         errors="replace",
         bufsize=1,
-        env=utf8_subprocess_env(legacy_pythonpath_env()),
+        env=subprocess_python_env(),
+        preexec_fn=popen_preexec_fn(),
     )
+    track_child(process)
     thread = threading.Thread(
         target=_prefix_stream,
         args=(process.stdout, spec.name, sys.stdout),
@@ -211,6 +214,7 @@ def run_processes(
             except subprocess.TimeoutExpired:
                 process.kill()
             release(spec.name)
+        terminate_tracked_children()
 
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
