@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Protocol
-
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore, resolve_session_for_channel
 
 
 class KnowledgeStore(Protocol):
-    def query(self, question: str) -> str:
-        """依問題檢索知識庫片段；無資料時回傳空字串。"""
+    def query(self, question: str, *, channel: str = "") -> str:
+        """依問題與直播間 channel 檢索知識庫片段；無資料時回傳空字串。"""
 
 
 class EmptyKnowledgeStore:
-    def query(self, question: str) -> str:
+    def query(self, question: str, *, channel: str = "") -> str:
         return ""
 
 
@@ -21,13 +19,13 @@ class CompositeKnowledgeStore:
     def __init__(self, stores: list[KnowledgeStore]) -> None:
         self._stores = stores
 
-    def query(self, question: str) -> str:
-        parts = [store.query(question).strip() for store in self._stores]
+    def query(self, question: str, *, channel: str = "") -> str:
+        parts = [store.query(question, channel=channel).strip() for store in self._stores]
         return "\n\n".join(part for part in parts if part)
 
 
 class SummaryKnowledgeStore:
-    """從 L2 summaries 表讀取同 session 的 chat/stt 摘要，供 sub-llm 參考。"""
+    """從 L2 summaries 表讀取同 channel 對應 session 的 chat/stt 摘要。"""
 
     def __init__(
         self,
@@ -42,17 +40,13 @@ class SummaryKnowledgeStore:
         self._limit = limit
         self._max_chars = max_chars
 
-    def _resolve_session_id(self) -> str | None:
-        if self._session_id:
-            return self._session_id
-        checkpoint = self._store.get_checkpoint(ACTIVE_SESSION_KEY)
-        if checkpoint:
-            return checkpoint
-        return self._store.latest_session_id()
-
-    def query(self, question: str) -> str:
+    def query(self, question: str, *, channel: str = "") -> str:
         del question  # 現階段注入近期摘要全文，由 LLM 自行推理
-        session_id = self._resolve_session_id()
+        session_id = resolve_session_for_channel(
+            self._store,
+            channel,
+            explicit_session_id=self._session_id,
+        )
         if session_id is None:
             return ""
         summaries = self._store.list_summaries(session_id, limit=self._limit)
@@ -96,7 +90,8 @@ class FileKnowledgeStore:
                 tokens.add(bigram)
         return tokens
 
-    def query(self, question: str) -> str:
+    def query(self, question: str, *, channel: str = "") -> str:
+        del channel
         if not self._documents:
             return ""
         tokens = self._query_tokens(question)

@@ -75,8 +75,9 @@ class LlmSubscriber:
             return
 
         try:
-            context = self._context_buffer.context_text()
-            knowledge = self._knowledge.query(filtered_question)
+            channel = event.channel or ""
+            context = self._context_buffer.context_text(channel)
+            knowledge = self._knowledge.query(filtered_question, channel=channel)
             raw_reply = self._llm.ask(
                 filtered_question,
                 context=context,

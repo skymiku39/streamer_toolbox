@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import TemplateSummarizer
@@ -29,13 +29,14 @@ def test_memory_worker_summarizes_and_marks_records(tmp_path: Path) -> None:
         author="B",
         message_id="m2",
     )
-    store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+    set_active_session_for_channel(store, channel="demo", session_id=session_id)
 
     worker = MemoryWorker(
         store,
         MemoryWorkerConfig(
             db_path=str(db_path),
             session_id=None,
+            channel="demo",
             interval_minutes=5,
             llm_backend="template",
             batch_limit=200,
@@ -63,13 +64,14 @@ def test_memory_worker_summarizes_stt(tmp_path: Path) -> None:
         text="開場白",
         segment_id="s1",
     )
-    store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+    set_active_session_for_channel(store, channel="demo", session_id=session_id)
 
     worker = MemoryWorker(
         store,
         MemoryWorkerConfig(
             db_path=str(db_path),
             session_id=None,
+            channel="demo",
             interval_minutes=5,
             llm_backend="template",
             batch_limit=200,
@@ -104,13 +106,14 @@ def test_memory_worker_both_separate_aligned_period(tmp_path: Path) -> None:
         text="今天打算打 Boss",
         segment_id="s1",
     )
-    store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+    set_active_session_for_channel(store, channel="demo", session_id=session_id)
 
     worker = MemoryWorker(
         store,
         MemoryWorkerConfig(
             db_path=str(db_path),
             session_id=None,
+            channel="demo",
             interval_minutes=5,
             llm_backend="template",
             batch_limit=200,

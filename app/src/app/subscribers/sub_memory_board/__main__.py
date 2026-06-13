@@ -8,6 +8,7 @@ import threading
 from dotenv import load_dotenv
 
 from app.console_encoding import configure_utf8_stdio
+from app.memory_view.channel import default_channel
 from app.memory_view.http_server import MemoryBoardHttpServer, MemoryBoardState
 from app.memory_view.service import MemoryViewService
 from app.processes.registry import register_subscriber
@@ -121,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
         port=args.port,
         service=service,
         state=state,
+        default_channel=default_channel(),
     )
     server.start()
     print(f"{PROCESS_NAME} {server.base_url}", file=sys.stderr, flush=True)

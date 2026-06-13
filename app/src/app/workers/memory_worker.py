@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore, resolve_session_for_channel
 from stream_store.models import Summary, TextRecord
 
 from app.workers.memory_config import MemoryWorkerConfig
@@ -145,17 +145,10 @@ class MemoryWorker:
     def _resolve_session_id(self) -> str | None:
         if self._config.session_id:
             return self._config.session_id
-        checkpoint = self._store.get_checkpoint(ACTIVE_SESSION_KEY)
-        if checkpoint:
-            return checkpoint
-        return self._infer_latest_session()
-
-    def _infer_latest_session(self) -> str | None:
-        session_id = self._store.latest_session_id()
-        if session_id is None:
-            return None
-        self._store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
-        return session_id
+        channel = self._config.channel
+        if channel:
+            return resolve_session_for_channel(self._store, channel)
+        return resolve_session_for_channel(self._store, "")
 
 
 def build_chat_context_lines(records: list[TextRecord]) -> str:

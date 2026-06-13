@@ -6,8 +6,6 @@ from pathlib import Path
 
 from stream_store.models import SessionStats, Summary, TextRecord
 
-ACTIVE_SESSION_KEY = "active_session_id"
-
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS stream_sessions (
     id TEXT PRIMARY KEY,
@@ -307,6 +305,23 @@ class StreamTextStore:
             ORDER BY id DESC
             LIMIT 1
             """
+        ).fetchone()
+        if row is None:
+            return None
+        return str(row["session_id"])
+
+    def latest_session_id_for_channel(self, channel: str) -> str | None:
+        from stream_store.session import normalize_channel
+
+        normalized = normalize_channel(channel)
+        row = self._conn.execute(
+            """
+            SELECT session_id FROM text_records
+            WHERE session_id LIKE ? OR LOWER(REPLACE(channel, '#', '')) = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (f"{normalized}_%", normalized),
         ).fetchone()
         if row is None:
             return None

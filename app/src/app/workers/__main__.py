@@ -90,6 +90,16 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.add_argument(
 
+        "--channel",
+
+        default=None,
+
+        help="Override TWITCH_CHANNEL / MEMORY_CHANNEL for session resolution",
+
+    )
+
+    parser.add_argument(
+
         "--db-path",
 
         default=os.environ.get("STREAM_DB_PATH", "data/stream_text.db"),
@@ -191,6 +201,8 @@ def main(argv: list[str] | None = None) -> int:
         db_path=args.db_path,
 
         session_id=session_id,
+
+        channel=(args.channel or config.channel or "").strip() or None,
 
         interval_minutes=args.interval_minutes,
 

@@ -5,7 +5,7 @@ import threading
 from typing import Any
 
 from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
 
@@ -51,7 +51,11 @@ class StreamRecordWriter:
                 author=event.author_name,
                 message_id=event.message_id,
             )
-            self._store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+            set_active_session_for_channel(
+                self._store,
+                channel=channel,
+                session_id=session_id,
+            )
             self._chat_count += 1
 
     def _handle_stt(self, payload: dict[str, Any]) -> None:
@@ -71,7 +75,11 @@ class StreamRecordWriter:
                 text=text,
                 segment_id=event.segment_id,
             )
-            self._store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+            set_active_session_for_channel(
+                self._store,
+                channel=channel,
+                session_id=session_id,
+            )
             self._stt_count += 1
 
     @property

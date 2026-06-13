@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 from app.memory_view.http_server import MemoryBoardHttpServer, MemoryBoardState
 from app.memory_view.service import MemoryViewService
@@ -36,7 +36,7 @@ def test_memory_view_service_lists_summaries_chronologically(tmp_path: Path) -> 
 def test_memory_board_api(tmp_path: Path) -> None:
     store = StreamTextStore(tmp_path / "test.db")
     session_id = "sess-board"
-    store.set_checkpoint(ACTIVE_SESSION_KEY, session_id)
+    set_active_session_for_channel(store, channel="sess-board", session_id=session_id)
     store.save_summary(
         session_id=session_id,
         period_start="2026-06-12T10:00:00+00:00",
@@ -47,7 +47,13 @@ def test_memory_board_api(tmp_path: Path) -> None:
     )
     service = MemoryViewService(store)
     state = MemoryBoardState()
-    server = MemoryBoardHttpServer(host="127.0.0.1", port=0, service=service, state=state)
+    server = MemoryBoardHttpServer(
+        host="127.0.0.1",
+        port=0,
+        service=service,
+        state=state,
+        default_channel="sess-board",
+    )
     server.start()
     try:
         import urllib.request

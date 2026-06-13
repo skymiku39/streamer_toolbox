@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -46,9 +45,11 @@ def routing_keys_for_mode(record_mode: str) -> list[str]:
     return keys
 
 
+from stream_store.session import resolve_session_id as build_session_id
+
+
 def resolve_session_id(config: RecordConfig, *, channel: str) -> str:
-    if config.session_id:
-        return config.session_id
-    day = datetime.now(UTC).strftime("%Y%m%d")
-    normalized = channel.lstrip("#").lower() or "unknown"
-    return f"{normalized}_{day}"
+    return build_session_id(
+        channel=channel,
+        explicit_session_id=config.session_id,
+    )

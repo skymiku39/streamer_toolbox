@@ -29,6 +29,7 @@ def test_memory_worker_publishes_summary_ready(tmp_path: Path) -> None:
         MemoryWorkerConfig(
             db_path=str(tmp_path / "test.db"),
             session_id=session_id,
+            channel="demo",
             interval_minutes=30,
             llm_backend="template",
             batch_limit=200,

@@ -9,14 +9,16 @@ from dotenv import load_dotenv
 from app.console_encoding import configure_utf8_stdio
 from stream_store import StreamTextStore
 
+from app.memory_view.channel import default_channel
 from app.memory_view.service import MemoryViewService
 
 configure_utf8_stdio()
 
 
-def _print_sessions(service: MemoryViewService) -> None:
-    active = service.resolve_active_session_id()
-    print(f"active_session_id: {active or '—'}")
+def _print_sessions(service: MemoryViewService, *, channel: str | None = None) -> None:
+    active = service.resolve_active_session_id(channel=channel)
+    channel_hint = f" (channel={channel})" if channel else ""
+    print(f"active_session_id: {active or '—'}{channel_hint}")
     print(f"{'session_id':<28} {'channel':<16} chat  stt  summaries  pending")
     print("-" * 72)
     for session in service.list_sessions():
@@ -68,7 +70,10 @@ def main(argv: list[str] | None = None) -> int:
         help="列出所有 session 統計",
     )
     parser.add_argument(
-        "--limit",
+        "--channel",
+        default=None,
+        help="直播間 channel（--active 時用於解析 session；預設 TWITCH_CHANNEL）",
+    )
         type=int,
         default=100,
         help="摘要顯示上限",
@@ -82,14 +87,15 @@ def main(argv: list[str] | None = None) -> int:
 
     store = StreamTextStore(db_path)
     service = MemoryViewService(store)
+    channel = (args.channel or default_channel() or "").strip() or None
     try:
         if args.list_sessions:
-            _print_sessions(service)
+            _print_sessions(service, channel=channel)
             return 0
 
         session_id = (args.session_id or "").strip() or None
         if args.active or session_id is None:
-            session_id = service.resolve_active_session_id()
+            session_id = service.resolve_active_session_id(channel=channel)
         if session_id is None:
             print("找不到 session；請用 --list-sessions 查看。", file=sys.stderr)
             return 1

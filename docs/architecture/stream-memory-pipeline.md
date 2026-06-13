@@ -85,7 +85,7 @@ L2 記憶層的作法：
 - `stream_sessions` — 場次
 - `text_records` — 原始文字（`source=chat` 或 `stt`）
 - `summaries` — 記憶層產出的摘要（`source=chat` / `stt`；`both` 模式每批各一列，period 對齊）
-- `memory_checkpoints` — worker 游標
+- `memory_checkpoints` — worker 游標（**per-channel**：`active_session_id:{channel}`）
 
 ## 環境變數
 
@@ -93,7 +93,8 @@ L2 記憶層的作法：
 |------|------|------|
 | `RECORD_MODE` | `chat` | `chat` / `stt` / `both` |
 | `STREAM_DB_PATH` | `data/stream_text.db` | SQLite 路徑 |
-| `STREAM_SESSION_ID` | （自動） | 可选手動指定場次 ID |
+| `TWITCH_CHANNEL` | — | L1/L2/L3 解析 session 的預設直播間 |
+| `MEMORY_CHANNEL` | （同 TWITCH） | memory worker 專用 channel 覆寫 |
 | `MEMORY_INTERVAL_MINUTES` | `30` | 摘要週期（常駐 worker 每隔幾分鐘執行一次） |
 | `MEMORY_TRIGGER_LISTEN` | `true` | 是否監聽 `memory.summarize.request` 觸發立即摘要 |
 | `MEMORY_PUBLISH_READY` | `true` | 摘要完成後 publish `memory.summary.ready` |

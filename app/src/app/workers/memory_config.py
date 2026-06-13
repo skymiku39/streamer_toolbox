@@ -10,6 +10,7 @@ DEFAULT_MEMORY_INTERVAL_MINUTES = 30
 class MemoryWorkerConfig:
     db_path: str
     session_id: str | None
+    channel: str | None
     interval_minutes: int
     llm_backend: str
     batch_limit: int
@@ -18,9 +19,15 @@ class MemoryWorkerConfig:
     @classmethod
     def from_env(cls) -> MemoryWorkerConfig:
         mode = (os.environ.get("RECORD_MODE", "chat") or "chat").strip().lower()
+        channel = (
+            os.environ.get("MEMORY_CHANNEL")
+            or os.environ.get("TWITCH_CHANNEL")
+            or ""
+        ).strip() or None
         return cls(
             db_path=os.environ.get("STREAM_DB_PATH", "data/stream_text.db"),
             session_id=(os.environ.get("STREAM_SESSION_ID") or "").strip() or None,
+            channel=channel,
             interval_minutes=int(
                 os.environ.get("MEMORY_INTERVAL_MINUTES", str(DEFAULT_MEMORY_INTERVAL_MINUTES))
             ),

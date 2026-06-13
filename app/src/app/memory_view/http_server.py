@@ -37,11 +37,13 @@ class MemoryBoardHttpServer:
         port: int,
         service: MemoryViewService,
         state: MemoryBoardState,
+        default_channel: str | None = None,
     ) -> None:
         self._host = host
         self._port = port
         self._service = service
         self._state = state
+        self._default_channel = default_channel
         self._server: ThreadingHTTPServer | None = None
         self._thread: threading.Thread | None = None
 
@@ -52,12 +54,14 @@ class MemoryBoardHttpServer:
     def start(self) -> None:
         service = self._service
         state = self._state
+        default_channel = self._default_channel
 
         class Handler(_BoardRequestHandler):
             pass
 
         Handler.service = service
         Handler.state = state
+        Handler.default_channel = default_channel
         self._server = ThreadingHTTPServer((self._host, self._port), Handler)
         self._thread = threading.Thread(
             target=self._server.serve_forever,
@@ -79,6 +83,7 @@ class MemoryBoardHttpServer:
 class _BoardRequestHandler(BaseHTTPRequestHandler):
     service: MemoryViewService
     state: MemoryBoardState
+    default_channel: str | None = None
 
     def log_message(self, format: str, *args) -> None:  # noqa: A003
         return
@@ -91,7 +96,12 @@ class _BoardRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"revision": self.state.revision})
             return
         if self.path == "/api/sessions":
-            self._send_json(self.service.sessions_payload(revision=self.state.revision))
+            self._send_json(
+                self.service.sessions_payload(
+                    revision=self.state.revision,
+                    channel=self.default_channel,
+                )
+            )
             return
         prefix = "/api/sessions/"
         if self.path.startswith(prefix) and self.path.endswith("/summaries"):

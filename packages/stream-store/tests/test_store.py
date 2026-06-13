@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 
 def test_append_chat_and_fetch_unsummarized(tmp_path: Path) -> None:
@@ -35,8 +35,8 @@ def test_append_chat_and_fetch_unsummarized(tmp_path: Path) -> None:
 
 def test_save_summary_and_checkpoint(tmp_path: Path) -> None:
     store = StreamTextStore(tmp_path / "test.db")
-    store.set_checkpoint(ACTIVE_SESSION_KEY, "sess-1")
-    assert store.get_checkpoint(ACTIVE_SESSION_KEY) == "sess-1"
+    set_active_session_for_channel(store, channel="demo", session_id="sess-1")
+    assert store.get_checkpoint("active_session_id:demo") == "sess-1"
     summary = store.save_summary(
         session_id="sess-1",
         period_start="2026-06-12T10:00:00+00:00",

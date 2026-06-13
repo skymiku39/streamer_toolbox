@@ -15,7 +15,7 @@ from sub_llm.knowledge import EmptyKnowledgeStore
 from sub_llm.llm import TemplateLlmClient
 
 
-def _chat_payload(content: str) -> dict:
+def _chat_payload(content: str, *, channel: str = "demo_channel") -> dict:
     return ChatMessageEvent(
         schema_version=1,
         topic=TOPIC_CHAT_MESSAGE,
@@ -24,16 +24,16 @@ def _chat_payload(content: str) -> dict:
         author_name="viewer",
         content=content,
         timestamp="2026-06-12T17:00:00+08:00",
-        channel="demo_channel",
+        channel=channel,
     ).to_dict()
 
 
-def _stt_payload(text: str) -> dict:
+def _stt_payload(text: str, *, channel: str = "demo_channel") -> dict:
     return SttSegmentEvent(
         schema_version=1,
         topic=TOPIC_STT_SEGMENT,
         platform="twitch",
-        channel="demo_channel",
+        channel=channel,
         segment_id="seg-1",
         text=text,
         timestamp="2026-06-12T17:00:00+08:00",
@@ -80,6 +80,25 @@ def test_stt_segment_accumulates_context_for_reply() -> None:
 
     assert len(published) == 1
     assert "逐字稿" in published[0][1]["content"]
+
+
+def test_stt_context_does_not_leak_across_channels() -> None:
+    published: list[tuple[str, dict]] = []
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=SttContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_stt_payload("B 房秘密", channel="room_b"))
+    subscriber.handle(_chat_payload("!ask 剛剛說什麼？", channel="room_a"))
+
+    assert len(published) == 1
+    assert "B 房秘密" not in published[0][1]["content"]
 
 
 def test_non_trigger_chat_is_ignored() -> None:
