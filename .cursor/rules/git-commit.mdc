@@ -1,0 +1,21 @@
+---
+description: 本 repo 的 Git commit 訊息格式（Conventional Commits + [AI]）
+alwaysApply: true
+---
+
+# Git Commit 格式
+
+本專案 commit 訊息格式：
+
+```
+type: emoji [AI] subject
+```
+
+範例：`feat: ✨ [AI] 新增 ingress-twitch-stream 並餵入 sub-llm 直播 metadata`
+
+- 正文使用**繁體中文**，聚焦「為何變更」
+- **禁止**使用 `[AI 自動提交]` 前綴
+- **僅在使用者明確要求時**才 commit
+- 不提交 `.env`、憑證、token 等機密檔案
+
+Type 與 emoji 對照見使用者全域規則 `conventional-commits.mdc`。
