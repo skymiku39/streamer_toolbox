@@ -9,6 +9,7 @@ TOPIC_CHARACTER_EXPRESSION_READY = "character.expression.ready"
 TOPIC_EVENTSUB_PREFIX = "eventsub."
 TOPIC_SYSTEM_ERROR = "system.error"
 TOPIC_MEMORY_SUMMARIZE_REQUEST = "memory.summarize.request"
+TOPIC_MEMORY_SUMMARY_READY = "memory.summary.ready"
 
 SOURCE_LOGIC_COMMANDS = "logic-commands"
 SOURCE_LOGIC_KEYWORDS = "logic-keywords"

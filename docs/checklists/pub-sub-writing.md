@@ -336,6 +336,8 @@ L2 記憶層：定時讀未摘要 chat / stt → 寫 `summaries` 表。實作於
 | 設定 | `STREAM_DB_PATH`, `MEMORY_INTERVAL_MINUTES`, `MEMORY_LLM_BACKEND`, `RECORD_MODE` |
 | CLI | `uv run python -m app.workers` / `--once` / `--trigger` |
 | 觸發 Topic | `memory.summarize.request` → 常駐 worker 立即跑一輪摘要 |
+| 就緒 Topic | `memory.summary.ready` → board / 其他 Sub 即時刷新 |
+| 檢視 | CLI `uv run python -m app.memory_view`；Board `sub-memory-board` |
 
 **撰寫清單**
 
@@ -346,6 +348,27 @@ L2 記憶層：定時讀未摘要 chat / stt → 寫 `summaries` 表。實作於
 - [x] 單元測試：`MemoryWorker.run_once`（chat / stt）
 
 **驗收：** `RECORD_MODE=both` 且 `--once` 後，`summaries` 有 `source=chat` 與 `source=stt` 各一列，且 `period_start`/`period_end` 相同。
+
+---
+
+### `sub-memory-board` ✅（Phase 2）
+
+L2 摘要檢視：本機 HTTP Board + 可選訂閱 `memory.summary.ready` 刷新。
+
+| 項目 | 內容 |
+|------|------|
+| 訂閱 | `memory.summary.ready`（可 `--no-mq` 關閉） |
+| 發布 | — |
+| 依賴 | `stream-store`；HTTP |
+| CLI | `uv run python -m app.main run sub-memory-board` |
+| 檢視 CLI | `uv run python -m app.memory_view` |
+
+**撰寫清單**
+
+- [x] `/api/sessions`、`/api/sessions/{id}/summaries` JSON API
+- [x] 本機 HTML Board（預設 `http://127.0.0.1:8765/`）
+- [x] MQ 事件 bump revision，前端輪詢刷新
+- [x] 單元測試：service + HTTP API
 
 ---
 

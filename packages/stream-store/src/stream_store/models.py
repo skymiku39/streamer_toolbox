@@ -25,3 +25,13 @@ class Summary:
     content: str
     created_at: str
     record_count: int
+
+
+@dataclass(frozen=True)
+class SessionStats:
+    session_id: str
+    channel: str
+    chat_count: int
+    stt_count: int
+    summary_count: int
+    unsummarized_count: int

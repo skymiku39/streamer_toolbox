@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Memory Board</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1117;
+      --panel: #171a22;
+      --border: #2a3140;
+      --text: #e6eaf2;
+      --muted: #8b95a8;
+      --chat: #6ea8fe;
+      --stt: #7ee787;
+      --accent: #d2a8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .meta { color: var(--muted); font-size: 0.9rem; }
+    main {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: calc(100vh - 64px);
+    }
+    aside, section {
+      padding: 1rem;
+      overflow: auto;
+    }
+    aside {
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .session {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      color: inherit;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .session:hover { border-color: var(--border); }
+    .session.active {
+      border-color: var(--accent);
+      background: rgba(210, 168, 255, 0.08);
+    }
+    .session-id { font-weight: 600; font-size: 0.92rem; }
+    .session-stats { color: var(--muted); font-size: 0.82rem; margin-top: 0.25rem; }
+    .summary {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: var(--panel);
+    }
+    .summary-head {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.chat { background: rgba(110, 168, 254, 0.15); color: var(--chat); }
+    .badge.stt { background: rgba(126, 231, 135, 0.15); color: var(--stt); }
+    .content { white-space: pre-wrap; line-height: 1.55; }
+    .empty { color: var(--muted); padding: 2rem 0; }
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; }
+      aside { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Memory Board</h1>
+    <span class="meta" id="status">載入中…</span>
+  </header>
+  <main>
+    <aside id="sessions"></aside>
+    <section>
+      <div id="summaries" class="empty">選擇左側 session 以檢視摘要。</div>
+    </section>
+  </main>
+  <script>
+    let revision = 0;
+    let selectedSession = null;
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`${response.status} ${url}`);
+      return response.json();
+    }
+
+    function renderSessions(data) {
+      const container = document.getElementById("sessions");
+      container.innerHTML = "";
+      const active = data.active_session_id;
+      for (const session of data.sessions) {
+        const button = document.createElement("button");
+        button.className = "session" + (
+          session.session_id === (selectedSession || active) ? " active" : ""
+        );
+        button.innerHTML = `
+          <div class="session-id">${session.session_id}</div>
+          <div class="session-stats">
+            chat ${session.chat_count} · stt ${session.stt_count} ·
+            摘要 ${session.summary_count} · 待摘要 ${session.unsummarized_count}
+          </div>`;
+        button.onclick = () => {
+          selectedSession = session.session_id;
+          loadSummaries(session.session_id);
+          renderSessions(data);
+        };
+        container.appendChild(button);
+      }
+      document.getElementById("status").textContent =
+        `active: ${active || "—"} · revision ${data.revision}`;
+    }
+
+    function renderSummaries(data) {
+      const container = document.getElementById("summaries");
+      if (!data.summaries.length) {
+        container.className = "empty";
+        container.textContent = "此 session 尚無摘要。";
+        return;
+      }
+      container.className = "";
+      container.innerHTML = data.summaries.map((summary) => `
+        <article class="summary">
+          <div class="summary-head">
+            <span class="badge ${summary.source}">${summary.source}</span>
+            <span>#${summary.id}</span>
+            <span>records ${summary.record_count}</span>
+            <span>${summary.period_start} → ${summary.period_end}</span>
+          </div>
+          <div class="content"></div>
+        </article>
+      `).join("");
+      container.querySelectorAll(".summary").forEach((node, index) => {
+        node.querySelector(".content").textContent = data.summaries[index].content;
+      });
+    }
+
+    async function loadSessions() {
+      const data = await fetchJson("/api/sessions");
+      revision = data.revision;
+      renderSessions(data);
+      const target = selectedSession || data.active_session_id;
+      if (target) {
+        selectedSession = target;
+        await loadSummaries(target);
+        renderSessions(data);
+      }
+    }
+
+    async function loadSummaries(sessionId) {
+      const data = await fetchJson(`/api/sessions/${encodeURIComponent(sessionId)}/summaries`);
+      revision = data.revision;
+      renderSummaries(data);
+    }
+
+    async function poll() {
+      try {
+        const meta = await fetchJson("/api/meta");
+        if (meta.revision !== revision) {
+          await loadSessions();
+        }
+      } catch (error) {
+        document.getElementById("status").textContent = `錯誤：${error.message}`;
+      }
+    }
+
+    loadSessions().catch((error) => {
+      document.getElementById("status").textContent = `錯誤：${error.message}`;
+    });
+    setInterval(poll, 15000);
+  </script>
+</body>
+</html>

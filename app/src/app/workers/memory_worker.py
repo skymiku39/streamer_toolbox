@@ -4,9 +4,10 @@ import sys
 from collections.abc import Callable
 
 from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
-from stream_store.models import TextRecord
+from stream_store.models import Summary, TextRecord
 
 from app.workers.memory_config import MemoryWorkerConfig
+from app.workers.memory_publisher import NoOpSummaryPublisher, SummaryPublisher
 from app.workers.memory_summarizer import Summarizer
 
 
@@ -16,10 +17,13 @@ class MemoryWorker:
         store: StreamTextStore,
         config: MemoryWorkerConfig,
         summarizer: Summarizer,
+        *,
+        summary_publisher: SummaryPublisher | None = None,
     ) -> None:
         self._store = store
         self._config = config
         self._summarizer = summarizer
+        self._summary_publisher = summary_publisher or NoOpSummaryPublisher()
 
     def run_once(self, *, session_id: str | None = None) -> int:
         resolved_session_id = session_id or self._resolve_session_id()
@@ -121,7 +125,7 @@ class MemoryWorker:
         summarize: Callable[[list[TextRecord]], str],
     ) -> int:
         content = summarize(records)
-        summary_id = self._store.save_summary(
+        summary = self._store.save_summary(
             session_id=session_id,
             period_start=period_start,
             period_end=period_end,
@@ -129,8 +133,9 @@ class MemoryWorker:
             content=content,
             record_count=len(records),
         )
+        self._summary_publisher.publish(summary)
         print(
-            f"[memory-worker] summary id={summary_id} session={session_id} source={source} "
+            f"[memory-worker] summary id={summary.id} session={session_id} source={source} "
             f"records={len(records)} period={period_start}..{period_end}",
             file=sys.stderr,
             flush=True,

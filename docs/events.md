@@ -19,6 +19,7 @@
 | `system.health` | 各 Sub | dashboard, monitor | 全部 |
 | `system.error` | 各 Sub | dashboard, monitor | 全部 |
 | `memory.summarize.request` | CLI、bot（規劃） | sub-memory-worker | L2 |
+| `memory.summary.ready` | sub-memory-worker | sub-memory-board（規劃：log、notify） | L2 |
 
 命名規則：`{domain}.{action}`；EventSub 事件為 `eventsub.{event_name}`（如 `eventsub.follow`）。
 

@@ -4,7 +4,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from stream_store.models import Summary, TextRecord
+from stream_store.models import SessionStats, Summary, TextRecord
 
 ACTIVE_SESSION_KEY = "active_session_id"
 
@@ -204,7 +204,7 @@ class StreamTextStore:
         source: str,
         content: str,
         record_count: int,
-    ) -> int:
+    ) -> Summary:
         created_at = datetime.now(UTC).isoformat()
         cursor = self._conn.execute(
             """
@@ -215,20 +215,73 @@ class StreamTextStore:
             (session_id, period_start, period_end, source, content, created_at, record_count),
         )
         self._conn.commit()
-        return int(cursor.lastrowid)
+        summary_id = int(cursor.lastrowid)
+        return Summary(
+            id=summary_id,
+            session_id=session_id,
+            period_start=period_start,
+            period_end=period_end,
+            source=source,
+            content=content,
+            created_at=created_at,
+            record_count=record_count,
+        )
 
-    def list_summaries(self, session_id: str, *, limit: int = 20) -> list[Summary]:
+    def list_summaries(
+        self,
+        session_id: str,
+        *,
+        limit: int = 20,
+        ascending: bool = False,
+    ) -> list[Summary]:
+        order = "ASC" if ascending else "DESC"
         rows = self._conn.execute(
-            """
+            f"""
             SELECT id, session_id, period_start, period_end, source, content, created_at, record_count
             FROM summaries
             WHERE session_id = ?
-            ORDER BY created_at DESC
+            ORDER BY created_at {order}
             LIMIT ?
             """,
             (session_id, limit),
         ).fetchall()
         return [_row_to_summary(row) for row in rows]
+
+    def list_sessions(self, *, limit: int = 50) -> list[SessionStats]:
+        rows = self._conn.execute(
+            """
+            SELECT
+                tr.session_id AS session_id,
+                COALESCE(ss.channel, MAX(tr.channel), '') AS channel,
+                SUM(CASE WHEN tr.source = 'chat' THEN 1 ELSE 0 END) AS chat_count,
+                SUM(CASE WHEN tr.source = 'stt' THEN 1 ELSE 0 END) AS stt_count,
+                SUM(CASE WHEN tr.summarized = 0 THEN 1 ELSE 0 END) AS unsummarized_count
+            FROM text_records tr
+            LEFT JOIN stream_sessions ss ON ss.id = tr.session_id
+            GROUP BY tr.session_id
+            ORDER BY MAX(tr.id) DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        stats: list[SessionStats] = []
+        for row in rows:
+            session_id = str(row["session_id"])
+            summary_count = self._conn.execute(
+                "SELECT COUNT(*) AS n FROM summaries WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+            stats.append(
+                SessionStats(
+                    session_id=session_id,
+                    channel=str(row["channel"] or ""),
+                    chat_count=int(row["chat_count"]),
+                    stt_count=int(row["stt_count"]),
+                    summary_count=int(summary_count["n"]) if summary_count else 0,
+                    unsummarized_count=int(row["unsummarized_count"]),
+                )
+            )
+        return stats
 
     def get_checkpoint(self, key: str) -> str | None:
         row = self._conn.execute(

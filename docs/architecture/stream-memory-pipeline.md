@@ -96,6 +96,8 @@ L2 記憶層的作法：
 | `STREAM_SESSION_ID` | （自動） | 可选手動指定場次 ID |
 | `MEMORY_INTERVAL_MINUTES` | `30` | 摘要週期（常駐 worker 每隔幾分鐘執行一次） |
 | `MEMORY_TRIGGER_LISTEN` | `true` | 是否監聽 `memory.summarize.request` 觸發立即摘要 |
+| `MEMORY_PUBLISH_READY` | `true` | 摘要完成後 publish `memory.summary.ready` |
+| `MEMORY_BOARD_PORT` | `8765` | Memory Board HTTP 埠 |
 | `MEMORY_LLM_BACKEND` | `template` | `template` 或 `openai`/`gemini` |
 | `STT_*` | 見 `.env.example` | `ingress-twitch-audio` 用 |
 
@@ -108,8 +110,13 @@ uv run python -m app.main run ingress-ttv-read ingress-twitch-audio sub-stream-r
 uv run python -m app.workers --llm-backend gemini
 # 需要立即摘要時（另開終端）
 uv run python -m app.workers --trigger
-# 指定 session 觸發
-uv run python -m app.workers --trigger --session-id your_session_id
+# 檢視摘要（CLI）
+uv run python -m app.memory_view --list-sessions
+uv run python -m app.memory_view --active
+uv run python -m app.memory_view --session-id ramengyozaset_20260612
+# Memory Board（本機網頁）
+uv run python -m app.main run sub-memory-board
+# 瀏覽器開 http://127.0.0.1:8765/
 ```
 
 `.env` 需設定 `RECORD_MODE=both` 與 `TWITCH_CHANNEL`（STT 與 IRC 共用頻道）。

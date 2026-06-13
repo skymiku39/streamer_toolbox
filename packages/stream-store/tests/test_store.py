@@ -37,7 +37,7 @@ def test_save_summary_and_checkpoint(tmp_path: Path) -> None:
     store = StreamTextStore(tmp_path / "test.db")
     store.set_checkpoint(ACTIVE_SESSION_KEY, "sess-1")
     assert store.get_checkpoint(ACTIVE_SESSION_KEY) == "sess-1"
-    summary_id = store.save_summary(
+    summary = store.save_summary(
         session_id="sess-1",
         period_start="2026-06-12T10:00:00+00:00",
         period_end="2026-06-12T10:05:00+00:00",
@@ -46,7 +46,7 @@ def test_save_summary_and_checkpoint(tmp_path: Path) -> None:
         record_count=3,
     )
     summaries = store.list_summaries("sess-1")
-    assert summary_id == summaries[0].id
+    assert summary.id == summaries[0].id
     assert summaries[0].content == "摘要內容"
     store.close()
 
