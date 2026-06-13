@@ -23,7 +23,7 @@ from stream_store.idempotency import IdempotencyStore
 
 from game_info import GameInfoProvider
 
-from sub_llm.chat_format import plain_text_for_chat
+from sub_llm.chat_format import cap_reply_for_chat, plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.game_context import build_game_reference, resolve_live_game_name
@@ -217,9 +217,12 @@ class LlmSubscriber:
             filtered_reply = plain_text_for_chat(filtered_reply)
             if not filtered_reply:
                 return
-            if len(filtered_reply) > self._config.reply_max_length:
-                limit = self._config.reply_max_length
-                filtered_reply = filtered_reply[: limit - 3] + "..."
+            filtered_reply = cap_reply_for_chat(
+                filtered_reply,
+                self._config.reply_max_length,
+            )
+            if not filtered_reply:
+                return
             self._publish_reply(event, filtered_reply, question=filtered_question)
             published = True
         finally:

@@ -112,6 +112,14 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
+    web_search = (os.environ.get("LLM_WEB_SEARCH", "true") or "true").strip().lower()
+    print(
+        f"[sub-llm] llm_client={type(llm).__name__} "
+        f"backend={args.llm_backend!r} web_search={web_search!r}",
+        file=sys.stderr,
+        flush=True,
+    )
+
     bot_author_id = (os.environ.get("TWITCH_BOT_ID") or "").strip()
     bot_login = (os.environ.get("TWITCH_BOT_LOGIN") or "").strip().lower()
     skip_author_ids = frozenset({bot_author_id}) if bot_author_id else frozenset()

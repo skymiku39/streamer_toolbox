@@ -124,7 +124,7 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 |------|------|
 | `LLM_TRIGGER_PREFIXES` | 觸發前綴（預設 `!ask`） |
 | `LLM_BACKEND` | `template` / `openai` / `gemini` |
-| `LLM_MAX_REPLY_LENGTH` | 回覆字元上限（預設 500） |
+| `LLM_MAX_REPLY_LENGTH` | 回覆正文上限（預設 50；不含 @/# tag 與標點） |
 | `LLM_SYSTEM_PROMPT` | 系統提示；預設要求勿用 Markdown，以純文字短句回覆 |
 | `LLM_CONTEXT_WINDOW_MINUTES` | STT / 聊天短期上下文（分鐘，預設 **15**） |
 | `LLM_BOT_REPLY_WINDOW_MINUTES` | Bot 近期問答 buffer 時間窗（預設 30；**不寫入 RAG**） |

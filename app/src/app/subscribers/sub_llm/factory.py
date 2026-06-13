@@ -43,6 +43,10 @@ def create_llm_client(backend: str | None = None) -> LlmClient:
     selected = (backend or os.environ.get("LLM_BACKEND", "template") or "template").lower()
     if selected == "template":
         return TemplateLlmClient()
+    if selected == "gemini" and _env_bool("LLM_WEB_SEARCH", True):
+        from sub_llm.gemini_grounded import GeminiGroundedLlmClient
+
+        return GeminiGroundedLlmClient.from_env()
     if selected in {"openai", "gemini"}:
         return OpenAiCompatibleLlmClient.from_env(backend=selected)
     raise ValueError(f"unsupported LLM_BACKEND: {selected!r}")

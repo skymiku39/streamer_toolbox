@@ -8,6 +8,7 @@ from sub_llm.chroma_store import ChromaKnowledgeStore, ChromaSummaryKnowledgeSto
 from sub_llm.factory import create_knowledge_store, create_llm_client
 from sub_llm.knowledge import CompositeKnowledgeStore, EmptyKnowledgeStore
 from sub_llm.llm import TemplateLlmClient
+from sub_llm.gemini_grounded import GeminiGroundedLlmClient
 from sub_llm.openai_client import OpenAiCompatibleLlmClient
 
 
@@ -23,14 +24,22 @@ def test_create_llm_client_openai_from_env(monkeypatch) -> None:
     assert isinstance(client, OpenAiCompatibleLlmClient)
 
 
-def test_create_llm_client_gemini_uses_google_ai_env(monkeypatch) -> None:
+def test_create_llm_client_gemini_uses_grounded_client_by_default(monkeypatch) -> None:
     monkeypatch.delenv("LLM_BACKEND", raising=False)
     monkeypatch.setenv("GOOGLE_AI_API_KEY", "google-key")
     monkeypatch.setenv("GOOGLE_AI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("LLM_WEB_SEARCH", "true")
     client = create_llm_client("gemini")
-    assert isinstance(client, OpenAiCompatibleLlmClient)
+    assert isinstance(client, GeminiGroundedLlmClient)
     assert client._model == "gemini-2.5-flash"
     assert client._api_key == "google-key"
+
+
+def test_create_llm_client_gemini_without_web_search_uses_openai_compat(monkeypatch) -> None:
+    monkeypatch.setenv("GOOGLE_AI_API_KEY", "google-key")
+    monkeypatch.setenv("LLM_WEB_SEARCH", "false")
+    client = create_llm_client("gemini")
+    assert isinstance(client, OpenAiCompatibleLlmClient)
 
 
 def test_create_knowledge_store_db_only_uses_chroma_rag(monkeypatch, tmp_path: Path) -> None:

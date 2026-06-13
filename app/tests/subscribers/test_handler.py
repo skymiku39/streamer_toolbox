@@ -321,6 +321,37 @@ def test_reply_strips_markdown_for_chat() -> None:
     assert published[0][1]["content"] == "重點：這是測試回覆"
 
 
+class _LongReplyLlmClient:
+    def ask(
+        self,
+        question: str,
+        *,
+        context: str,
+        knowledge: str = "",
+        game_reference: str = "",
+    ) -> str:
+        return "這" * 80 + "。"
+
+
+def test_reply_is_capped_by_content_length() -> None:
+    from sub_llm.chat_format import count_reply_content_chars
+
+    published: list[tuple[str, dict]] = []
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"], reply_max_length=50),
+        llm=_LongReplyLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_chat_payload("!ask 長回覆"))
+
+    content = published[0][1]["content"]
+    assert count_reply_content_chars(content) == 50
+
+
 def test_hallucination_stt_segment_is_ignored() -> None:
     published: list[tuple[str, dict]] = []
 

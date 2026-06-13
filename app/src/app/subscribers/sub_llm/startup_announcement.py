@@ -8,7 +8,7 @@ from collections.abc import Callable
 from events import SOURCE_LOGIC_LLM, TOPIC_CHAT_REPLY, ChatReplyEvent
 from safety import SafetyFilter
 
-from sub_llm.chat_format import plain_text_for_chat
+from sub_llm.chat_format import cap_reply_for_chat, plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.llm import LlmClient
@@ -16,10 +16,10 @@ from sub_llm.startup_messages import build_degraded_startup_announcement
 
 _STARTUP_SYSTEM_PROMPT = (
     "你是 Twitch 直播聊天室的 AI 助手，剛完成上線。"
-    "請用一句有趣、親切、不油膩的中文向觀眾打招呼，"
+    "請用一句有趣、親切、不油膩的繁體中文（台灣用語）向觀眾打招呼，禁止簡體字，"
     "並自然提到可以用觸發詞提問。"
     "語氣像直播間朋友，可帶一點幽默或可愛感。"
-    "勿使用 Markdown，一兩句即可，全長不超過 120 字。"
+    "勿使用 Markdown，一兩句即可，正文不超過 50 字（不含 @ 標記與標點）。"
     "勿在訊息中逐字寫出觸發詞（例如 !ask），改以口語描述如何提問。"
 )
 
@@ -85,9 +85,10 @@ def publish_startup_announcement(
         print("[sub-llm] startup announcement blocked by safety filter", file=sys.stderr, flush=True)
         return False
 
-    if len(filtered_reply) > config.reply_max_length:
-        limit = config.reply_max_length
-        filtered_reply = filtered_reply[: limit - 3] + "..."
+    filtered_reply = cap_reply_for_chat(filtered_reply, config.reply_max_length)
+    if not filtered_reply:
+        print("[sub-llm] startup announcement empty after length cap", file=sys.stderr, flush=True)
+        return False
 
     correlation_id = f"startup-{uuid.uuid4().hex[:12]}"
     reply = ChatReplyEvent(

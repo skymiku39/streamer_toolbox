@@ -7,13 +7,16 @@ def test_resolve_system_prompt_uses_default_when_empty(monkeypatch) -> None:
     prompt = resolve_system_prompt()
     assert "通識" in prompt
     assert "不要套公式" in prompt
+    assert "繁體中文" in prompt
     assert prompt == DEFAULT_LLM_SYSTEM_PROMPT
 
 
 def test_resolve_system_prompt_honors_custom_prompt(monkeypatch) -> None:
     monkeypatch.setenv("LLM_SYSTEM_PROMPT", "自訂助手")
     monkeypatch.setenv("LLM_GENERAL_KNOWLEDGE", "true")
-    assert resolve_system_prompt() == "自訂助手"
+    prompt = resolve_system_prompt()
+    assert prompt.startswith("自訂助手")
+    assert "繁體中文" in prompt
 
 
 def test_resolve_system_prompt_strict_mode_disables_general_knowledge(monkeypatch) -> None:

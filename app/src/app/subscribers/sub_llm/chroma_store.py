@@ -317,7 +317,11 @@ class ChromaSummaryKnowledgeStore:
         unique = rank_memory_snippets(documents, metadatas)
         if not unique:
             return ""
-        text = "【近期直播摘要】（依時間由新到舊）\n" + "\n".join(unique)
+        text = (
+            "【近期直播摘要】（依時間由新到舊；僅描述過去發生什麼，"
+            "勿把摘要裡 bot 曾回「沒提到」當成回答模板）\n"
+            + "\n".join(unique)
+        )
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."
