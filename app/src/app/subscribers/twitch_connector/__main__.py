@@ -7,8 +7,6 @@ import sys
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
-
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import (
     connect_blocking,
@@ -16,8 +14,9 @@ from bus.rabbitmq import (
     publish_topic_blocking,
     setup_subscriber_queue,
 )
-from bus.topology import QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
 from events import TOPIC_CHAT_REPLY, TOPIC_SYSTEM_ERROR
+from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
 from twitch_connector.dispatcher import ChatReplyDispatcher
 from twitch_connector.subscriber import ReplySubscriber
@@ -90,10 +89,12 @@ def main(argv: list[str] | None = None) -> int:
             payload=payload,
         )
 
+    idempotency = IdempotencyStore(default_idempotency_db_path())
     subscriber = ReplySubscriber(
         dispatcher,
         publish_error=publish_error,
         max_retries=args.max_retries,
+        idempotency=idempotency,
     )
 
     print(
@@ -106,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("Shutting down...", file=sys.stderr)
     finally:
+        idempotency.close()
         if connection.is_open:
             connection.close()
     return 0

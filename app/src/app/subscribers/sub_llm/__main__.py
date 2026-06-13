@@ -18,6 +18,7 @@ from bus.rabbitmq import (
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
 from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_STT_SEGMENT
 from safety import BlocklistSafetyFilter
+from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
@@ -107,6 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
+    idempotency = IdempotencyStore(default_idempotency_db_path())
     subscriber = LlmSubscriber(
         config=config,
         llm=llm,
@@ -114,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
         knowledge=knowledge,
         context_buffer=SttContextBuffer(window_minutes=config.context_window_minutes),
         publish=publish,
+        idempotency=idempotency,
     )
 
     print(
@@ -127,6 +130,7 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("Shutting down...", file=sys.stderr)
     finally:
+        idempotency.close()
         if connection.is_open:
             connection.close()
     return 0

@@ -126,6 +126,8 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 
 LLM 回覆在 `safety.filter_output` 之後會經 `plain_text_for_chat` 去除 Markdown，再截斷長度並發布 `chat.reply`。
 
+**避免連發：** 同一頻道只跑一組 ingress / sub-llm / twitch-connector；系統已以 SQLite `IdempotencyStore`（預設共用 `STREAM_DB_PATH`）對 `message_id` 去重，但多開 process 仍會浪費 LLM 配額，請勿重複啟動。
+
 ### 記錄層 + 記憶層（Phase 1）
 
 ```powershell

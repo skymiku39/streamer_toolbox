@@ -174,3 +174,38 @@ def test_hallucination_stt_segment_is_ignored() -> None:
     subscriber.handle(_chat_payload("!ask 摘要？"))
 
     assert "逐字稿" not in published[0][1]["content"]
+
+
+class _CountingLlmClient:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+        self.calls += 1
+        return f"answer-{self.calls}"
+
+
+def test_duplicate_message_id_is_ignored(tmp_path) -> None:
+    from stream_store.idempotency import IdempotencyStore
+
+    published: list[tuple[str, dict]] = []
+    llm = _CountingLlmClient()
+    store = IdempotencyStore(tmp_path / "dedup.db")
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=SttContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        idempotency=store,
+    )
+
+    payload = _chat_payload("!ask 重複測試")
+    subscriber.handle(payload)
+    subscriber.handle(payload)
+
+    assert llm.calls == 1
+    assert len(published) == 1
+    store.close()

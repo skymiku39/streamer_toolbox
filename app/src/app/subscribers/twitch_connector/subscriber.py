@@ -13,11 +13,13 @@ from events import (
     ChatReplyEvent,
     SystemErrorEvent,
 )
+from stream_store.idempotency import IdempotencyStore
 
 from twitch_connector.dispatcher import ChatReplyDispatcher, UnsupportedPlatformError
 from twitch_connector.twitch_sender import TwitchSendError
 
 PROCESS_NAME = "twitch-connector"
+NAMESPACE_CHAT_REPLY = "twitch_connector.chat.reply"
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_BASE_SECONDS = 0.5
 
@@ -30,17 +32,31 @@ class ReplySubscriber:
         publish_error: Callable[[dict[str, Any]], None] | None = None,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_base_seconds: float = DEFAULT_RETRY_BASE_SECONDS,
+        idempotency: IdempotencyStore | None = None,
     ) -> None:
         self._dispatcher = dispatcher
         self._publish_error = publish_error
         self._max_retries = max_retries
         self._retry_base_seconds = retry_base_seconds
+        self._idempotency = idempotency
 
     def handle(self, payload: dict) -> None:
         try:
             event = ChatReplyEvent.from_dict(payload)
         except (ValueError, KeyError, TypeError) as exc:
             self._report_error("invalid chat.reply payload", detail={"error": str(exc)})
+            return
+
+        dedup_key = self._dedup_key(event)
+        if self._idempotency is not None and dedup_key and not self._idempotency.claim(
+            NAMESPACE_CHAT_REPLY,
+            dedup_key,
+        ):
+            print(
+                f"skip duplicate chat.reply key={dedup_key[:24]}",
+                file=sys.stderr,
+                flush=True,
+            )
             return
 
         last_error: Exception | None = None
@@ -83,6 +99,13 @@ class ReplySubscriber:
                     "correlation_id": event.correlation_id,
                 },
             )
+
+    @staticmethod
+    def _dedup_key(event: ChatReplyEvent) -> str:
+        correlation = (event.correlation_id or event.reply_to_message_id or "").strip()
+        if not correlation:
+            return ""
+        return f"{event.source}:{correlation}"
 
     def _report_error(self, message: str, *, detail: dict[str, Any]) -> None:
         print(f"[error] {message}", file=sys.stderr, flush=True)

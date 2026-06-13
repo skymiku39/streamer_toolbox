@@ -97,3 +97,21 @@ def test_unsupported_platform_reports_error() -> None:
     subscriber = ReplySubscriber(RaisingDispatcher(), publish_error=publish_error)
     subscriber.handle(_payload(platform="youtube"))
     publish_error.assert_called_once()
+
+
+def test_duplicate_chat_reply_is_skipped(tmp_path) -> None:
+    from stream_store.idempotency import IdempotencyStore
+
+    sender = FlakySender()
+    store = IdempotencyStore(tmp_path / "dedup.db")
+    subscriber = ReplySubscriber(
+        ChatReplyDispatcher(senders={"twitch": sender}),
+        idempotency=store,
+    )
+
+    payload = _payload(correlation_id="msg-dup")
+    subscriber.handle(payload)
+    subscriber.handle(payload)
+
+    assert sender.calls == ["pong"]
+    store.close()

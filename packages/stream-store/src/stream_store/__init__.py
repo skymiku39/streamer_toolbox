@@ -1,3 +1,4 @@
+from stream_store.idempotency import IdempotencyStore
 from stream_store.models import SessionStats, Summary, TextRecord
 from stream_store.session import (
     ACTIVE_SESSION_KEY,
@@ -11,6 +12,7 @@ from stream_store.store import StreamTextStore
 
 __all__ = [
     "ACTIVE_SESSION_KEY",
+    "IdempotencyStore",
     "SessionStats",
     "StreamTextStore",
     "Summary",

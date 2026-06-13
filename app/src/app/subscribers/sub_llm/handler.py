@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import threading
 from collections.abc import Callable
 from typing import Any
@@ -15,6 +16,7 @@ from events import (
 )
 from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
+from stream_store.idempotency import IdempotencyStore
 
 from sub_llm.chat_format import plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
@@ -24,6 +26,7 @@ from sub_llm.llm import LlmClient
 from sub_llm.triggers import TriggerMatcher
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
+NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
 
 
 class LlmSubscriber:
@@ -35,6 +38,8 @@ class LlmSubscriber:
         knowledge: KnowledgeStore,
         context_buffer: SttContextBuffer,
         publish: Callable[[str, dict[str, Any]], None],
+        *,
+        idempotency: IdempotencyStore | None = None,
     ) -> None:
         self._config = config
         self._llm = llm
@@ -42,6 +47,7 @@ class LlmSubscriber:
         self._knowledge = knowledge
         self._context_buffer = context_buffer
         self._publish = publish
+        self._idempotency = idempotency
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -69,6 +75,17 @@ class LlmSubscriber:
 
         filtered_question = self._safety.filter_input(question)
         if filtered_question is None:
+            return
+
+        if self._idempotency is not None and not self._idempotency.claim(
+            NAMESPACE_CHAT_TRIGGER,
+            event.message_id,
+        ):
+            print(
+                f"[sub-llm] skip duplicate trigger message_id={event.message_id[:8]}",
+                file=sys.stderr,
+                flush=True,
+            )
             return
 
         if not self._busy.acquire(blocking=False):
