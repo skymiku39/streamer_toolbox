@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from sub_llm.factory import create_knowledge_store, create_llm_client
 from sub_llm.knowledge import (
     CompositeKnowledgeStore,
@@ -66,3 +68,12 @@ def test_create_knowledge_store_empty_when_disabled(monkeypatch) -> None:
     monkeypatch.delenv("LLM_KNOWLEDGE_PATH", raising=False)
     store = create_knowledge_store()
     assert isinstance(store, EmptyKnowledgeStore)
+
+
+def test_create_knowledge_store_rejects_unknown_backend(monkeypatch, tmp_path: Path) -> None:
+    knowledge_file = tmp_path / "notes.txt"
+    knowledge_file.write_text("x", encoding="utf-8")
+    monkeypatch.setenv("LLM_MEMORY_FROM_DB", "false")
+    monkeypatch.setenv("LLM_KNOWLEDGE_BACKEND", "unknown")
+    with pytest.raises(ValueError, match="LLM_KNOWLEDGE_BACKEND"):
+        create_knowledge_store(str(knowledge_file))

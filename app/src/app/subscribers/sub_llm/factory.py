@@ -4,6 +4,7 @@ import os
 
 from stream_store import StreamTextStore
 
+from sub_llm.chroma_store import ChromaKnowledgeStore
 from sub_llm.knowledge import (
     CompositeKnowledgeStore,
     EmptyKnowledgeStore,
@@ -39,6 +40,21 @@ def _create_summary_store() -> SummaryKnowledgeStore:
     return SummaryKnowledgeStore(store, session_id, limit=limit)
 
 
+def _create_static_knowledge_store(knowledge_path: str) -> KnowledgeStore:
+    backend = (os.environ.get("LLM_KNOWLEDGE_BACKEND", "file") or "file").strip().lower()
+    if backend == "chroma":
+        chroma_dir = (os.environ.get("LLM_CHROMA_DIR", "data/chroma") or "data/chroma").strip()
+        query_limit = int(os.environ.get("LLM_CHROMA_QUERY_LIMIT", "3"))
+        return ChromaKnowledgeStore(
+            knowledge_path,
+            chroma_dir=chroma_dir,
+            max_results=query_limit,
+        )
+    if backend == "file":
+        return FileKnowledgeStore(knowledge_path)
+    raise ValueError(f"unsupported LLM_KNOWLEDGE_BACKEND: {backend!r}")
+
+
 def create_knowledge_store(path: str | None = None) -> KnowledgeStore:
     stores: list[KnowledgeStore] = []
     if _env_bool("LLM_MEMORY_FROM_DB", True):
@@ -46,10 +62,17 @@ def create_knowledge_store(path: str | None = None) -> KnowledgeStore:
 
     knowledge_path = (path or os.environ.get("LLM_KNOWLEDGE_PATH", "")).strip()
     if knowledge_path:
-        stores.append(FileKnowledgeStore(knowledge_path))
+        stores.append(_create_static_knowledge_store(knowledge_path))
 
     if not stores:
         return EmptyKnowledgeStore()
     if len(stores) == 1:
         return stores[0]
     return CompositeKnowledgeStore(stores)
+
+
+def preload_knowledge_store(store: KnowledgeStore) -> None:
+    """程序啟動時預載知識庫；重複呼叫應為 no-op。"""
+    preload = getattr(store, "preload", None)
+    if callable(preload):
+        preload()

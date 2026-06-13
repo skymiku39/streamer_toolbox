@@ -467,7 +467,7 @@ L2 摘要檢視：本機 HTTP Board + 可選訂閱 `memory.summary.ready` 刷新
 
 ### `sub-llm` ✅
 
-LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini` 與 `FileKnowledgeStore`。
+LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini` 與 `FileKnowledgeStore` / `ChromaKnowledgeStore`。
 
 | 項目 | 內容 |
 |------|------|
@@ -480,7 +480,7 @@ LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini` 與 `
 
 - [x] 觸發條件（如 `!ask`、redemption）可配置
 - [x] 訂閱 `stt.segment` 累積時間窗上下文（不內嵌 streamlink）
-- [x] 知識庫 / RAG 留於本 Sub 內部（`FileKnowledgeStore` 輕量版；可擴充 Chroma）
+- [x] 知識庫 / RAG 留於本 Sub 內部（`FileKnowledgeStore` 輕量版；`ChromaKnowledgeStore` 向量版）
 - [x] 輸入閘門：`safety` 過濾觀眾輸入與 STT 片段
 - [x] LLM 呼叫抽象（Protocol），不綁死 Gemini（`OpenAiCompatibleLlmClient`）
 - [x] 輸出閘門：幻覺 / 敏感詞過濾後才 `publish chat.reply`

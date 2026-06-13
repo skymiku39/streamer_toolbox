@@ -2,7 +2,23 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Protocol
+
 from stream_store import StreamTextStore, resolve_session_for_channel
+
+_TEXT_SUFFIXES = frozenset({".md", ".txt", ".json"})
+
+
+def iter_text_documents(root: Path) -> list[tuple[str, str]]:
+    """載入知識庫檔案，回傳 (來源識別, 內容) 列表。"""
+    documents: list[tuple[str, str]] = []
+    if root.is_file():
+        documents.append((root.name, root.read_text(encoding="utf-8")))
+    elif root.is_dir():
+        for file_path in sorted(root.rglob("*")):
+            if file_path.is_file() and file_path.suffix.lower() in _TEXT_SUFFIXES:
+                rel = file_path.relative_to(root).as_posix()
+                documents.append((rel, file_path.read_text(encoding="utf-8")))
+    return documents
 
 
 class KnowledgeStore(Protocol):
@@ -18,6 +34,12 @@ class EmptyKnowledgeStore:
 class CompositeKnowledgeStore:
     def __init__(self, stores: list[KnowledgeStore]) -> None:
         self._stores = stores
+
+    def preload(self) -> None:
+        for store in self._stores:
+            preload = getattr(store, "preload", None)
+            if callable(preload):
+                preload()
 
     def query(self, question: str, *, channel: str = "") -> str:
         parts = [store.query(question, channel=channel).strip() for store in self._stores]
@@ -68,18 +90,9 @@ class SummaryKnowledgeStore:
 class FileKnowledgeStore:
     """從檔案或目錄載入文字，以簡易關鍵字評分檢索（RAG 輕量版）。"""
 
-    _TEXT_SUFFIXES = frozenset({".md", ".txt", ".json"})
-
     def __init__(self, path: str | Path, *, max_snippet_chars: int = 2000) -> None:
-        root = Path(path)
         self._max_snippet_chars = max_snippet_chars
-        self._documents: list[str] = []
-        if root.is_file():
-            self._documents.append(root.read_text(encoding="utf-8"))
-        elif root.is_dir():
-            for file_path in sorted(root.rglob("*")):
-                if file_path.is_file() and file_path.suffix.lower() in self._TEXT_SUFFIXES:
-                    self._documents.append(file_path.read_text(encoding="utf-8"))
+        self._documents = [content for _, content in iter_text_documents(Path(path))]
 
     def _query_tokens(self, question: str) -> set[str]:
         tokens = {token for token in question.lower().split() if len(token) >= 2}

@@ -23,7 +23,7 @@ from stream_store.idempotency import IdempotencyStore, default_idempotency_db_pa
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
 from sub_llm.handler import LlmSubscriber
-from sub_llm.factory import create_knowledge_store, create_llm_client
+from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
 
 PROCESS_NAME = "sub-llm"
 DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
@@ -104,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         llm = create_llm_client(args.llm_backend)
         knowledge = create_knowledge_store(args.knowledge_path or None)
+        preload_knowledge_store(knowledge)
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1

@@ -123,6 +123,9 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 | `LLM_SYSTEM_PROMPT` | 系統提示；預設要求勿用 Markdown，以純文字短句回覆 |
 | `LLM_CONTEXT_WINDOW_MINUTES` | STT 上下文時間窗（分鐘） |
 | `LLM_KNOWLEDGE_PATH` | 知識庫檔案或目錄（可選） |
+| `LLM_KNOWLEDGE_BACKEND` | 靜態知識庫後端：`file`（關鍵字）或 `chroma`（向量 RAG） |
+| `LLM_CHROMA_DIR` | Chroma 持久化目錄（`LLM_KNOWLEDGE_BACKEND=chroma` 時） |
+| `LLM_CHROMA_QUERY_LIMIT` | Chroma 每次查詢回傳片段數（預設 3） |
 
 LLM 回覆在 `safety.filter_output` 之後會經 `plain_text_for_chat` 去除 Markdown，再截斷長度並發布 `chat.reply`。
 
