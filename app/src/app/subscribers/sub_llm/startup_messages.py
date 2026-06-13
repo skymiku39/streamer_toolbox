@@ -65,5 +65,5 @@ def build_degraded_startup_announcement(
     return (
         f"大家好，我是 {channel} 的 AI 助手，程序已上線。"
         f"目前 LLM 推理端點未就緒：{detail}，系統以降級模式（Degraded Mode）運行；"
-        f"生成式問答可能無法使用，請管理員檢查 LLM_BACKEND、API 金鑰與 LLM_API_BASE。"
+        f"生成式問答可能無法使用，請管理員檢查 LLM 後端設定、API 金鑰與 API Base URL。"
     )
