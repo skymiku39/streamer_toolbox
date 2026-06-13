@@ -19,8 +19,6 @@ from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
 from stream_store.idempotency import IdempotencyStore
 
-from app.debug_agent_log import agent_debug_log
-
 from sub_llm.chat_format import plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import SttContextBuffer
@@ -92,16 +90,6 @@ class LlmSubscriber:
         if self._idempotency is not None:
             content_key = _ask_content_dedup_key(event, filtered_question)
             if not self._idempotency.claim(NAMESPACE_ASK_CONTENT, content_key):
-                agent_debug_log(
-                    "sub_llm/handler.py:_handle_chat_message",
-                    "sub-llm skip duplicate ask content",
-                    {
-                        "content_key": content_key,
-                        "message_id": event.message_id,
-                        "dedup_db": str(getattr(self._idempotency, "path", "")),
-                    },
-                    hypothesis_id="H2",
-                )
                 print(
                     f"[sub-llm] skip duplicate ask content message_id={event.message_id[:8]}",
                     file=sys.stderr,
@@ -113,33 +101,12 @@ class LlmSubscriber:
             NAMESPACE_CHAT_TRIGGER,
             event.message_id,
         ):
-            agent_debug_log(
-                "sub_llm/handler.py:_handle_chat_message",
-                "sub-llm skip duplicate trigger",
-                {
-                    "message_id": event.message_id,
-                    "dedup_db": str(getattr(self._idempotency, "path", "")),
-                },
-                hypothesis_id="H2",
-            )
             print(
                 f"[sub-llm] skip duplicate trigger message_id={event.message_id[:8]}",
                 file=sys.stderr,
                 flush=True,
             )
             return
-
-        agent_debug_log(
-            "sub_llm/handler.py:_handle_chat_message",
-            "sub-llm processing !ask",
-            {
-                "message_id": event.message_id,
-                "author": event.author_name,
-                "question_preview": filtered_question[:80],
-                "dedup_db": str(getattr(self._idempotency, "path", "")),
-            },
-            hypothesis_id="H2",
-        )
 
         if not self._busy.acquire(blocking=False):
             self._publish_reply(event, BUSY_REPLY)
@@ -163,15 +130,6 @@ class LlmSubscriber:
             if len(filtered_reply) > self._config.reply_max_length:
                 limit = self._config.reply_max_length
                 filtered_reply = filtered_reply[: limit - 3] + "..."
-            agent_debug_log(
-                "sub_llm/handler.py:_handle_chat_message",
-                "sub-llm publishing chat.reply",
-                {
-                    "message_id": event.message_id,
-                    "reply_preview": filtered_reply[:80],
-                },
-                hypothesis_id="H4",
-            )
             self._publish_reply(event, filtered_reply)
         finally:
             self._busy.release()

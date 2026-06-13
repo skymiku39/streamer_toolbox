@@ -7,7 +7,6 @@ import sys
 
 from dotenv import load_dotenv
 
-from app.debug_agent_log import agent_debug_log
 from app.processes.registry import register_publisher
 from bus.topology import DEFAULT_EXCHANGE
 
@@ -38,17 +37,6 @@ async def run(channel: str) -> None:
                 if message_id
                 else True
             )
-            agent_debug_log(
-                "ingress_ttv_read/__main__.py:publish",
-                "ingress !ask publish attempt",
-                {
-                    "message_id": message_id,
-                    "author": payload.get("author_name", ""),
-                    "dedup_db": dedup_db_path,
-                    "claim_ok": claim_ok,
-                },
-                hypothesis_id="H1",
-            )
             if message_id and not claim_ok:
                 print(
                     f"skip duplicate chat.message message_id={message_id[:8]}",
@@ -68,13 +56,6 @@ async def run(channel: str) -> None:
         author = payload.get("author_name", "")
         ch = payload.get("channel", "")
         preview = content if len(content) <= 60 else f"{content[:57]}..."
-        if is_ask:
-            agent_debug_log(
-                "ingress_ttv_read/__main__.py:publish",
-                "ingress !ask published to MQ",
-                {"message_id": str(payload.get("message_id", "")), "channel": ch},
-                hypothesis_id="H1",
-            )
         print(f"published {message_id_short} #{ch} {author}: {preview}", flush=True)
 
     print(
