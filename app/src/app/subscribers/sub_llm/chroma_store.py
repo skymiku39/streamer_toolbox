@@ -9,11 +9,14 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sub_llm.knowledge import iter_text_documents
+from sub_llm.debug_agent_log import agent_log
 
 logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "kb_global"
+MEMORY_COLLECTION_NAME = "kb_memory"
 SYNC_STATE_FILE = ".sync_fingerprint.json"
+MEMORY_SYNC_STATE_FILE = ".memory_sync_fingerprint.json"
 
 
 class PreloadableKnowledgeStore(Protocol):
@@ -64,10 +67,31 @@ class ChromaKnowledgeStore:
     def preload(self) -> None:
         with self._preload_lock:
             if self._preloaded:
+                # region agent log
+                agent_log(
+                    hypothesis_id="H5",
+                    location="chroma_store.py:preload",
+                    message="preload skipped (already loaded)",
+                    data={"root": str(self._root), "exists": self._root.exists()},
+                )
+                # endregion
                 return
             self._ensure_chroma()
             self._sync_if_needed()
             self._preloaded = True
+            # region agent log
+            agent_log(
+                hypothesis_id="H3",
+                location="chroma_store.py:preload",
+                message="preload finished",
+                data={
+                    "root": str(self._root),
+                    "root_exists": self._root.exists(),
+                    "collection_ready": self._collection is not None,
+                    "chroma_dir": str(self._chroma_dir),
+                },
+            )
+            # endregion
 
     def _ensure_chroma(self) -> None:
         if self._chroma_tried:
@@ -85,6 +109,14 @@ class ChromaKnowledgeStore:
         except Exception as exc:
             logger.warning("ChromaDB 初始化失敗，知識庫查詢將回傳空結果: %s", exc)
             self._collection = None
+            # region agent log
+            agent_log(
+                hypothesis_id="H3",
+                location="chroma_store.py:_ensure_chroma",
+                message="chroma init failed",
+                data={"error_type": type(exc).__name__, "error": str(exc)[:200]},
+            )
+            # endregion
 
     def _sync_state_path(self) -> Path:
         return self._chroma_dir / SYNC_STATE_FILE
@@ -109,6 +141,18 @@ class ChromaKnowledgeStore:
 
     def _sync_if_needed(self) -> None:
         if self._collection is None or not self._root.exists():
+            # region agent log
+            agent_log(
+                hypothesis_id="H2",
+                location="chroma_store.py:_sync_if_needed",
+                message="sync skipped",
+                data={
+                    "collection_ready": self._collection is not None,
+                    "root": str(self._root),
+                    "root_exists": self._root.exists(),
+                },
+            )
+            # endregion
             return
 
         documents = iter_text_documents(self._root)
@@ -153,9 +197,186 @@ class ChromaKnowledgeStore:
             return ""
 
         unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
+        # region agent log
+        agent_log(
+            hypothesis_id="H4",
+            location="chroma_store.py:query",
+            message="chroma query result",
+            data={
+                "question_len": len(question),
+                "hit_count": len(unique),
+                "has_kb_marker": any("實況主知識庫" in doc for doc in unique),
+            },
+        )
+        # endregion
         if not unique:
             return ""
         text = "【實況主知識庫】\n" + "\n".join(unique)
+        if len(text) <= self._max_snippet_chars:
+            return text
+        return text[: self._max_snippet_chars - 3] + "..."
+
+
+def _fingerprint_summaries(summaries: list[Any]) -> str:
+    digest = hashlib.sha256()
+    for summary in summaries:
+        digest.update(str(summary.id).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(summary.content.encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+class ChromaSummaryKnowledgeStore:
+    """L2 摘要改由 Chroma 向量檢索，取代全文注入 SQLite 摘要。"""
+
+    def __init__(
+        self,
+        store: Any,
+        session_id: str | None,
+        *,
+        chroma_dir: str | Path,
+        limit: int = 10,
+        max_results: int = 5,
+        max_snippet_chars: int = 4000,
+    ) -> None:
+        self._store = store
+        self._session_id = session_id
+        self._chroma_dir = Path(chroma_dir)
+        self._limit = limit
+        self._max_results = max_results
+        self._max_snippet_chars = max_snippet_chars
+        self._collection: Any | None = None
+        self._client: Any | None = None
+        self._preload_lock = threading.Lock()
+        self._preloaded = False
+        self._chroma_tried = False
+
+    def preload(self) -> None:
+        with self._preload_lock:
+            if self._preloaded:
+                return
+            self._ensure_chroma()
+            self._preloaded = True
+
+    def _ensure_chroma(self) -> None:
+        if self._chroma_tried:
+            return
+        self._chroma_tried = True
+        try:
+            import chromadb
+
+            self._chroma_dir.mkdir(parents=True, exist_ok=True)
+            self._client = chromadb.PersistentClient(path=str(self._chroma_dir))
+            self._collection = self._client.get_or_create_collection(
+                name=MEMORY_COLLECTION_NAME,
+                metadata={"hnsw:space": "cosine"},
+            )
+        except Exception as exc:
+            logger.warning("Chroma 記憶庫初始化失敗: %s", exc)
+            self._collection = None
+
+    def _memory_sync_state_path(self) -> Path:
+        return self._chroma_dir / MEMORY_SYNC_STATE_FILE
+
+    def _read_memory_fingerprints(self) -> dict[str, str]:
+        state_path = self._memory_sync_state_path()
+        if not state_path.is_file():
+            return {}
+        try:
+            payload = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+        if not isinstance(payload, dict):
+            return {}
+        return {
+            str(key): str(value)
+            for key, value in payload.items()
+            if isinstance(key, str) and isinstance(value, str)
+        }
+
+    def _write_memory_fingerprint(self, session_id: str, fingerprint: str) -> None:
+        fingerprints = self._read_memory_fingerprints()
+        fingerprints[session_id] = fingerprint
+        self._memory_sync_state_path().write_text(
+            json.dumps(fingerprints, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def _sync_session_summaries(self, session_id: str) -> None:
+        if self._collection is None:
+            return
+
+        summaries = self._store.list_summaries(session_id, limit=self._limit)
+        chronological = list(reversed(summaries))
+        fingerprint = _fingerprint_summaries(chronological)
+        if self._read_memory_fingerprints().get(session_id) == fingerprint:
+            return
+        if not chronological:
+            return
+
+        ids: list[str] = []
+        documents: list[str] = []
+        metadatas: list[dict[str, str]] = []
+        for summary in chronological:
+            ids.append(f"summary_{summary.id}")
+            documents.append(
+                f"[{summary.source}] {summary.period_start} .. {summary.period_end}\n"
+                f"{summary.content.strip()}"
+            )
+            metadatas.append({"session_id": session_id, "source": summary.source})
+
+        self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        self._write_memory_fingerprint(session_id, fingerprint)
+        logger.info("Chroma 記憶庫已同步 session=%s 共 %d 筆摘要", session_id, len(chronological))
+
+    def query(self, question: str, *, channel: str = "") -> str:
+        from stream_store import resolve_session_for_channel
+
+        if not question.strip():
+            return ""
+        if not self._preloaded:
+            self.preload()
+        if self._collection is None:
+            return ""
+
+        session_id = resolve_session_for_channel(
+            self._store,
+            channel,
+            explicit_session_id=self._session_id,
+        )
+        if session_id is None:
+            return ""
+
+        self._sync_session_summaries(session_id)
+        try:
+            result = self._collection.query(
+                query_texts=[question],
+                n_results=self._max_results,
+                where={"session_id": session_id},
+            )
+            documents = (result.get("documents") or [[]])[0]
+        except Exception as exc:
+            logger.debug("Chroma 記憶查詢失敗: %s", exc)
+            return ""
+
+        unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
+        # region agent log
+        agent_log(
+            hypothesis_id="H4",
+            location="chroma_store.py:ChromaSummaryKnowledgeStore.query",
+            message="chroma memory query result",
+            data={
+                "question_len": len(question),
+                "hit_count": len(unique),
+                "session_id": session_id,
+                "via_chroma_memory": True,
+            },
+        )
+        # endregion
+        if not unique:
+            return ""
+        text = "【近期直播摘要】\n" + "\n".join(unique)
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."

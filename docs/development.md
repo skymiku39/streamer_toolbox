@@ -125,7 +125,8 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 | `LLM_KNOWLEDGE_PATH` | 知識庫檔案或目錄（可選） |
 | `LLM_KNOWLEDGE_BACKEND` | 靜態知識庫後端：`file`（關鍵字）或 `chroma`（向量 RAG） |
 | `LLM_CHROMA_DIR` | Chroma 持久化目錄（`LLM_KNOWLEDGE_BACKEND=chroma` 時） |
-| `LLM_CHROMA_QUERY_LIMIT` | Chroma 每次查詢回傳片段數（預設 3） |
+| `LLM_CHROMA_QUERY_LIMIT` | 靜態知識庫 Chroma 查詢片段數（預設 3） |
+| `LLM_CHROMA_MEMORY_QUERY_LIMIT` | L2 摘要向量檢索回傳片段數（`LLM_KNOWLEDGE_BACKEND=chroma` 時，預設 5） |
 
 首次啟用 Chroma 時，先將 `config/knowledge/{TWITCH_CHANNEL}.md` 複製到 `data/knowledge/`：
 

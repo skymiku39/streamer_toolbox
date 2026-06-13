@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from sub_llm.chroma_store import ChromaKnowledgeStore, ChromaSummaryKnowledgeStore
 from sub_llm.factory import create_knowledge_store, create_llm_client
 from sub_llm.knowledge import (
     CompositeKnowledgeStore,
@@ -54,13 +55,17 @@ def test_create_knowledge_store_file_only(monkeypatch, tmp_path: Path) -> None:
     assert "manual knowledge" in store.query("manual")
 
 
-def test_create_knowledge_store_composite(monkeypatch, tmp_path: Path) -> None:
+def test_create_knowledge_store_composite_chroma_order(monkeypatch, tmp_path: Path) -> None:
     knowledge_file = tmp_path / "notes.txt"
     knowledge_file.write_text("file note", encoding="utf-8")
     monkeypatch.setenv("STREAM_DB_PATH", str(tmp_path / "test.db"))
     monkeypatch.setenv("LLM_MEMORY_FROM_DB", "true")
+    monkeypatch.setenv("LLM_KNOWLEDGE_BACKEND", "chroma")
+    monkeypatch.setenv("LLM_CHROMA_DIR", str(tmp_path / "chroma"))
     store = create_knowledge_store(str(knowledge_file))
     assert isinstance(store, CompositeKnowledgeStore)
+    child_types = [type(child).__name__ for child in store._stores]
+    assert child_types == ["ChromaKnowledgeStore", "ChromaSummaryKnowledgeStore"]
 
 
 def test_create_knowledge_store_empty_when_disabled(monkeypatch) -> None:
