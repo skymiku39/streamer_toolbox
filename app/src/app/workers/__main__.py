@@ -27,6 +27,11 @@ def main(argv: list[str] | None = None) -> int:
         description="Periodic chat summarization → summaries table (Phase 1)",
     )
     parser.add_argument(
+        "--session-id",
+        default=None,
+        help="Override STREAM_SESSION_ID for this run",
+    )
+    parser.add_argument(
         "--db-path",
         default=os.environ.get("STREAM_DB_PATH", "data/stream_text.db"),
     )
@@ -41,6 +46,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Run one summarization cycle and exit",
     )
     parser.add_argument(
+        "--until-empty",
+        action="store_true",
+        help="Run cycles until no unsummarized records remain",
+    )
+    parser.add_argument(
         "--llm-backend",
         default=os.environ.get("MEMORY_LLM_BACKEND", "template"),
         choices=["template", "openai", "gemini"],
@@ -48,9 +58,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     config = MemoryWorkerConfig.from_env()
+    session_id = (args.session_id or config.session_id or "").strip() or None
     config = MemoryWorkerConfig(
         db_path=args.db_path,
-        session_id=config.session_id,
+        session_id=session_id,
         interval_minutes=args.interval_minutes,
         llm_backend=args.llm_backend,
         batch_limit=config.batch_limit,
@@ -67,13 +78,18 @@ def main(argv: list[str] | None = None) -> int:
     worker = MemoryWorker(store, config, summarizer)
 
     print(
-        f"{PROCESS_NAME} db={config.db_path} mode={config.record_mode} "
-        f"interval={config.interval_minutes}m backend={config.llm_backend}",
+        f"{PROCESS_NAME} db={config.db_path} session={config.session_id or '(auto)'} "
+        f"mode={config.record_mode} interval={config.interval_minutes}m "
+        f"backend={config.llm_backend}",
         file=sys.stderr,
         flush=True,
     )
 
     try:
+        if args.until_empty:
+            while worker.run_once():
+                pass
+            return 0
         if args.once:
             worker.run_once()
             return 0

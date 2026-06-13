@@ -37,15 +37,29 @@ class OpenAiCompatibleLlmClient:
                 "LLM_API_BASE",
                 "https://generativelanguage.googleapis.com/v1beta/openai",
             )
-            api_key = (os.environ.get("LLM_API_KEY") or os.environ.get("GEMINI_API_KEY") or "").strip()
-            model = (os.environ.get("LLM_MODEL") or "gemini-2.0-flash").strip()
+            api_key = (
+                os.environ.get("LLM_API_KEY")
+                or os.environ.get("GOOGLE_AI_API_KEY")
+                or os.environ.get("GEMINI_API_KEY")
+                or os.environ.get("GOOGLE_API_KEY")
+                or ""
+            ).strip()
+            model = (
+                os.environ.get("LLM_MODEL")
+                or os.environ.get("GOOGLE_AI_MODEL")
+                or "gemini-2.5-flash"
+            ).strip()
         else:
             base_url = (os.environ.get("LLM_API_BASE") or "https://api.openai.com/v1").strip()
             api_key = (os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or "").strip()
             model = (os.environ.get("LLM_MODEL") or "gpt-4o-mini").strip()
         system_prompt = (os.environ.get("LLM_SYSTEM_PROMPT") or "").strip()
         if not api_key:
-            raise ValueError("LLM_API_KEY (或 GEMINI_API_KEY / OPENAI_API_KEY) is required")
+            if backend == "gemini":
+                raise ValueError(
+                    "GOOGLE_AI_API_KEY (或 LLM_API_KEY / GEMINI_API_KEY) is required"
+                )
+            raise ValueError("LLM_API_KEY (或 OPENAI_API_KEY) is required")
         return cls(
             base_url=base_url,
             api_key=api_key,

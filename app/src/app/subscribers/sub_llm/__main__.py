@@ -18,7 +18,7 @@ from bus.rabbitmq import (
     setup_subscriber_queue_bindings,
 )
 from bus.topology import QUEUE_SUB_LLM
-from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT
+from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_STT_SEGMENT
 from safety import BlocklistSafetyFilter
 
 from sub_llm.config import LlmSubscriberConfig
@@ -92,7 +92,15 @@ def main(argv: list[str] | None = None) -> int:
             payload=payload,
         )
         correlation = payload.get("correlation_id", "")[:8]
-        print(f"published {topic} correlation={correlation}", file=sys.stderr, flush=True)
+        if topic == "chat.reply":
+            preview = str(payload.get("content", ""))[:80]
+            print(
+                f"published {topic} correlation={correlation}: {preview}",
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            print(f"published {topic} correlation={correlation}", file=sys.stderr, flush=True)
 
     try:
         llm = create_llm_client(args.llm_backend)
