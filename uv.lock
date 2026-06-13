@@ -11,6 +11,7 @@ resolution-markers = [
 members = [
     "bus",
     "events",
+    "game-info",
     "identity-oauth",
     "safety",
     "stream-store",
@@ -869,6 +870,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/d5/8d/1c51c094345df128c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d5/0c/043d5e551459da400957a1395e0febbf771446ff34291afcbe3d8be2a279/fsspec-2026.4.0-py3-none-any.whl", hash = "sha256:11ef7bb35dab8a394fde6e608221d5cf3e8499401c249bebaeaad760a1a8dec2", size = 203402, upload-time = "2026-04-29T20:42:36.842Z" },
 ]
+
+[[package]]
+name = "game-info"
+version = "0.1.0"
+source = { editable = "packages/game-info" }
 
 [[package]]
 name = "googleapis-common-protos"
@@ -2857,6 +2863,7 @@ dependencies = [
     { name = "discord-py" },
     { name = "events" },
     { name = "faster-whisper" },
+    { name = "game-info" },
     { name = "identity-oauth" },
     { name = "numpy" },
     { name = "obsws-python" },
@@ -2881,6 +2888,7 @@ requires-dist = [
     { name = "discord-py" },
     { name = "events", editable = "packages/events" },
     { name = "faster-whisper", specifier = ">=1.1.0" },
+    { name = "game-info", editable = "packages/game-info" },
     { name = "identity-oauth", editable = "packages/identity-oauth" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "obsws-python" },

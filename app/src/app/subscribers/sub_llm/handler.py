@@ -21,12 +21,16 @@ from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
 from stream_store.idempotency import IdempotencyStore
 
+from game_info import GameInfoProvider
+
 from sub_llm.chat_format import plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
+from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.llm import LlmClient
 from sub_llm.triggers import TriggerMatcher
+from stream_store.session import normalize_channel
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
@@ -52,6 +56,7 @@ class LlmSubscriber:
         publish: Callable[[str, dict[str, Any]], None],
         *,
         idempotency: IdempotencyStore | None = None,
+        game_info: GameInfoProvider | None = None,
     ) -> None:
         self._config = config
         self._llm = llm
@@ -60,6 +65,7 @@ class LlmSubscriber:
         self._context_buffer = context_buffer
         self._publish = publish
         self._idempotency = idempotency
+        self._game_info = game_info
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -149,10 +155,68 @@ class LlmSubscriber:
                     flush=True,
                 )
             knowledge = self._knowledge.query(filtered_question, channel=channel)
+            live_game = resolve_live_game_name(self._context_buffer, channel)
+            game_reference = build_game_reference(
+                filtered_question,
+                game_name=live_game,
+                provider=self._game_info,
+            )
+            if game_reference:
+                print(
+                    f"[sub-llm] game_reference game={live_game} chars={len(game_reference)}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            # region agent log
+            import json
+            import time
+            from pathlib import Path
+
+            stream_event = self._context_buffer._stream._latest_by_channel.get(  # noqa: SLF001
+                normalize_channel(channel)
+            )
+            Path("debug-8f4ded.log").open("a", encoding="utf-8").write(
+                json.dumps(
+                    {
+                        "sessionId": "8f4ded",
+                        "hypothesisId": "VERIFY",
+                        "location": "handler.py:_handle_chat_message",
+                        "message": "qa_ground_truth",
+                        "data": {
+                            "question": filtered_question,
+                            "channel": channel,
+                            "stt_count": stt_count,
+                            "chat_count": chat_count,
+                            "context_len": context_len,
+                            "has_stream_metadata": has_stream,
+                            "metadata": {
+                                "title": stream_event.title if stream_event else None,
+                                "game_name": stream_event.game_name if stream_event else None,
+                                "duration_seconds": (
+                                    stream_event.duration_seconds if stream_event else None
+                                ),
+                                "viewer_count": (
+                                    stream_event.viewer_count if stream_event else None
+                                ),
+                                "is_live": stream_event.is_live if stream_event else None,
+                            },
+                            "knowledge_len": len(knowledge),
+                            "game_reference_len": len(game_reference),
+                            "live_game": live_game,
+                            "context_preview": context[:500],
+                        },
+                        "timestamp": int(time.time() * 1000),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+            # endregion
             raw_reply = self._llm.ask(
                 filtered_question,
                 context=context,
                 knowledge=knowledge,
+                game_reference=game_reference,
             )
             filtered_reply = self._safety.filter_output(raw_reply)
             if filtered_reply is None:
@@ -160,6 +224,29 @@ class LlmSubscriber:
             filtered_reply = plain_text_for_chat(filtered_reply)
             if not filtered_reply:
                 return
+            # region agent log
+            import json
+            import time
+            from pathlib import Path
+
+            Path("debug-8f4ded.log").open("a", encoding="utf-8").write(
+                json.dumps(
+                    {
+                        "sessionId": "8f4ded",
+                        "hypothesisId": "VERIFY",
+                        "location": "handler.py:_handle_chat_message",
+                        "message": "qa_reply",
+                        "data": {
+                            "question": filtered_question,
+                            "reply": filtered_reply,
+                        },
+                        "timestamp": int(time.time() * 1000),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+            # endregion
             if len(filtered_reply) > self._config.reply_max_length:
                 limit = self._config.reply_max_length
                 filtered_reply = filtered_reply[: limit - 3] + "..."

@@ -24,6 +24,7 @@ from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
+from sub_llm.game_context import create_game_info_provider
 
 PROCESS_NAME = "sub-llm"
 DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
@@ -124,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         publish=publish,
         idempotency=idempotency,
+        game_info=create_game_info_provider(),
     )
 
     print(

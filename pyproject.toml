@@ -36,12 +36,14 @@ testpaths = [
     "packages/tts/tests",
     "packages/stream-store/tests",
     "packages/identity-oauth/tests",
+    "packages/game-info/tests",
     "app/tests",
 ]
 pythonpath = [
     "app/src",
     "app/src/app/subscribers",
     "app/src/app/publishers",
+    "packages/game-info/src",
 ]
 
 [tool.ruff]
@@ -56,6 +58,7 @@ known-first-party = [
     "app",
     "bus",
     "events",
+    "game_info",
     "identity_oauth",
     "ingress_discord",
     "ingress_ttv_read",

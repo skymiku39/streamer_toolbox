@@ -182,6 +182,15 @@ class StreamMetadataBuffer:
             lines.append(f"觀眾：{event.viewer_count}")
         return "\n".join(lines)
 
+    def live_game_name(self, channel: str) -> str | None:
+        key = normalize_channel(channel)
+        with self._lock:
+            event = self._latest_by_channel.get(key)
+        if event is None or not event.is_live:
+            return None
+        game_name = (event.game_name or "").strip()
+        return game_name or None
+
 
 class LiveContextBuffer:
     """合併直播 metadata、STT 逐字稿與聊天室短期記憶。"""
@@ -225,3 +234,6 @@ class LiveContextBuffer:
         chat_count = self._chat.count(channel)
         has_stream = self._stream.has_metadata(channel)
         return stt_count, chat_count, len(self.context_text(channel)), has_stream
+
+    def live_game_name(self, channel: str) -> str | None:
+        return self._stream.live_game_name(channel)

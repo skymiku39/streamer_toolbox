@@ -117,7 +117,14 @@ def test_stream_metadata_updates_context_for_reply() -> None:
     captured: dict[str, str] = {}
 
     class CapturingLlm:
-        def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+        def ask(
+            self,
+            question: str,
+            *,
+            context: str,
+            knowledge: str = "",
+            game_reference: str = "",
+        ) -> str:
             captured["context"] = context
             return "metadata-aware reply"
 
@@ -207,7 +214,14 @@ def test_busy_lock_returns_busy_reply() -> None:
 
 
 class _MarkdownLlmClient:
-    def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+    def ask(
+        self,
+        question: str,
+        *,
+        context: str,
+        knowledge: str = "",
+        game_reference: str = "",
+    ) -> str:
         return "**重點**：這是*測試*回覆"
 
 
@@ -249,7 +263,14 @@ class _CountingLlmClient:
     def __init__(self) -> None:
         self.calls = 0
 
-    def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+    def ask(
+        self,
+        question: str,
+        *,
+        context: str,
+        knowledge: str = "",
+        game_reference: str = "",
+    ) -> str:
         self.calls += 1
         return f"answer-{self.calls}"
 

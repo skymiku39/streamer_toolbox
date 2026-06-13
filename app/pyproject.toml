@@ -10,6 +10,7 @@ dependencies = [
     "discord.py",
     "events",
     "faster-whisper>=1.1.0",
+    "game-info",
     "identity-oauth",
     "numpy>=1.24.0",
     "obsws-python",
@@ -36,6 +37,7 @@ packages = ["src/app"]
 [tool.uv.sources]
 bus = { workspace = true }
 events = { workspace = true }
+game-info = { workspace = true }
 identity-oauth = { workspace = true }
 safety = { workspace = true }
 stream-store = { workspace = true }

@@ -1,31 +1,24 @@
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 
 
-def test_build_ask_messages_includes_all_sections() -> None:
+def test_build_ask_messages_includes_game_reference_section() -> None:
     messages = build_ask_messages(
-        "誰是 LNG",
-        context="【近期聊天室（skymiku39）】\nviewer: LNG Live",
-        knowledge="【實況主知識庫】\n777：幸運數字\n\n【近期直播摘要】\n[chat] 摘要",
-        system_prompt="測試系統",
+        "這遊戲好玩嗎",
+        context="【直播狀態】",
+        knowledge="知識片段",
+        game_reference="【遊戲資料參考：Bad North】\n評分：媒體評分 80/100",
     )
     user = next(m["content"] for m in messages if m["role"] == "user")
-    assert "近期直播上下文" in user
-    assert "知識庫參考" in user
-    assert "觀眾問題：誰是 LNG" in user
-    assert "LNG Live" in user
-    assert "【實況主知識庫】" in user
-    assert "【近期直播摘要】" in user
+    assert "遊戲資料參考：" in user
+    assert "Bad North" in user
+    assert user.index("知識庫參考：") < user.index("遊戲資料參考：") < user.index("觀眾問題：")
 
 
-def test_analyze_prompt_payload_detects_markers() -> None:
+def test_analyze_prompt_payload_detects_game_reference_marker() -> None:
     analysis = analyze_prompt_payload(
-        "主播在玩什麼",
-        context="【直播逐字稿（skymiku39，最近片段）】\n[120s] 測試\n\n【近期聊天室（skymiku39）】\nviewer: hi",
-        knowledge="【實況主知識庫】\n梗\n\n【近期直播摘要】\n[stt] 摘要",
-        system_prompt="可用本身的常識",
+        "評分",
+        context="",
+        game_reference="【遊戲資料參考：Demo】",
     )
-    assert analysis["has_stt_marker"] is True
-    assert analysis["has_chat_marker"] is True
-    assert analysis["has_static_kb_marker"] is True
-    assert analysis["has_memory_marker"] is True
-    assert analysis["has_general_knowledge_hint"] is True
+    assert analysis["has_game_reference_marker"]
+    assert analysis["game_reference_len"] > 0

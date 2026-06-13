@@ -73,11 +73,19 @@ class OpenAiCompatibleLlmClient:
             system_prompt=system_prompt,
         )
 
-    def ask(self, question: str, *, context: str, knowledge: str = "") -> str:
+    def ask(
+        self,
+        question: str,
+        *,
+        context: str,
+        knowledge: str = "",
+        game_reference: str = "",
+    ) -> str:
         messages = build_ask_messages(
             question,
             context=context,
             knowledge=knowledge,
+            game_reference=game_reference,
             system_prompt=self._system_prompt,
         )
         if os.environ.get("LLM_DEBUG_PROMPT", "").strip().lower() in {"1", "true", "yes", "on"}:
@@ -85,14 +93,17 @@ class OpenAiCompatibleLlmClient:
                 question,
                 context=context,
                 knowledge=knowledge,
+                game_reference=game_reference,
                 system_prompt=self._system_prompt,
             )
             print(
                 "[sub-llm] prompt "
                 f"context_len={analysis['context_len']} "
                 f"knowledge_len={analysis['knowledge_len']} "
+                f"game_len={analysis['game_reference_len']} "
                 f"stt={analysis['has_stt_marker']} "
                 f"chat={analysis['has_chat_marker']} "
+                f"game_ref={analysis['has_game_reference_marker']} "
                 f"static_kb={analysis['has_static_kb_marker']} "
                 f"memory={analysis['has_memory_marker']}",
                 file=sys.stderr,
