@@ -114,6 +114,8 @@ def main(argv: list[str] | None = None) -> int:
     skip_author_ids = frozenset({bot_author_id}) if bot_author_id else frozenset()
 
     idempotency = IdempotencyStore(default_idempotency_db_path())
+    game_info = create_game_info_provider()
+    game_info_mode = "igdb" if game_info is not None else "disabled"
     subscriber = LlmSubscriber(
         config=config,
         llm=llm,
@@ -125,13 +127,14 @@ def main(argv: list[str] | None = None) -> int:
         ),
         publish=publish,
         idempotency=idempotency,
-        game_info=create_game_info_provider(),
+        game_info=game_info,
     )
 
     print(
         f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT}, "
         f"{TOPIC_STREAM_METADATA} "
-        f"(backend={args.llm_backend!r}, knowledge=RAG/chroma, triggers={config.trigger_prefixes!r})",
+        f"(backend={args.llm_backend!r}, knowledge=RAG/chroma, "
+        f"game_info={game_info_mode!r}, triggers={config.trigger_prefixes!r})",
         file=sys.stderr,
         flush=True,
     )

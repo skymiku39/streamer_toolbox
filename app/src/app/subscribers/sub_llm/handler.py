@@ -30,7 +30,6 @@ from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.llm import LlmClient
 from sub_llm.triggers import TriggerMatcher
-from stream_store.session import normalize_channel
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
@@ -167,51 +166,6 @@ class LlmSubscriber:
                     file=sys.stderr,
                     flush=True,
                 )
-            # region agent log
-            import json
-            import time
-            from pathlib import Path
-
-            stream_event = self._context_buffer._stream._latest_by_channel.get(  # noqa: SLF001
-                normalize_channel(channel)
-            )
-            Path("debug-8f4ded.log").open("a", encoding="utf-8").write(
-                json.dumps(
-                    {
-                        "sessionId": "8f4ded",
-                        "hypothesisId": "VERIFY",
-                        "location": "handler.py:_handle_chat_message",
-                        "message": "qa_ground_truth",
-                        "data": {
-                            "question": filtered_question,
-                            "channel": channel,
-                            "stt_count": stt_count,
-                            "chat_count": chat_count,
-                            "context_len": context_len,
-                            "has_stream_metadata": has_stream,
-                            "metadata": {
-                                "title": stream_event.title if stream_event else None,
-                                "game_name": stream_event.game_name if stream_event else None,
-                                "duration_seconds": (
-                                    stream_event.duration_seconds if stream_event else None
-                                ),
-                                "viewer_count": (
-                                    stream_event.viewer_count if stream_event else None
-                                ),
-                                "is_live": stream_event.is_live if stream_event else None,
-                            },
-                            "knowledge_len": len(knowledge),
-                            "game_reference_len": len(game_reference),
-                            "live_game": live_game,
-                            "context_preview": context[:500],
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
-            # endregion
             raw_reply = self._llm.ask(
                 filtered_question,
                 context=context,
@@ -224,29 +178,6 @@ class LlmSubscriber:
             filtered_reply = plain_text_for_chat(filtered_reply)
             if not filtered_reply:
                 return
-            # region agent log
-            import json
-            import time
-            from pathlib import Path
-
-            Path("debug-8f4ded.log").open("a", encoding="utf-8").write(
-                json.dumps(
-                    {
-                        "sessionId": "8f4ded",
-                        "hypothesisId": "VERIFY",
-                        "location": "handler.py:_handle_chat_message",
-                        "message": "qa_reply",
-                        "data": {
-                            "question": filtered_question,
-                            "reply": filtered_reply,
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
-            # endregion
             if len(filtered_reply) > self._config.reply_max_length:
                 limit = self._config.reply_max_length
                 filtered_reply = filtered_reply[: limit - 3] + "..."
