@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import os
 
+from sub_llm.chat_format import reply_length_guidance
+from sub_llm.config import DEFAULT_REPLY_MAX_LENGTH, resolve_reply_max_length
+
 _TRADITIONAL_CHINESE_RULE = (
     "一律使用繁體中文（台灣用語）回覆，禁止出現簡體字；"
     "若知識庫或 Google 搜尋結果為簡體，須轉為繁體後再回答。"
@@ -25,7 +28,7 @@ DEFAULT_LLM_SYSTEM_PROMPT = (
     "討論正在玩的遊戲時，可引用遊戲資料參考中的評分與簡介，勿捏造未提供的數字。"
     "勿捏造與直播主、頻道相關的未提供事實。"
     "勿使用 Markdown（無粗體、標題、連結語法），以純文字短句回覆，適合 Twitch 聊天室。"
-    "每次回覆正文不超過 50 字（不含 @ 標記與標點），精簡扼要。"
+    + reply_length_guidance(DEFAULT_REPLY_MAX_LENGTH)
 )
 
 _STRICT_KNOWLEDGE_ONLY_SUFFIX = (
@@ -40,11 +43,25 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
-def resolve_system_prompt(raw: str | None = None) -> str:
+def resolve_system_prompt(
+    raw: str | None = None,
+    *,
+    reply_max_length: int | None = None,
+) -> str:
     """組裝 sub-llm 系統提示；預設允許在 RAG 不足時使用模型自身知識。"""
     base = (raw if raw is not None else os.environ.get("LLM_SYSTEM_PROMPT", "")).strip()
+    limit = (
+        reply_max_length
+        if reply_max_length is not None
+        else resolve_reply_max_length()
+    )
     if not base:
         base = DEFAULT_LLM_SYSTEM_PROMPT
+        if limit != DEFAULT_REPLY_MAX_LENGTH:
+            base = base.replace(
+                reply_length_guidance(DEFAULT_REPLY_MAX_LENGTH),
+                reply_length_guidance(limit),
+            )
     if _env_bool("LLM_GENERAL_KNOWLEDGE", True):
         prompt = base
     elif _STRICT_KNOWLEDGE_ONLY_SUFFIX in base:

@@ -3,11 +3,13 @@ from sub_llm.prompts import DEFAULT_LLM_SYSTEM_PROMPT, resolve_system_prompt
 
 def test_resolve_system_prompt_uses_default_when_empty(monkeypatch) -> None:
     monkeypatch.delenv("LLM_SYSTEM_PROMPT", raising=False)
+    monkeypatch.delenv("LLM_MAX_REPLY_LENGTH", raising=False)
     monkeypatch.setenv("LLM_GENERAL_KNOWLEDGE", "true")
     prompt = resolve_system_prompt()
     assert "通識" in prompt
     assert "不要套公式" in prompt
     assert "繁體中文" in prompt
+    assert "200 字" in prompt
     assert prompt == DEFAULT_LLM_SYSTEM_PROMPT
 
 

@@ -10,10 +10,12 @@ from events import (
     SOURCE_LOGIC_LLM,
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
+    TOPIC_MEMORY_QA_RECORD,
     TOPIC_STT_SEGMENT,
     TOPIC_STREAM_METADATA,
     ChatMessageEvent,
     ChatReplyEvent,
+    MemoryQaRecordEvent,
     SttSegmentEvent,
     StreamMetadataEvent,
 )
@@ -23,12 +25,13 @@ from stream_store.idempotency import IdempotencyStore
 
 from game_info import GameInfoProvider
 
-from sub_llm.chat_format import cap_reply_for_chat, plain_text_for_chat
-from sub_llm.config import LlmSubscriberConfig
+from sub_llm.chat_format import cap_reply_for_chat, cap_reply_for_twitch, plain_text_for_chat
+from sub_llm.config import TWITCH_CHAT_MAX_CHARS, LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.llm import LlmClient
+from sub_llm.qa_memory_gate import should_persist_qa_memory
 from sub_llm.triggers import TriggerMatcher
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
@@ -205,13 +208,13 @@ class LlmSubscriber:
                     file=sys.stderr,
                     flush=True,
                 )
-            raw_reply = self._llm.ask(
+            ask_result = self._llm.ask(
                 filtered_question,
                 context=context,
                 knowledge=knowledge,
                 game_reference=game_reference,
             )
-            filtered_reply = self._safety.filter_output(raw_reply)
+            filtered_reply = self._safety.filter_output(ask_result.reply)
             if filtered_reply is None:
                 return
             filtered_reply = plain_text_for_chat(filtered_reply)
@@ -221,10 +224,27 @@ class LlmSubscriber:
                 filtered_reply,
                 self._config.reply_max_length,
             )
+            filtered_reply = cap_reply_for_twitch(
+                filtered_reply,
+                TWITCH_CHAT_MAX_CHARS,
+            )
             if not filtered_reply:
                 return
             self._publish_reply(event, filtered_reply, question=filtered_question)
             published = True
+            if self._config.qa_memory_mode == "structured" and should_persist_qa_memory(
+                ask_result,
+                question=filtered_question,
+                published_reply=filtered_reply,
+                min_memory_value=self._config.qa_memory_min_value,
+            ):
+                self._publish_qa_memory_record(
+                    event,
+                    question=filtered_question,
+                    reply=filtered_reply,
+                    memory_note=ask_result.memory_note,
+                    memory_value=ask_result.memory_value,
+                )
         finally:
             if busy_acquired:
                 self._busy.release()
@@ -262,4 +282,33 @@ class LlmSubscriber:
             content,
             question=question,
             reply_to_author=reply_to,
+        )
+
+    def _publish_qa_memory_record(
+        self,
+        trigger: ChatMessageEvent,
+        *,
+        question: str,
+        reply: str,
+        memory_note: str,
+        memory_value: int,
+    ) -> None:
+        ask_author = (trigger.author_name or trigger.login or "").strip()
+        record = MemoryQaRecordEvent.build(
+            channel=trigger.channel or "",
+            platform=trigger.platform,
+            correlation_id=trigger.message_id,
+            question=question,
+            reply=reply,
+            memory_note=memory_note,
+            memory_value=memory_value,
+            store_worthy=True,
+            ask_author=ask_author,
+        )
+        self._publish(TOPIC_MEMORY_QA_RECORD, record.to_dict())
+        print(
+            f"[sub-llm] published {TOPIC_MEMORY_QA_RECORD} "
+            f"correlation={trigger.message_id[:8]} memory_value={memory_value}",
+            file=sys.stderr,
+            flush=True,
         )

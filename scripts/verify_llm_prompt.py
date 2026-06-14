@@ -28,7 +28,7 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _build_sample_context(channel: str) -> tuple[LiveContextBuffer, tuple[int, int, int]]:
+def _build_sample_context(channel: str) -> tuple[LiveContextBuffer, tuple[int, int, int, int, bool]]:
     bot_id = (os.environ.get("TWITCH_BOT_ID") or "").strip()
     skip_ids = frozenset({bot_id}) if bot_id else frozenset()
     window = int(os.environ.get("LLM_CONTEXT_WINDOW_MINUTES", "5"))
@@ -69,7 +69,9 @@ def main() -> int:
     store = create_knowledge_store(knowledge_path or None)
     preload_knowledge_store(store)
 
-    context_buffer, (stt_count, chat_count, context_len, has_stream) = _build_sample_context(channel)
+    context_buffer, (stt_count, chat_count, bot_reply_count, context_len, has_stream) = (
+        _build_sample_context(channel)
+    )
     context = context_buffer.context_text(channel)
 
     scenarios = [
@@ -85,6 +87,7 @@ def main() -> int:
         "buffer_stats": {
             "stt": stt_count,
             "chat": chat_count,
+            "bot_replies": bot_reply_count,
             "context_len": context_len,
             "has_stream": has_stream,
         },

@@ -69,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
 
     config_path = Path(args.config)
     config = _load_config(config_path if config_path.is_file() else None)
+    os.environ.setdefault("LLM_MAX_REPLY_LENGTH", str(config.reply_max_length))
     safety = BlocklistSafetyFilter(
         blocklist=frozenset(
             word.lower()
@@ -150,7 +151,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT}, "
         f"{TOPIC_STREAM_METADATA} "
-        f"(backend={args.llm_backend!r}, knowledge=RAG/chroma, "
+        f"(backend={args.llm_backend!r}, qa_memory_mode={config.qa_memory_mode!r}, "
+        f"knowledge=RAG/chroma, "
         f"game_info={game_info_mode!r}, triggers={config.trigger_prefixes!r})",
         file=sys.stderr,
         flush=True,

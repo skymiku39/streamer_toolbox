@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+from sub_llm.ask_response import structured_output_guidance
+from sub_llm.chat_format import reply_length_guidance
+from sub_llm.config import resolve_reply_max_length
+from sub_llm.qa_memory_mode import structured_ask_enabled
 from sub_llm.prompts import resolve_system_prompt
 
-_ANSWER_GUIDANCE = (
-    "【回答方式】直接回答觀眾問題，語氣自然，全文繁體中文（台灣），禁止簡體字。"
-    "正文不超過 50 字（不含 @ 標記與標點），精簡扼要。"
-    "上下文沒提到的，最多一句帶過，仍須用知識庫、遊戲資料、網路搜尋或通識補足；"
-    "勿反覆「直播中…」，勿只說沒提到就結束。"
-    "知識庫摘要若記載你過去曾回「沒提到」，那是歷史紀錄，不代表這次也要這樣答。"
-)
+
+def _answer_guidance(reply_max_length: int | None = None) -> str:
+    limit = (
+        reply_max_length
+        if reply_max_length is not None
+        else resolve_reply_max_length()
+    )
+    return (
+        "【回答方式】直接回答觀眾問題，語氣自然，全文繁體中文（台灣），禁止簡體字。"
+        + reply_length_guidance(limit)
+        + "上下文沒提到的，最多一句帶過，仍須用知識庫、遊戲資料、網路搜尋或通識補足；"
+        "勿反覆「直播中…」，勿只說沒提到就結束。"
+        "知識庫摘要若記載你過去曾回「沒提到」，那是歷史紀錄，不代表這次也要這樣答。"
+    )
 
 
 def build_ask_messages(
@@ -18,10 +29,18 @@ def build_ask_messages(
     knowledge: str = "",
     game_reference: str = "",
     system_prompt: str | None = None,
+    reply_max_length: int | None = None,
 ) -> list[dict[str, str]]:
     """組裝送給 LLM 的 messages（與 OpenAiCompatibleLlmClient.ask 相同）。"""
+    limit = (
+        reply_max_length
+        if reply_max_length is not None
+        else resolve_reply_max_length()
+    )
     resolved_system = (
-        resolve_system_prompt() if system_prompt is None else system_prompt.strip()
+        resolve_system_prompt(reply_max_length=limit)
+        if system_prompt is None
+        else system_prompt.strip()
     )
     messages: list[dict[str, str]] = []
     if resolved_system:
@@ -33,7 +52,9 @@ def build_ask_messages(
         user_sections.append(f"知識庫參考：\n{knowledge.strip()}")
     if game_reference.strip():
         user_sections.append(f"遊戲資料參考：\n{game_reference.strip()}")
-    user_sections.append(_ANSWER_GUIDANCE)
+    user_sections.append(_answer_guidance(limit))
+    if structured_ask_enabled():
+        user_sections.append(structured_output_guidance(limit))
     user_sections.append(f"觀眾問題：{question.strip()}")
     messages.append({"role": "user", "content": "\n\n".join(user_sections)})
     return messages

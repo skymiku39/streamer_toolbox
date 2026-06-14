@@ -124,7 +124,9 @@ uv run python -m app.subscribers.sub_llm --llm-backend template
 |------|------|
 | `LLM_TRIGGER_PREFIXES` | 觸發前綴（預設 `!ask`） |
 | `LLM_BACKEND` | `template` / `openai` / `gemini` |
-| `LLM_MAX_REPLY_LENGTH` | 回覆正文上限（預設 50；不含 @/# tag 與標點） |
+| `LLM_MAX_REPLY_LENGTH` | 回覆正文上限（預設 200；不含 @/# tag 與標點；設 0 則不截正文，僅受 Twitch 500 字限制） |
+| `QA_MEMORY_MODE` | Bot 問答長期記憶：`none`（預設，不讀寫 qa）／`structured`／`batch`（2、3 讀取相同） |
+| `LLM_QA_MEMORY_MIN_VALUE` | `structured` 模式最低 memory_value（預設 3） |
 | `LLM_SYSTEM_PROMPT` | 系統提示；預設要求勿用 Markdown，以純文字短句回覆 |
 | `LLM_CONTEXT_WINDOW_MINUTES` | STT / 聊天短期上下文（分鐘，預設 **15**） |
 | `LLM_BOT_REPLY_WINDOW_MINUTES` | Bot 近期問答 buffer 時間窗（預設 30；**不寫入 RAG**） |

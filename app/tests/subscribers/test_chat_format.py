@@ -33,6 +33,14 @@ def test_truncate_reply_for_chat_preserves_tags() -> None:
     assert count_reply_content_chars(capped) == 50
 
 
+def test_truncate_reply_for_chat_prefers_sentence_boundary() -> None:
+    text = "前半段沒提到。" + ("中間很長的補充" * 8) + "。結尾不應出現。"
+    capped = truncate_reply_for_chat(text, 20)
+    assert count_reply_content_chars(capped) <= 20
+    assert "結尾不應出現" not in capped
+    assert capped.endswith("。") or capped.endswith("充")
+
+
 def test_cap_reply_for_chat() -> None:
     text = "短回覆。"
     assert cap_reply_for_chat(text, 50) == text

@@ -42,10 +42,26 @@ def count_reply_content_chars(text: str) -> int:
     return count
 
 
+def _trim_incomplete_trailing_sentence(text: str, max_content_chars: int) -> str:
+    """若硬截斷落在半句，僅去掉末尾不完整片段，保留已完整的句子。"""
+    stripped = text.rstrip()
+    if not stripped or stripped[-1] in "。！？!?…":
+        return stripped
+    stub_limit = min(20, max(max_content_chars // 5, 1))
+    for punct in "。！？!?…":
+        index = stripped.rfind(punct)
+        if index < 0 or index >= len(stripped) - 1:
+            continue
+        tail = stripped[index + 1 :]
+        if count_reply_content_chars(tail) <= stub_limit:
+            return stripped[: index + 1].strip()
+    return stripped
+
+
 def truncate_reply_for_chat(text: str, max_content_chars: int) -> str:
     """截斷回覆，使正文不超過 max_content_chars（不含 tag 與標點）。"""
     if max_content_chars <= 0:
-        return ""
+        return text.strip()
     if count_reply_content_chars(text) <= max_content_chars:
         return text
 
@@ -68,12 +84,39 @@ def truncate_reply_for_chat(text: str, max_content_chars: int) -> str:
         parts.append(char)
         content_count += 1
         index += 1
-    return "".join(parts).strip()
+    result = "".join(parts).strip()
+    if count_reply_content_chars(text) > max_content_chars:
+        result = _trim_incomplete_trailing_sentence(result, max_content_chars)
+    return result
+
+
+def cap_reply_for_twitch(text: str, max_chars: int = 500) -> str:
+    """Twitch 聊天室單則訊息字元上限（含標點與 @ tag）。"""
+    if max_chars <= 0 or len(text) <= max_chars:
+        return text
+    trimmed = text[:max_chars].rstrip()
+    if trimmed and trimmed[-1] in "。！？!?…":
+        return trimmed
+    for punct in "。！？!?…":
+        index = trimmed.rfind(punct)
+        if index > 0 and (len(trimmed) - index - 1) <= 40:
+            return trimmed[: index + 1].strip()
+    return trimmed
 
 
 def cap_reply_for_chat(text: str, max_content_chars: int) -> str:
-    """將 LLM 回覆限制在聊天室可接受的正文長度內。"""
-    return truncate_reply_for_chat(text.strip(), max_content_chars)
+    """將 LLM 回覆限制在聊天室可接受的正文長度內；max_content_chars<=0 表示不截正文。"""
+    stripped = text.strip()
+    if max_content_chars <= 0:
+        return stripped
+    return truncate_reply_for_chat(stripped, max_content_chars)
+
+
+def reply_length_guidance(max_content_chars: int) -> str:
+    return (
+        f"每次回覆正文不超過 {max_content_chars} 字（不含 @ 標記與標點），"
+        "回答完整、語意收尾，勿寫到一半就停。"
+    )
 
 
 def plain_text_for_chat(text: str) -> str:
