@@ -3,20 +3,23 @@
 | 項目 | 連結 |
 |------|------|
 | 模組 / 啟用 | [modules.md#產品-c--llm-bot](../modules.md#產品-c--llm-bot) |
-| 安全層 | [solid.md](../solid.md)、`pkg-safety` |
+| 安全層 | [solid.md](../solid.md)、`safety` |
 | As-is 參考 | [`llm_twitchat`](../../../llm_twitchat)、[references/llm-twitchat.md](../references/llm-twitchat.md) |
 
 產品 B 基礎上增加 `sub-llm`。預設僅觸發詞（如 `!ask`）或 redemption 觸發 LLM。
 
-## As-is：`llm_twitchat`
+## 現況：本專案已實作
 
-[`llm_twitchat`](../../../llm_twitchat) 為**獨立 Web App**（`uv run llm-twitchat`），與 `twitch_api` 分離運行：
+產品 C 已由 **streamer-toolbox** 內的 `sub-llm`、`ingress-twitch-audio`、`ingress-twitch-stream`、`twitch-connector` 等程序組裝，經 RabbitMQ 協作；記憶管線見 `sub-stream-record` + `app.workers`。啟動方式見 [getting-started.md](../getting-started.md) §3.4（`--stack ingress` + `--stack llm`）。
+
+## 歷史參考：`llm_twitchat`
+
+[`llm_twitchat`](../../../llm_twitchat) 為遷移前的**獨立 Web App**（`uv run llm-twitchat`）：
 
 - 直播音訊 STT + Twitch IRC 聊天（匿名）→ 瀏覽器問答 / 摘要 / 高光
 - **不**經 MQ、**不**發布 `chat.reply`（IRC 唯讀）
-- 目標態：LLM 邏輯抽成 `sub-llm`，訂閱 `chat.message` 並經 `twitch-connector` 回覆
 
-若需同時具備規則 BOT 發話與 LLM 問答，現階段需分別啟動 `twitch_api` 與 `llm_twitchat`；遷移完成後由 `stream-app` 依 [modules.md](../modules.md) 啟用表編排。
+上述能力已演進為本專案的 `sub-llm` + `ingress-twitch-audio` + `twitch-connector`。
 
 ## 時序
 
@@ -24,9 +27,9 @@
 sequenceDiagram
     participant MQ
     participant Bot as sub_bot_logic
-    participant Pre as pkg_safety_in
+    participant Pre as safety_in
     participant LLM as sub_llm
-    participant Post as pkg_safety_out
+    participant Post as safety_out
     participant Send as twitch_connector
 
     MQ->>Bot: chat.message

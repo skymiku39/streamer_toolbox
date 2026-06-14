@@ -171,16 +171,16 @@ Bot 帳號 (bot)      ──► twitch-connector 發話
 |------|------|
 | `TWITCH_STREAMLINK_AUTH_TOKEN` | 瀏覽器 `auth-token` cookie；**敏感**，勿 commit |
 
-### 5.5 與 twitch_api 共用 .env
+### 5.5 `.env` 與 OAuth bootstrap
 
-兩專案可共用同一份 `.env`：
+首次授權由本 repo 完成：
 
+```powershell
+uv run python scripts/first_time_auth.py --role channel
+uv run python scripts/first_time_auth.py --role bot
 ```
-D:\github\twitch_api\.env          ← GUI 授權寫入 refresh token
-D:\github\streamer_toolbox\.env    ← 可 symlink 或 copy 相同 key
-```
 
-toolbox **不**依賴 `twitch_api` runtime；只對齊 **key 命名** 與 refresh 語意。
+寫入 `.env` 後，各 process 透過 `identity-oauth` 自動 refresh。歷史上可與 [`twitch_api`](../../../twitch_api) 共用相同 env key 命名，但**非必要**。
 
 ---
 

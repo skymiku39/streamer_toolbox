@@ -6,9 +6,9 @@
 
 | 術語 | 含義 |
 |------|------|
-| **本專案** | `streamer_toolbox`：設計文件（`docs/`）與 stream-core 實作（`pkg-*` 等 workspace package） |
+| **本專案** | `streamer_toolbox`：設計文件（`docs/`）與 stream-core 實作（`packages/` 內 `bus`、`events` 等 workspace package） |
 | **姊妹專案** | 僅 [`streamer-toolkit`](../streamer-toolkit)：早期 Phase 01 Pub/Sub 架構參考 |
-| **參考程式碼** | `twitch_api`、`yt_chat`、`ttv_chat`、`llm_twitchat` 等：既有 As-is 實作，供拆分模組或對照邏輯，**不是**姊妹專案 |
+| **參考程式碼** | `twitch_api`、`llm_twitchat` 等：歷史 As-is，供對照邏輯；**執行期不依賴**。`ttvchat-lens`、`tubechat-lens` 已收編至 `packages/` |
 | **Sub** | Pub/Sub 架構中的 **Subscriber package**（`sub-io-log`、`sub-llm` 等），非 Git submodule |
 
 ## 姊妹專案
@@ -23,27 +23,24 @@
 
 下列 repo 為**參考用程式**，方便拆分或建立本專案各模組與邏輯；目標是演進為本專案內的 `ingress-*` / `sub-*` package，而非與本專案並列的姊妹專案。
 
-| 專案 | 路徑 | PyPI / 套件名 | 用途 | 目標 package |
-|------|------|---------------|------|----------------|
-| twitch-oauth-bot | [`../twitch_api`](../twitch_api) | `twitch-oauth-bot` | 全功能 Twitch BOT（OAuth、EventSub、發話、TTS、Desktop） | 多數 `sub-*` / `ingress-twitch-eventsub` |
-| TubeChat Lens | [`../yt_chat`](../yt_chat) | `tubechat-lens` | YouTube 直播聊天唯讀 | `ingress-yt-read` |
-| ttvchat-lens | [`../ttv_chat`](../ttv_chat) | `ttvchat-lens` | Twitch IRC 匿名唯讀 | `ingress-ttv-read` |
-| llm-twitchat | [`../llm_twitchat`](../llm_twitchat) | `llm-twitchat` | 直播 STT + IRC 聊天 + Gemini 問答（獨立 Web App） | `sub-llm`（及未來 STT ingress） |
+| 專案 | 路徑 | PyPI / 套件名 | 用途 | 本專案現況 |
+|------|------|---------------|------|------------|
+| twitch-oauth-bot | [`../twitch_api`](../twitch_api) | `twitch-oauth-bot` | 全功能 Twitch BOT（歷史 As-is） | 邏輯已遷移至 `app/` + `identity-oauth` |
+| TubeChat Lens | `packages/tubechat-lens` | `tubechat-lens` | YouTube 直播聊天唯讀 | ✅ `ingress-yt-read` |
+| ttvchat-lens | `packages/ttvchat-lens` | `ttvchat-lens` | Twitch IRC 匿名唯讀 | ✅ `ingress-ttv-read` |
+| llm-twitchat | [`../llm_twitchat`](../llm_twitchat) | `llm-twitchat` | 歷史 STT + Gemini Web App | ✅ 演進為 `sub-llm` + `ingress-twitch-audio` |
 
 ## 模組依賴關係
 
 ```mermaid
 flowchart TB
-    subgraph read [唯讀 Ingress 參考]
-        YT[yt_chat / tubechat_lens]
-        TTV[ttv_chat / ttvchat_lens]
+    subgraph read [唯讀 Ingress — 已收編]
+        YT[packages/tubechat-lens]
+        TTV[packages/ttvchat-lens]
     end
 
-    subgraph full [全功能 Twitch 參考]
+    subgraph legacy [歷史參考 As-is]
         API[twitch_api]
-    end
-
-    subgraph llm [LLM 參考應用]
         LLM[llm_twitchat]
     end
 
@@ -59,20 +56,19 @@ flowchart TB
 
     YT -->|ChatMessage schema| Ingress
     TTV -->|ChatMessage schema| Ingress
-    API -->|path 依賴 IRC fallback| TTV
-    API -.->|EventSub 主路徑| Ingress
-    LLM -.->|內建 IRC + STT，待 MQ 化| Sub
+    API -.->|歷史對照| Ingress
+    LLM -.->|已 MQ 化| Sub
     TK -.->|Phase 01 可執行範本| Ingress
     Ingress --> MQ --> Sub
 ```
 
 | 關係 | 說明 |
 |------|------|
-| `yt_chat` ↔ `ttv_chat` | 同類參考程式；`ChatMessage.to_dict()` schema 對齊，方便同一下游 pipeline |
-| `twitch_api` → `ttv_chat` | `pyproject.toml` path 依賴 `ttvchat-lens`；EventSub 不可用時**降級**為匿名 IRC 唯讀 |
-| `llm_twitchat` ⊥ `twitch_api` | **分離運行**；LLM / STT 已自 `twitch_api` 拆出，不共用 EventBus 或 Python 套件 |
-| 參考程式 → streamer-toolbox | 作為各層 As-is 對照；目標態經 MQ + `pkg-events` 解耦 |
-| streamer-toolkit → streamer-toolbox | 姊妹專案；早期 Pub/Sub 架構參考，本專案已實作對齊設計的 Phase 01 |
+| `tubechat-lens` / `ttvchat-lens` | 已收編於 `packages/`；`uv sync` 不需外部 repo |
+| `twitch_api` → `ingress-ttv-read` | EventSub 不可用時 App **改啟** `ingress-ttv-read`（匿名 IRC 降級） |
+| `llm_twitchat` | 歷史獨立 App；現由 `sub-llm` + `ingress-twitch-audio` 取代 |
+| 參考程式 → streamer-toolbox | 歷史 As-is 對照；執行期僅依賴本 repo workspace |
+| streamer-toolkit → streamer-toolbox | 姊妹專案；早期 Pub/Sub 架構參考 |
 
 ### streamer-toolkit（姊妹專案）
 
@@ -80,29 +76,25 @@ flowchart TB
 
 詳見 [references/streamer-toolkit.md](references/streamer-toolkit.md)。
 
-### yt_chat（TubeChat Lens）
+### yt_chat / tubechat-lens（已收編）
 
 | 項目 | 內容 |
 |------|------|
-| 套件 | `tubechat_lens`（`uv run tubechat-lens`） |
-| 連線 | `pytchat` / InnerTube，**無** YouTube Data API Key |
-| 輸出 | CLI、`LiveChatReader` API、WebSocket `ws://127.0.0.1:8765`、Tauri 桌面 App |
-| 設計角色 | `ingress-yt-read` 模板；normalize 後發布 `chat.message`（`platform: youtube`） |
+| 本專案路徑 | `packages/tubechat-lens/` |
+| 套件 | `tubechat_lens` |
+| 程序 | `ingress-yt-read` |
 
-- `ChatMessage` + `to_dict()` → 對齊 [events.md#chatmessage](events.md#chatmessage)
-- 設計筆記：用 Queue 消費，避免 handler 內 I/O 拖慢拉取
+歷史上游 repo 為 `yt_chat`；現已 vendored，無需另行 clone。
 
-### ttv_chat（ttvchat-lens）
+### ttv_chat / ttvchat-lens（已收編）
 
 | 項目 | 內容 |
 |------|------|
-| 套件 | `ttvchat_lens`（`uv run ttvchat-lens`） |
-| 連線 | Twitch IRC over WebSocket（`justinfan*` 匿名），**零 OAuth** |
-| 輸出 | CLI、`LiveChatReader` API、WebSocket `ws://127.0.0.1:8766`、Tauri 桌面 App |
-| 設計角色 | `ingress-ttv-read` 模板；Phase 01 `ingress-twitch-chat` 建議依賴此 reader |
+| 本專案路徑 | `packages/ttvchat-lens/` |
+| 套件 | `ttvchat_lens` |
+| 程序 | `ingress-ttv-read` |
 
-- 支援 `textMessage`、訂閱 / Raid / Bits 等 `USERNOTICE` 類型
-- 讀取層與發話層解耦（發話需 OAuth，見 `twitch_api` / `twitch-connector`）
+歷史上游 repo 為 `ttv_chat`；現已 vendored，無需另行 clone。
 
 ### twitch_api（Twitch OAuth Bot）
 
@@ -131,7 +123,7 @@ flowchart TB
 | 輸入 | 直播音訊 STT（streamlink + faster-whisper）+ Twitch IRC 聊天（內建，匿名） |
 | 輸出 | Gemini 問答、摘要、高光時段；**不**代發 Twitch 訊息 |
 | 執行期 | 單機 in-process `EventBus`（`core/event_bus.py`） |
-| 設計角色 | 產品 C **As-is** 參考；目標態為 MQ 上的 `sub-llm` + 未來 STT ingress |
+| 設計角色 | 產品 C **As-is** 參考；To-be 已於本專案實作為 `sub-llm` + `ingress-twitch-audio` / `ingress-twitch-stream` |
 
 詳見 [references/llm-twitchat.md](references/llm-twitchat.md)、[use-cases/03-llm-bot.md](use-cases/03-llm-bot.md)。
 
@@ -141,16 +133,20 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 
 | To-be package | 參考 As-is | 備註 |
 |---------------|------------|------|
-| `ingress-yt-read` | `yt_chat` | 可直接包 `tubechat_lens.LiveChatReader` |
-| `ingress-ttv-read` | `packages/ttvchat-lens` | workspace 內 `ttvchat_lens` |
+| `ingress-yt-read` | `packages/tubechat-lens` | workspace `tubechat_lens` |
+| `ingress-ttv-read` | `packages/ttvchat-lens` | workspace `ttvchat_lens` |
 | `ingress-twitch-eventsub` | `twitch_api` `bot/` | EventSub 主路徑 |
 | `sub-bot-logic` | `twitch_api` `chat_commands.py`、`bot_responses.py` | 規則 BOT |
 | `sub-tts` | `twitch_api` `tts/` | 觀眾彈幕朗讀 |
 | `sub-show-overlay` | `twitch_api` `ui/chat_overlay_*` | |
 | `sub-visual` | `twitch_api` `runtime/subtitle.py` | |
 | `twitch-connector` | `twitch_api` `send_message`、`throttle.py` | |
-| `identity-oauth` | `twitch_api` `auth/` | |
-| `sub-llm` | `llm_twitchat` | 待拆出 LLM 邏輯並改訂閱 MQ `chat.message` |
+| `identity-oauth` | 本專案 `packages/identity-oauth` | ✅ 含 bootstrap |
+| `sub-llm` | `llm_twitchat` | **已 MQ 化**；邏輯見 `app/subscribers/sub_llm/` |
+| `ingress-twitch-audio` | `llm_twitchat` `ingest/` | STT → `stt.segment` |
+| `ingress-twitch-stream` | Twitch GQL | 直播 metadata → `stream.metadata` |
+| `ingress-discord` | — | 已實作於本專案 |
+| `sub-character-*` | — | 已實作於本專案（產品 D） |
 | `sub-io-log` | streamer-toolkit `sub1` | 診斷 Sub，留本專案 |
 
 ## twitch_api 路徑索引
@@ -158,56 +154,61 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 | 層 | 路徑 | 遷移目標 |
 |----|------|----------|
 | Ingress | `src/bot/chatbot.py`, `event_handlers.py` | `ingress-twitch-eventsub` |
-| Ingress fallback | `ttvchat_lens`（path 依賴 `../ttv_chat`） | `ingress-ttv-read`（唯讀保底） |
-| Core | `src/runtime/events.py` | `pkg-bus` |
-| Core | `src/runtime/controller.py`, `bot_manager.py` | `stream-app` |
-| Identity | `src/auth/`, `account_service.py` | `identity-oauth` |
+| Ingress fallback | `packages/ttvchat-lens` | `ingress-ttv-read`（唯讀保底） |
+| Core | `src/runtime/events.py` | `bus` |
+| Core | `src/runtime/controller.py`, `bot_manager.py` | `streamer-app` |
+| Identity | `src/auth/`, `account_service.py` | `identity-oauth` + `scripts/first_time_auth.py` |
 | Logic | `bot/chat_commands.py`, `utils/bot_responses.py` | `sub-bot-logic` |
 | Egress | `send_message`, `throttle.py` | `twitch-connector` |
-| Egress | `tts/` | `sub-tts` + `pkg-tts` |
+| Egress | `tts/` | `sub-tts` + `tts` |
 | Egress | `runtime/subtitle.py` | `sub-visual` |
 | LocalPC | `ui/main_window.py`, `chat_overlay_*` | `sub-show-overlay` |
 
-入口：`main.py`、`scripts/first_time_auth.py`。
+入口（歷史）：`twitch_api/main.py`。本專案：`scripts/first_time_auth.py`、`uv run python -m identity_oauth`。
 
-**缺口（尚未有參考程式）：** Discord ingress、Web Dashboard、EventSub Webhook、虛擬角色管線（`sub-character-*`）、MQ 化後的 `sub-llm`、輸出安全層（`pkg-safety` 輸出閘門）。
+**缺口（尚未有參考程式或仍待加強）：** Web Dashboard（`local-dashboard` 暫緩）、EventSub Webhook 獨立 ingress、`safety` 輸出閘門全面統一（`sub-tts`/`sub-visual` 仍用自建 filter）、YAML 產品設定編排。
+
+**已於本專案實作（原列缺口）：** `ingress-discord`、`sub-llm`（MQ）、`sub-character-*`、`safety` 輸入閘門（`sub-llm`、`sub-character-brain`、STT ingress）。
 
 ## 遷移對照
 
 | twitch_api 現況 | 目標 | 難度 | SOLID |
 |-----------------|------|------|-------|
-| `RuntimeEventBus` | `pkg-bus` | 低 | D |
-| `AppController` | `stream-app` | 低 | S |
+| `RuntimeEventBus` | `bus` | 低 | D |
+| `AppController` | `streamer-app` | 低 | S |
 | `TwitchBot` + Mixin | 拆 ingress / sub / connector | **高** | S, O |
 | `auth/` | `identity-oauth` | 低 | I |
-| `tts/message_filter` | `pkg-safety` 輸入 | 低 | L |
+| `tts/message_filter` | `safety` 輸入（部分；TTS 仍自建） | 低 | L |
 | `ui/chat_overlay_*` | `sub-show-overlay` | 中 | O |
-| — | `pkg-events`, `sub-character-*` | 新建 | — |
-| `llm_twitchat`（獨立） | `sub-llm` + 可選 STT ingress | 中 | S, O |
+| — | `events`, `sub-character-*` | 新建 | — |
+| `llm_twitchat`（獨立） | `sub-llm` + STT/metadata ingress | 中 | S, O |
 
 ### 遷移順序
 
-1. 建立 `pkg-events` + `pkg-bus`，凍結 [events.md](events.md) 契約
-2. `event_message` → 僅 normalize + publish `chat.message`
-3. 抽出 `sub-bot-logic`、`twitch-connector`、`sub-tts` 為獨立訂閱者
-4. `yt_chat` / `ttv_chat` ingress adapter 接入同一 schema
-5. `llm_twitchat` 的 LLM 路徑演進為 `sub-llm`（不改 `sub-bot-logic`，**O**）
-6. `sub-character-*` 以新 Sub 擴展（**O**）
+1. ~~建立 `events` + `bus`，凍結 [events.md](events.md) 契約~~ ✅
+2. ~~`event_message` → 僅 normalize + publish `chat.message`~~ ✅（`ingress-twitch-eventsub`）
+3. ~~抽出 `sub-bot-logic`、`twitch-connector`、`sub-tts` 為獨立訂閱者~~ ✅
+4. ~~`yt_chat` / `ttv_chat` ingress adapter 接入同一 schema~~ ✅
+5. ~~`llm_twitchat` 的 LLM 路徑演進為 `sub-llm`~~ ✅
+6. ~~`sub-character-*` 以新 Sub 擴展~~ ✅
+7. **進行中**：YAML 產品設定編排、`safety` 全面統一、EventSub Webhook ingress
 
 每步通過 [solid.md 檢查清單](solid.md#新-repo--sub-檢查清單)。
 
 ## OAuth
 
-→ [use-cases/04-oauth.md](use-cases/04-oauth.md)；權威來源 [`twitch_api/README.md`](../twitch_api/README.md)。
+→ [use-cases/04-oauth.md](use-cases/04-oauth.md)；權威來源 [architecture/identity-auth.md](architecture/identity-auth.md)。
 
 ## 本專案與外部程式關係
 
 ```
-streamer_toolbox/          ← 本專案：docs/ + pkg-* 實作
-streamer-toolkit/          ← 姊妹專案：Phase 01 MQ 可執行參考
-yt_chat / ttv_chat         ← 參考程式碼：ingress 讀取模板
-twitch_api/                ← 參考程式碼：產品 B As-is，逐步拆 sub-*
-llm_twitchat/              ← 參考程式碼：產品 C As-is，演進為 sub-llm
+streamer_toolbox/          ← 本專案（單 repo 自包含）
+  packages/ttvchat-lens/   ← 已收編
+  packages/tubechat-lens/  ← 已收編
+  packages/identity-oauth/ ← OAuth runtime + bootstrap
+streamer-toolkit/          ← 姊妹專案：Phase 01 架構參考（非執行依賴）
+twitch_api/                ← 歷史參考：產品 B As-is
+llm_twitchat/              ← 歷史參考：產品 C As-is
 ```
 
 實作不得與設計文件衝突；契約變更須先改 `events.md` 再改程式。

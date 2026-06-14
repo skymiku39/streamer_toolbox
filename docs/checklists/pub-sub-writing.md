@@ -24,7 +24,7 @@
 | `identity-oauth` | `twitch_api` | `auth/oauth_manager.py`, `runtime/account_service.py` |
 | `sub-llm` | `llm_twitchat` | `llm/`, `services/stream_session.py`, `memory/knowledge.py` |
 | `sub-stream-record` | `llm_twitchat` | `app/subscribers/stream_record.py` |
-| `sub-memory-worker` | `llm_twitchat` | `app/workers/` |
+| `app.workers` | `app/workers/` |
 | `stream-store` | — | 本專案 `packages/stream-store/` |
 
 ---
@@ -37,10 +37,13 @@
 | `ingress-yt-read` | Pub | ✅ | `chat.message` | — | A |
 | `ingress-twitch-eventsub` | Pub | ✅ | `chat.message`, `eventsub.*` | — | B, C, D |
 | `ingress-twitch-audio` | Pub | ✅ | `stt.segment` | — | C |
+| `ingress-twitch-stream` | Pub | ✅ | `stream.metadata` | — | C |
+| `ingress-local-audio` | Pub | ✅ | `stt.segment` | — | C（開發） |
 | `ingress-discord` | Pub | ✅ | `chat.message` | — | — |
 | `sub-io-log` | Sub | ✅ | — | `chat.message` | 診斷 |
-| `sub-stream-record` | Sub | ✅ | — | `chat.message` | 記錄層 L1 |
-| `sub-memory-worker` | Worker | ✅ | — | —（讀 SQLite） | 記憶層 L2 |
+| `sub-stream-record` | Sub | ✅ | — | `chat.message`, `stt.segment` | 記錄層 L1 |
+| `app.workers` | Worker | ✅ | `memory.summary.ready` | —（讀 SQLite） | 記憶層 L2 |
+| `sub-memory-board` | Sub | ✅ | — | —（HTTP 讀 DB） | 維運 |
 | `sub-show-overlay` | Sub | ✅ | — | `chat.message` | A～D |
 | `sub-visual` | Sub | ✅ | — | `chat.message` | B, C |
 | `sub-tts` | Sub | ✅ | — | `chat.message` | B, C |
@@ -121,7 +124,7 @@ Phase 01 Twitch IRC 匿名讀取（本專案已實作，對應設計態 `ingress
 - [x] `bus.publish("chat.message", payload)`
 - [x] CLI `--channel` 覆寫 env
 - [x] 註冊 `app.main run ingress-twitch-chat`
-- [ ] 改為 path 依賴 `ttv_chat` 的 `LiveChatReader`（可選重構）
+- [x] workspace 依賴 `packages/ttvchat-lens` 的 `LiveChatReader`
 - [ ] 單元測試覆蓋 disconnect / reconnect 邊界
 
 **驗收：** 直播頻道有聊天 → RabbitMQ queue 收到合法 `events.md` JSON。
@@ -326,7 +329,7 @@ L1 記錄層：`chat.message` / `stt.segment` → SQLite `text_records`。實作
 
 ---
 
-### `sub-memory-worker` ✅（Phase 2）
+### `app.workers` ✅（Phase 2，原 `sub-memory-worker`）
 
 L2 記憶層：定時讀未摘要 chat / stt → 寫 `summaries` 表。實作於 **`app/workers/`**（非 MQ Subscriber）。
 

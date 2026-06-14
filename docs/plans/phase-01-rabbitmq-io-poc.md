@@ -7,6 +7,8 @@
 | 對應產品 | 產品 A 的子集（僅 ingress + I/O 檢查，尚無 overlay） |
 | 依據文件 | [events.md](../events.md)、[solid.md](../solid.md)、[packages.md](../packages.md) |
 
+> **命名附註：** 計畫書中的 `pkg-events` / `pkg-bus` / `stream-app` 已實作為 `packages/events`、`packages/bus`、`streamer-app`。下文 §4 等保留歷史用語，現況以 [packages.md](../packages.md) 為準。
+
 ## 0. 實作狀態
 
 **本專案**（`streamer_toolbox`）已實作對齊設計的 Phase 01 管線，執行方式見 [development.md](../development.md)。
@@ -21,7 +23,7 @@
 | Exchange / routing | topic `stream_helper` / `chat.message` | **已對齊** | 未對齊（fanout `twitch.chat`） |
 | JSON schema | 完整 `events.md#chatmessage` | **已對齊** | 未對齊（精簡 4 欄位） |
 | I/O log 格式 | JSONL | **已對齊** | 未對齊（`sub1` 文字行） |
-| `pkg-events` / `pkg-bus` | 獨立 package | **已拆** | 未拆（合併於 `app/messaging/`） |
+| `events` / `bus` | 獨立 package | **已拆**（`packages/events`、`packages/bus`） | 未拆（合併於 `app/messaging/`） |
 
 ## 1. 要做什麼
 
@@ -113,7 +115,7 @@ IO_LOG_CONSOLE=true
 
 | Package | Phase 01 位置 | 長期歸屬 |
 |---------|---------------|----------|
-| `pkg-events`, `pkg-bus` | 本專案 | **本專案 `streamer_toolbox`**（永久） |
+| `events`, `bus` | 本專案 | **本專案 `streamer_toolbox`**（永久） |
 | `sub-io-log` | 本專案 | **本專案**（簡單、維運必用，不拆） |
 | `ingress-twitch-chat` | 本專案內目錄 | 介面穩定後可拆成獨立 `ingress-ttv-read` repo |
 
@@ -121,7 +123,7 @@ IO_LOG_CONSOLE=true
 
 - **介面未穩定前**：全部在本專案目錄內開發，不急着拆 Git remote。
 - **`sub-io-log`**：屬診斷/基礎設施，**即使介面穩定也留在本專案**。
-- **複雜或可選 Sub**（bot、llm、overlay、character）：`events.md` + `pkg-bus` 凍結後再拆獨立 repo。
+- **複雜或可選 Sub**（bot、llm、overlay、character）：`events.md` + `bus` 凍結後再拆獨立 repo。
 
 ### 4.1 目錄（Phase 01 孵化）
 
@@ -309,12 +311,12 @@ uv run python -m app.main run
 
 | 里程碑 | 動作 |
 |--------|------|
-| Phase 01 完成 | `pkg-events`、`pkg-bus`、`sub-io-log` **留在本專案** |
-| `events.md` schema v1 凍結 | 允許新 Sub 以 git 依賴 `pkg-events` 在獨立 repo 開發 |
+| Phase 01 完成 | `events`、`bus`、`sub-io-log` **留在本專案** |
+| `events.md` schema v1 凍結 | 允許新 Sub 以 git 依賴 `events` 在獨立 repo 開發 |
 | Phase 02+ 加 `sub-show-overlay` | 新建獨立 repo，只依賴 pkg，經 MQ 連通 |
 | Ingress 多實作並存 | `ingress-twitch-eventsub` 等拆出，本專案只留最小 IRC ingress 或全拆 |
 
-**`sub-io-log` 不拆**——作為管線健康檢查工具，與 `stream-app` 一同維護。
+**`sub-io-log` 不拆**——作為管線健康檢查工具，與 `streamer-app` 一同維護。
 
 ## 12. 後續 Phase（預覽）
 
@@ -322,7 +324,7 @@ uv run python -m app.main run
 |-------|------|
 | **02** | 加 `sub-show-overlay`（第二個 Sub，驗證 fan-out） |
 | **03** | Pub 改 `twitch_api` EventSub + OAuth |
-| **04** | `stream-app` 讀 YAML 啟停 Pub/Sub |
+| **04** | `streamer-app` 讀 YAML 啟停 Pub/Sub（CLI `--stack` 已實作；YAML 規劃中） |
 | **05** | `sub-bot-logic` + `twitch-connector` |
 
 ## 13. 相關文件

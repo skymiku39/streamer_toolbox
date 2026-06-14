@@ -35,14 +35,14 @@ uv run python -m app.main run
 
 ## 參考程式碼
 
-下列為既有 As-is 實作，供拆分模組或對照邏輯，**不是**姊妹專案：
+下列為**歷史 As-is** 實作，供對照邏輯；**執行期不依賴**，僅需 clone 本 repo：
 
-| 專案 | 路徑 | 角色 |
-|------|------|------|
-| twitch-oauth-bot | [`../twitch_api`](../twitch_api) | 產品 B：OAuth、EventSub、規則 BOT、TTS、Overlay |
-| TubeChat Lens | [`../yt_chat`](../yt_chat) | `ingress-yt-read`：YouTube 唯讀 |
-| ttvchat-lens | [`../ttv_chat`](../ttv_chat) | `ingress-ttv-read`：Twitch IRC 匿名唯讀 |
-| llm-twitchat | [`../llm_twitchat`](../llm_twitchat) | 產品 C As-is：STT + IRC + Gemini 問答 |
+| 專案 | 角色 |
+|------|------|
+| [`../twitch_api`](../twitch_api) | 產品 B 歷史參考（OAuth、EventSub、規則 BOT） |
+| [`../llm_twitchat`](../llm_twitchat) | 產品 C 歷史參考（STT + Gemini Web App） |
+
+聊天讀取已收編：`packages/ttvchat-lens`、`packages/tubechat-lens`。
 
 詳見 [docs/references.md](docs/references.md)。
 

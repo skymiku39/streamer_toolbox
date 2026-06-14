@@ -8,19 +8,20 @@
 
 | Topic | Publisher | Subscriber | 產品 |
 |-------|-----------|------------|------|
-| `chat.message` | `ingress-*` | show, tts, bot, llm, character-brain | A～D |
+| `chat.message` | `ingress-*` | show, tts, bot, llm, character-brain, stream-record | A～D |
 | `eventsub.*` | `ingress-twitch-eventsub` | bot-logic | B, C |
-| `stt.segment` | `ingress-twitch-audio` | llm, io-log（診斷） | C |
+| `stt.segment` | `ingress-twitch-audio`, `ingress-local-audio` | llm, stream-record, io-log（診斷） | C |
 | `stream.metadata` | `ingress-twitch-stream` | llm | C |
 | `stt.status` / `stt.error` | `ingress-twitch-audio` | monitor（App） | C |
-| `chat.reply` | bot, llm, character-brain | twitch-connector | B～D |
+| `chat.reply` | bot, llm, character-brain | twitch-connector, qa-memory-batch | B～D |
+| `memory.qa.record` | llm（structured 模式） | qa-memory-structured | C |
+| `memory.summarize.request` | CLI、bot（規劃） | app.workers | L2 |
+| `memory.summary.ready` | qa-memory-structured, app.workers | memory-board | L2 |
 | `character.turn` | character-brain | character-voice, character-face | D |
 | `character.audio.ready` | character-voice | character-stage | D |
 | `character.expression.ready` | character-face | character-stage | D |
 | `system.health` | 各 Sub | dashboard, monitor | 全部 |
 | `system.error` | 各 Sub | dashboard, monitor | 全部 |
-| `memory.summarize.request` | CLI、bot（規劃） | sub-memory-worker | L2 |
-| `memory.summary.ready` | sub-memory-worker | sub-memory-board（規劃：log、notify） | L2 |
 
 命名規則：`{domain}.{action}`；EventSub 事件為 `eventsub.{event_name}`（如 `eventsub.follow`）。
 

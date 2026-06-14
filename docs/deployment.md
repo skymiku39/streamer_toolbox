@@ -25,7 +25,7 @@ graph LR
     end
 
     Conn[twitch-connector]
-    App[stream-app]
+    App[streamer-app]
     OBS[OBS]
 
     ext --> Ingress --> MQ
@@ -52,9 +52,10 @@ graph LR
 
 | 應用 | 現況執行期 |
 |------|------------|
-| `twitch_api` | 單機：`RuntimeEventBus` + Bot thread + UI + overlay 子進程 |
-| `llm_twitchat` | 單機：in-process `EventBus` + STT worker + Web UI（**未**接入 MQ） |
-| `yt_chat` / `ttv_chat` | 單機：reader / WebSocket server；可作 ingress 模板 |
+| `twitch_api` | 單機：`RuntimeEventBus` + Bot thread + UI + overlay 子進程（參考 As-is） |
+| `llm_twitchat` | 單機：in-process `EventBus` + STT worker + Web UI（參考 As-is） |
+| `streamer_toolbox` | 多 process + RabbitMQ：`ingress-*` / `sub-*` 經 `bus` 通訊 |
+| `yt_chat` / `ttv_chat` | 單機：reader / WebSocket server；已收編為 `ttvchat-lens` / `tubechat-lens` |
 
 ## 通訊規則
 
@@ -88,8 +89,8 @@ sequenceDiagram
 
 | 階段 | 實作 | Package |
 |------|------|---------|
-| 本機驗證 | in-process queue | `pkg-bus` InProcessBus |
-| 多 process / 多 repo | RabbitMQ 或 Redis Streams | `pkg-bus` 外部 adapter |
+| 本機驗證 | in-process queue | `bus` InProcessBus（規劃） |
+| 多 process / 多 repo | RabbitMQ 或 Redis Streams | `bus` RabbitMQ adapter（**現況**） |
 | 產品 A 極簡 | ingress 直連 show（可跳過 MQ） | — |
 
 Phase 01 的 RabbitMQ Pub/Sub 已於本專案 `streamer_toolbox` 實作（topic `stream_helper` / `chat.message`）。姊妹專案 [streamer-toolkit](references/streamer-toolkit.md) 曾以 fanout `twitch.chat` 驗證 fan-out 概念，僅供架構對照。

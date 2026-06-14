@@ -219,16 +219,16 @@ streamer_toolbox/
 ├── pyproject.toml           # Workspace 定義
 ├── app/
 │   ├── pyproject.toml       # streamer-app 依賴
-│   ├── src/app/             # 主程式、processes、publishers、subscribers、workers
+│   ├── src/app/             # 主程式、processes、publishers、subscribers、workers、memory_view
 │   └── tests/
 ├── packages/
-│   ├── bus/                 # 原 pkg-bus
-│   ├── events/              # 原 pkg-events
+│   ├── bus/
+│   ├── events/
+│   ├── game-info/
 │   ├── identity-oauth/
-│   ├── safety/              # 原 pkg-safety
-│   ├── stream-store/        # 原 pkg-stream-store
-│   ├── game-info/           # IGDB 遊戲資料
-│   ├── tts/                 # 原 pkg-tts
+│   ├── safety/
+│   ├── stream-store/
+│   ├── tts/
 │   ├── ttvchat-lens/        # Twitch IRC 匿名唯讀
 │   └── tubechat-lens/       # YouTube 直播聊天唯讀
 ├── config/

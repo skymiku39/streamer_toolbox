@@ -4,21 +4,29 @@
 
 ## 模組一覽
 
-| 模組 ID | 層 | 狀態 | Package | 參考實作 |
-|---------|-----|------|---------|----------|
+| 模組 ID | 層 | 狀態 | 程序 / Package | 參考實作 |
+|---------|-----|------|----------------|----------|
 | `ingress-twitch-eventsub` | Ingress | 已有 | `ingress-twitch-eventsub` | `twitch_api` `bot/` |
-| `ingress-yt-read` | Ingress | 已有 | `ingress-yt-read` | `yt_chat` |
-| `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `ttv_chat` |
+| `ingress-yt-read` | Ingress | 已有 | `ingress-yt-read` | `packages/tubechat-lens` |
+| `ingress-ttv-read` | Ingress | 已有 | `ingress-ttv-read` | `packages/ttvchat-lens` |
 | `ingress-twitch-audio` | Ingress | 已有 | `ingress-twitch-audio` | `llm_twitchat` `ingest/` |
+| `ingress-twitch-stream` | Ingress | 已有 | `ingress-twitch-stream` | Twitch GQL 直播 metadata |
+| `ingress-local-audio` | Ingress | 已有 | `ingress-local-audio` | 本機麥克風 STT（開發用） |
 | `ingress-discord` | Ingress | 已有 | `ingress-discord` | — |
+| `stream-record` | Core | 已有 | `sub-stream-record` | L1 SQLite 記錄層 |
+| `memory-worker` | Core | 已有 | `app.workers` | L2 定時摘要 → Chroma |
+| `memory-board` | LocalPC | 已有 | `sub-memory-board` | 本機 HTTP 瀏覽 L2 摘要 |
 | `io-log` | Core | 已有 | `sub-io-log` | `streamer-toolkit` `sub1` |
-| `identity-oauth` | Identity | 已有 | `identity-oauth` | `twitch_api` `auth/` |
-| `core-eventbus` | Core | 已有 | `pkg-bus` | `runtime/events.py` |
-| `core-orchestrator` | Core | 已有 | `stream-app` | `runtime/controller.py` |
+| `identity-oauth` | Identity | 已有 | `identity-oauth` | 本專案 `packages/identity-oauth` |
+| `core-eventbus` | Core | 已有 | `bus` | `packages/bus` |
+| `core-orchestrator` | Core | 已有 | `streamer-app` | `app/main.py` + `processes/` |
 | `logic-commands` | Logic | 已有 | `sub-bot-logic` | `chat_commands.py` |
 | `logic-keywords` | Logic | 已有 | `sub-bot-logic` | `bot_responses.py` |
-| `logic-llm` | Logic | 已有（As-is） | `sub-llm` | `llm_twitchat` |
-| `safety-filter` | Logic | 部分 | `pkg-safety` | `tts/message_filter.py` |
+| `logic-llm` | Logic | 已有 | `sub-llm` | 本專案（歷史參考 `llm_twitchat`） |
+| `qa-memory-structured` | Logic | 已有 | `sub-qa-memory-structured` | `QA_MEMORY_MODE=structured` |
+| `qa-memory-batch` | Logic | 已有 | `sub-qa-memory-batch` | `QA_MEMORY_MODE=batch` |
+| `game-info` | Logic | 已有 | `game-info` | IGDB 遊戲資料注入 LLM |
+| `safety-filter` | Logic | 部分 | `safety` | `sub-llm`、`sub-character-brain`、STT ingress 已接入；`sub-tts`/`sub-visual` 仍用自建 filter |
 | `character-brain` | Logic | 已有 | `sub-character-brain` | — |
 | `character-voice` | Egress | 已有 | `sub-character-voice` | — |
 | `character-face` | Egress | 已有 | `sub-character-face` | VTS WebSocket |
@@ -27,8 +35,8 @@
 | `egress-tts` | Egress | 已有 | `sub-tts` | `tts/` |
 | `egress-subtitle` | Egress | 已有 | `sub-visual` | `subtitle.py` |
 | `local-dashboard` | LocalPC | 暫緩 | （客製 UI 層） | `twitch_api` `ui/main_window.py`；**不作為 Sub 設計**，將來可作 MQ 輸入端 |
-| `local-show` | LocalPC | 部分 | `sub-show-overlay` | overlay / desktop |
-| `local-vts` | LocalPC | Future | — | — |
+| `local-show` | LocalPC | 已有 | `sub-show-overlay` | overlay / desktop |
+| `local-vts` | LocalPC | Future | — | VTS 整合目前嵌在 `sub-character-face` |
 
 ## 產品定義
 
@@ -55,9 +63,9 @@
 
 ### 產品 C — LLM BOT
 
-產品 B Required + `logic-llm` + `safety-filter`（輸入+輸出）+ `ingress-twitch-audio`（STT，可選但建議）。
+產品 B Required + `logic-llm` + `safety-filter`（輸入+輸出）+ `ingress-twitch-audio`（STT，可選但建議）+ `ingress-twitch-stream`（直播 metadata，建議）+ 記憶管線（`stream-record`、`memory-worker`；可選 `qa-memory-*`、`memory-board`）。
 
-→ [03-llm-bot.md](use-cases/03-llm-bot.md)
+→ [03-llm-bot.md](use-cases/03-llm-bot.md) · 記憶管線詳見 [architecture/stream-memory-pipeline.md](architecture/stream-memory-pipeline.md)
 
 ### 產品 D — 虛擬角色
 
@@ -66,7 +74,7 @@
 | `ingress-*`（至少一種） | Required |
 | `core-eventbus`, `core-orchestrator` | Required |
 | `character-brain`, `character-voice`, `character-face`, `character-stage` | Required |
-| `safety-filter`（雙閘門，內嵌於 brain 或 `pkg-safety`） | Required |
+| `safety-filter`（雙閘門，內嵌於 brain 或 `safety`） | Required |
 | `egress-chat-send` | Optional（若要同步發聊天文字） |
 | `identity-oauth` | 僅 EventSub ingress + 發話時 Required |
 | `local-show` | Optional（同屏顯示觀眾彈幕） |
@@ -92,12 +100,17 @@
 
 | Pub | topic | A | B | C | D |
 |-----|-------|:-:|:-:|:-:|:-:|
-| `ingress-yt/ttv-read` | `chat.message` | ● | — | — | ○ |
+| `ingress-yt/ttv-read` | `chat.message` | ● | —² | —² | ○ |
 | `ingress-twitch-eventsub` | `chat.message` | ○ | ● | ● | ○ |
 | 同上 | `eventsub.*` | — | ● | ● | — |
 | `ingress-twitch-audio` | `stt.segment` | — | — | ○ | — |
+| `ingress-twitch-stream` | `stream.metadata` | — | — | ○ | — |
+| `ingress-local-audio` | `stt.segment` | — | — | ○³ | — |
+| `ingress-discord` | `chat.message` | ○ | ○ | ○ | ○ |
 
 ² EventSub 不可用時，App **改啟** `ingress-ttv-read`（`twitch_api` `fallback_chat.py` 模式），不與 EventSub ingress 並行。
+
+³ 本機麥克風 STT，開發／無 streamlink 時替代 `ingress-twitch-audio`。
 
 ### Subscriber
 
@@ -108,6 +121,10 @@
 | `sub-tts` | `chat.message` | — | ○ | ○ | — |
 | `sub-bot-logic` | `chat.message`, `eventsub.*` | — | ● | ● | — |
 | `sub-llm` | `chat.message`, `stt.segment`, `stream.metadata` | — | — | ● | — |
+| `sub-stream-record` | `chat.message`, `stt.segment` | — | ○ | ○ | — |
+| `sub-qa-memory-structured` | `memory.qa.record` | — | — | ○⁴ | — |
+| `sub-qa-memory-batch` | `chat.reply` | — | — | ○⁴ | — |
+| `sub-memory-board` | （HTTP 讀 DB） | — | — | ○ | — |
 | `sub-io-log` | `chat.message`（診斷） | ○ | ○ | ○ | ○ |
 | `sub-character-brain` | `chat.message` | — | — | — | ● |
 | `sub-character-voice` | `character.turn` | — | — | — | ● |
@@ -116,7 +133,15 @@
 | `twitch-connector` | `chat.reply` | — | ● | ● | ○ |
 | `local-dashboard` | `system.*`（監控） | — | ○ | ○ | ○ |
 
+⁴ 依 `QA_MEMORY_MODE` 擇一啟用；`--stack llm` 會啟動兩者，非對應模式者自動 idle 退出。
+
 客製控制面板（UI 層）暫不納入啟用表；原則上可作 **Publisher** 將操作轉為 topic（契約待定）。
+
+### Worker（非 MQ Sub）
+
+| Worker | 職責 | A | B | C | D |
+|--------|------|:-:|:-:|:-:|:-:|
+| `app.workers` | L2 定時摘要 → `summaries` → Chroma | — | — | ○ | — |
 
 ### 啟動快照
 
@@ -124,12 +149,44 @@
 A: ingress-read → MQ → sub-show
 B: oauth → ingress-eventsub → MQ → sub-bot → connector
    （降級: ingress-ttv-read 取代 eventsub）
-C: B + ingress-twitch-audio + ingress-twitch-stream + sub-llm + twitch-connector
+C: B + --stack ingress + --stack llm + app.workers（記憶）
+   ingress stack: ingress-ttv-read, ingress-twitch-audio, ingress-twitch-stream, sub-stream-record
+   llm stack: sub-llm, sub-qa-memory-*, twitch-connector
 D: ingress → MQ → character-brain → character.turn → (voice + face) → stage → OBS
    可選: brain → chat.reply → connector；可選: sub-show 顯示彈幕
 ```
 
-### App 設定範例（產品 D）
+### CLI 啟動（現況）
+
+編排以 `uv run python -m app.main` 為準；預定義 stack 見 `app/processes/stacks.py`：
+
+```powershell
+# 列出已註冊程序
+uv run python -m app.main list
+
+# 產品 A（Phase 01 smoke）
+uv run python -m app.main run sub-io-log
+uv run python -m app.main run ingress-ttv-read
+
+# 產品 C（雙終端，詳見 getting-started.md）
+uv run python -m app.main run --stack ingress
+uv run python -m app.main run --stack llm
+uv run python -m app.workers --llm-backend gemini   # L2 記憶 worker
+
+# 產品 B（手動指定）
+uv run python -m app.main run ingress-twitch-eventsub sub-bot-logic twitch-connector
+
+# 產品 D（手動指定）
+uv run python -m app.main run ingress-twitch-eventsub sub-character-brain sub-character-voice sub-character-face sub-character-stage
+```
+
+`--chat-fallback`（預設開啟）：含 `ingress-twitch-eventsub` 時，EventSub 聊天不可用會自動改啟 `ingress-ttv-read`。
+
+### App 設定範例（規劃中，尚未實作）
+
+下列 YAML 為**目標態**啟用表；現況請用上方 CLI。實作後將取代手動指定程序名。
+
+#### 產品 D
 
 ```yaml
 product: D
@@ -154,7 +211,7 @@ subscribers:
 identity: { oauth: { enabled: true, env_file: .env } }
 ```
 
-### App 設定範例（產品 B）
+#### 產品 B
 
 ```yaml
 product: B
@@ -178,7 +235,7 @@ subscribers:
   sub-io-log: { enabled: true, topics: [chat.message] }
 ```
 
-### App 設定範例（產品 C）
+#### 產品 C
 
 ```yaml
 product: C
@@ -197,10 +254,13 @@ subscribers:
 
 | Topic | Publisher | Subscriber |
 |-------|-----------|------------|
-| `chat.message` | ingress-* | show, tts, bot, llm, character-brain |
+| `chat.message` | ingress-* | show, tts, bot, llm, character-brain, stream-record |
 | `eventsub.*` | ingress-twitch-eventsub | bot-logic |
-| `stt.segment` | ingress-twitch-audio | llm, io-log |
-| `chat.reply` | bot, llm, character-brain | twitch-connector |
+| `stt.segment` | ingress-twitch-audio, ingress-local-audio | llm, stream-record |
+| `stream.metadata` | ingress-twitch-stream | llm |
+| `chat.reply` | bot, llm, character-brain | twitch-connector, qa-memory-batch |
+| `memory.qa.record` | llm（structured 模式） | qa-memory-structured |
+| `memory.summary.ready` | qa-memory-structured, workers | memory-board（規劃：notify） |
 | `character.turn` | character-brain | character-voice, character-face |
 | `character.audio.ready` | character-voice | character-stage |
 | `character.expression.ready` | character-face | character-stage |
@@ -216,23 +276,30 @@ subscribers:
 | 虛擬角色（TTS+表情+OBS） | 產品 D |
 | 觀眾彈幕朗讀 | `sub-tts`（與產品 D 的 character-voice 不同） |
 | 直播音訊 STT + LLM | `ingress-twitch-audio` + `sub-llm` |
+| 本機麥克風 STT（開發） | `ingress-local-audio` + `sub-llm` |
+| 直播遊戲 metadata 注入 LLM | `ingress-twitch-stream` + `game-info` |
+| L1/L2 記憶管線 | `sub-stream-record` + `app.workers` + Chroma |
+| Bot 問答長期記憶 | `QA_MEMORY_MODE=structured` 或 `batch` + 對應 `sub-qa-memory-*` |
+| 瀏覽 L2 摘要 | `sub-memory-board` |
 | EventSub 降級唯讀 | App 改啟 `ingress-ttv-read`，停 `ingress-twitch-eventsub` |
 
 ## 參考程式碼對照
 
-| Package | 參考路徑 |
-|---------|----------|
-| `ingress-ttv-read` | [`ttv_chat`](../ttv_chat) `ttvchat_lens/reader.py` |
-| `ingress-yt-read` | [`yt_chat`](../yt_chat) `tubechat_lens/reader.py` |
+| Package | 本專案路徑 / 歷史參考 |
+|---------|---------------------|
+| `ingress-ttv-read` | `packages/ttvchat-lens` |
+| `ingress-yt-read` | `packages/tubechat-lens` |
 | `ingress-twitch-eventsub` | [`twitch_api`](../twitch_api) `src/bot/chatbot.py`, `event_handlers.py` |
 | `ingress-twitch-audio` | [`llm_twitchat`](../llm_twitchat) `services/ingest.py`, `ingest/stt_worker.py` |
+| `ingress-twitch-stream` | Twitch GQL（Helix 補充 metadata） |
+| `ingress-local-audio` | 本機 `sounddevice` + `faster-whisper` |
 | `sub-bot-logic` | `twitch_api` `chat_commands.py`, `bot_responses.py`, `redemption_responses.py` |
 | `sub-tts` | `twitch_api` `tts/` |
 | `sub-show-overlay` | `twitch_api` `ui/chat_overlay_*` |
 | `sub-visual` | `twitch_api` `runtime/subtitle.py` |
 | `twitch-connector` | `twitch_api` `send_message`, `throttle.py` |
-| `identity-oauth` | `twitch_api` `auth/`, `account_service.py` |
-| `sub-llm` | [`llm_twitchat`](../llm_twitchat) `llm/`, `services/stream_session.py` |
+| `identity-oauth` | `packages/identity-oauth` + `scripts/first_time_auth.py` |
+| `sub-llm` | `app/subscribers/sub_llm/`（歷史參考 `llm_twitchat`） |
 
 ## 相關文件
 

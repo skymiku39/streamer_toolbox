@@ -1,10 +1,12 @@
-# 產品 D：虛擬角色（Future / 假設性）
+# 產品 D：虛擬角色
 
 | 項目 | 連結 |
 |------|------|
 | 模組 / 啟用 | [modules.md#產品-d--虛擬角色](../modules.md#產品-d--虛擬角色) |
 | 事件 | [character.turn](../events.md#characterturn) 等 |
 | SOLID | 新建 `sub-character-*`，不改 `sub-tts` / `sub-llm`（**O**） |
+
+**狀態：** `sub-character-brain`、`sub-character-voice`、`sub-character-face`、`sub-character-stage` **已於本專案實作**；啟動見 [modules.md#cli-啟動現況](../modules.md#cli-啟動現況)。
 
 Neuro-sama 類型：聊天輸入 → 人設 LLM → TTS + 表情同步 → OBS。與產品 C 差異在**第二層 topic** 同步語音與表情。
 
@@ -54,7 +56,7 @@ sequenceDiagram
 | `sub-character-face` | `character.turn` | `character.expression.ready` |
 | `sub-character-stage` | audio + expression ready | —（輸出至 OBS） |
 
-共用：`pkg-tts`（voice）、`pkg-safety`（brain）、`pkg-events`。
+共用：`tts`（voice）、`safety`（brain）、`events`。
 
 ## 與產品 C 並存
 
