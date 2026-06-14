@@ -14,14 +14,14 @@
 | **開放封閉（O）** | 新 ingress（如 streamlink OAuth）透過新 Provider 或 env 擴充，不改 EventSub 核心 |
 | **依賴反轉（D）** | EventSub、connector 依賴 `TokenProvider` Protocol，不依賴 `.env` 或 `twitch_api` |
 | **Pub/Sub 邊界** | **Token 永不進 MQ**；只在 process 啟動／刷新時注入 consumer |
-| **Bootstrap 與 Runtime 分離** | 首次瀏覽器授權可在 `twitch_api` GUI／腳本完成；toolbox 執行期只消費 refresh token |
+| **Bootstrap 與 Runtime 分離** | 首次瀏覽器授權由本 repo `scripts/first_time_auth.py` 完成；執行期只消費 refresh token |
 
 ```mermaid
 flowchart TB
-    subgraph bootstrap [Bootstrap 階段 — 人工／GUI]
-        GUI[twitch_api GUI / first_time_auth]
+    subgraph bootstrap [Bootstrap 階段 — 本 repo]
+        CLI[scripts/first_time_auth.py]
         Browser[Twitch 授權頁]
-        GUI --> Browser
+        CLI --> Browser
         Browser --> EnvFile[".env refresh tokens"]
     end
 
@@ -269,16 +269,20 @@ if token:
 
 ## 8. Bootstrap：首次取得 Refresh Token
 
-toolbox **不提供** GUI 授權（現階段）。請使用 [`twitch_api`](../../../twitch_api)：
+請使用本 repo 內建授權工具（**不需** `twitch_api`）：
 
 | 步驟 | 工具 | 產出 |
 |------|------|------|
-| 1. 建立 Twitch 應用 | Developer Console | `CLIENT_ID` / `SECRET` |
-| 2. 主帳號授權 | `scripts/first_time_auth.py` 或 GUI | `TWITCH_CHANNEL_REFRESH_TOKEN` |
-| 3. Bot 授權 | 同上（換 Bot 登入） | `TWITCH_BOT_REFRESH_TOKEN` |
-| 4. 驗證 | `uv run identity-oauth` | 印出 token 前綴 |
+| 1. 建立 Twitch 應用 | Developer Console | `CLIENT_ID` / `SECRET`；Redirect URI = `TWITCH_REDIRECT_URI`（預設 `http://localhost:17563`） |
+| 2. 主帳號授權 | `uv run python scripts/first_time_auth.py --role channel` | `TWITCH_CHANNEL_REFRESH_TOKEN`、`TWITCH_BROADCASTER_ID` |
+| 3. Bot 授權 | `uv run python scripts/first_time_auth.py --role bot` | `TWITCH_BOT_REFRESH_TOKEN`、`TWITCH_BOT_ID` |
+| 4. 驗證 | `uv run python -m identity_oauth --role channel`（與 `--role bot`） | 印出 token 前綴與 user id |
+
+單帳號模式（`TWITCH_SINGLE_ACCOUNT=true`）只需授權 `--role channel`，會自動鏡射 Bot 欄位。
 
 授權完成後，streamer-toolbox 各 process 只需 `.env` + `identity-oauth` 自動 refresh。
+
+> 歷史參考：[`twitch_api`](../../../twitch_api) 仍保留 GUI 授權，但非必要依賴。
 
 ---
 
@@ -303,7 +307,7 @@ toolbox **不提供** GUI 授權（現階段）。請使用 [`twitch_api`](../..
 | **B** | `TWITCH_SINGLE_ACCOUNT` 鏡射 | ✅ 已完成 |
 | **C** | `ingress-twitch-audio` 可選 `TWITCH_STREAMLINK_AUTH_TOKEN` | `live_audio.py` |
 | **D** | `identity-oauth` CLI：`--role channel\|bot` 驗證 | `__main__.py` |
-| **E**（可選） | 將 `twitch_api` OAuthManager 邏輯完全搬入 package，GUI 改呼叫 toolbox CLI | 跨 repo |
+| **E**（可選） | OAuth GUI（桌面） | 非必要；CLI `first_time_auth.py` 已涵蓋 bootstrap |
 
 **不建議：**
 

@@ -115,6 +115,7 @@ uv run python -m app.main run ingress-ttv-read
 |------|------|
 | `TWITCH_CLIENT_ID` | [Twitch Developer Console](https://dev.twitch.tv/console) 應用程式 ID |
 | `TWITCH_CLIENT_SECRET` | 同上 Client Secret |
+| `TWITCH_REDIRECT_URI` | OAuth callback（預設 `http://localhost:17563`，須與 Console 設定一致） |
 | `TWITCH_CHANNEL_REFRESH_TOKEN` | 主帳號（頻道擁有者）refresh token |
 | `TWITCH_BOT_REFRESH_TOKEN` | Bot 帳號 refresh token |
 | `TWITCH_BROADCASTER_ID` | 主帳號使用者 ID |
@@ -126,13 +127,28 @@ uv run python -m app.main run ingress-ttv-read
 
 完整變數說明見 [.env.example](../.env.example)。
 
-### 3.2 OAuth 首次授權（外部工具）
+### 3.2 OAuth 首次授權（本 repo 內建）
 
-Twitch refresh token **不在本 repo 內產生**。請使用姊妹專案 [`twitch_api`](../twitch_api)（與 `streamer_toolbox` 同層的 `../twitch_api`）：
+1. 在 [Twitch Developer Console](https://dev.twitch.tv/console) 建立應用，將 **OAuth Redirect URL** 設為 `http://localhost:17563`（或與 `.env` 的 `TWITCH_REDIRECT_URI` 一致）
+2. 將 `TWITCH_CLIENT_ID`、`TWITCH_CLIENT_SECRET` 寫入 `.env`
+3. 執行授權（雙帳號模式需各跑一次）：
 
-1. 在 Twitch Developer Console 建立應用，取得 Client ID / Secret，寫入 `.env`
-2. 於 `twitch_api` 執行 `scripts/first_time_auth.py` 或 GUI，完成**主帳號**與 **Bot 帳號**授權
-3. 將產生的 `TWITCH_*_REFRESH_TOKEN`、`*_ID` 複製回本 repo 的 `.env`
+```powershell
+# 主帳號（EventSub）
+uv run python scripts/first_time_auth.py --role channel
+
+# Bot 帳號（發話）；單帳號模式可略過
+uv run python scripts/first_time_auth.py --role bot
+```
+
+腳本會開啟瀏覽器、接收本機 callback，並自動寫入 `TWITCH_*_REFRESH_TOKEN` 與 `TWITCH_*_ID`。
+
+驗證 token 是否可用：
+
+```powershell
+uv run python -m identity_oauth --role channel
+uv run python -m identity_oauth --role bot
+```
 
 詳細設計見 [architecture/identity-auth.md](architecture/identity-auth.md)、[use-cases/04-oauth.md](use-cases/04-oauth.md)。
 
@@ -200,7 +216,7 @@ powershell -NoProfile -File scripts/stop_all.ps1
 | `Bind for 0.0.0.0:5672 failed` | 5672 埠被佔用 | 停止其他 RabbitMQ 容器，或共用既有 broker 並確認 `RABBITMQ_URL` |
 | `TWITCH_CHANNEL must be set` | `.env` 未設定頻道 | 編輯 `.env` 或 `--channel 頻道名` |
 | `!ask` 沒反應 | 只開了 llm stack | 另開終端執行 `--stack ingress` |
-| Bot 無法發話 / EventSub 失敗 | OAuth token 過期或 scope 不足 | 重跑 `twitch_api` 授權，更新 `.env` 後 `stop_all.ps1` 再重啟 |
+| Bot 無法發話 / EventSub 失敗 | OAuth token 過期或 scope 不足 | 重跑 `scripts/first_time_auth.py --role channel`（與 bot），更新 `.env` 後 `stop_all.ps1` 再重啟 |
 | 中文亂碼 | 終端編碼 | 使用 Windows Terminal；詳見 [development.md](development.md) |
 
 ---

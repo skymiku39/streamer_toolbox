@@ -10,6 +10,7 @@ dependencies = [
 
 [project.scripts]
 identity-oauth = "identity_oauth.__main__:main"
+first-time-auth = "identity_oauth.bootstrap:run_authorize_cli"
 
 [build-system]
 requires = ["hatchling"]
