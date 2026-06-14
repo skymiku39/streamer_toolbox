@@ -1,0 +1,52 @@
+---
+description: 變更需重啟才生效時，Agent 應自動重啟對應 stack／程序，勿只提醒使用者
+alwaysApply: true
+---
+
+# 自動重啟（需重啟才生效的變更）
+
+## 原則
+
+完成會影響**執行中程序**的變更後，**不要**只寫「請重啟 sub-llm」；應**自行**停止並重啟受影響的服務，並簡短回報結果。
+
+僅在無法安全重啟時才改為告知使用者（例如：缺少憑證、使用者正在手動除錯、明確要求不要動執行中環境）。
+
+## 何時需要重啟
+
+Python publisher/subscriber/worker **不熱更新**，下列變更通常需重啟：
+
+| 變更 | 建議重啟 |
+|------|----------|
+| `app/subscribers/sub_llm/**`、`.env` 中 `LLM_*` / `QA_MEMORY_*` | `--stack llm` |
+| `sub_qa_memory_*`、`packages/events`（topic 契約） | `--stack llm` |
+| `app/publishers/**`、`sub-stream-record`、ingress 相關 | `--stack ingress` |
+| `app/workers/**`、`MEMORY_*` | `app.workers` 常駐程序 |
+| `config/llm_subscriber.json` | `--stack llm` |
+| 知識庫檔案 + Chroma | `--stack llm`（或跑 `scripts/setup_knowledge.ps1` 後重啟 llm） |
+| 僅文件／僅測試 | 不必重啟 |
+
+## 標準流程（Windows，本 repo）
+
+1. 查看 `terminals/` 或 `scripts/list_procs.ps1`，確認哪些 stack 在跑。
+2. 停止：
+   ```powershell
+   powershell -NoProfile -File scripts/stop_all.ps1
+   ```
+   （若只改單一 stack 且確定無交叉依賴，可只停該 stack 的 terminal；不確定時用 `stop_all.ps1`。）
+3. 在**背景**重啟必要 stack（依先前有在跑的為準，預設開發環境常為兩者）：
+   ```powershell
+   uv run python -m app.main run --stack ingress
+   uv run python -m app.main run --stack llm
+   ```
+4. 若有 memory worker，另起：
+   ```powershell
+   uv run python -m app.workers --llm-backend gemini
+   ```
+5. 重啟後用 stderr 啟動 log 確認（例如 `qa_memory_mode=`、`llm_client=`、`listening on`）。
+
+## 注意
+
+- 重啟前先完成測試（若使用者規則要求跑測試）。
+- 不要更新 git config；`stop_all.ps1` 會清 `data/process-locks/*.pid`。
+- 重啟指令用 background 執行，避免阻塞對話；必要時 `list_procs.ps1` 驗證每個關鍵模組約 1 個實例。
+- 回覆使用者時說明**已重啟哪些 stack**，而非只列步驟請他手動做。

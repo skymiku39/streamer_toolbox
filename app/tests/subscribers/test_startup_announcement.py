@@ -39,7 +39,7 @@ def test_publish_startup_announcement_publishes_chat_reply(monkeypatch) -> None:
     ok = publish_startup_announcement(
         llm=TemplateLlmClient(),
         safety=PassThroughSafetyFilter(),
-        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"], reply_max_length=120),
         publish=capture,
     )
 
@@ -65,7 +65,7 @@ def test_publish_startup_announcement_falls_back_on_llm_failure(monkeypatch) -> 
     ok = publish_startup_announcement(
         llm=FailingLlm(),
         safety=PassThroughSafetyFilter(),
-        config=LlmSubscriberConfig(),
+        config=LlmSubscriberConfig(reply_max_length=120),
         publish=lambda topic, payload: published.append((topic, payload)),
         backend="gemini",
     )

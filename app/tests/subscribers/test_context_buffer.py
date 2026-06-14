@@ -164,3 +164,43 @@ def test_live_context_buffer_includes_stream_metadata() -> None:
     assert "打 Boss" in context
     assert "Dark Souls" in context
     assert "1h 0m" in context
+
+
+def _stream_metadata_event(
+    *,
+    snapshot_id: str = "snap-1",
+    title: str = "打 Boss",
+    game_name: str = "Dark Souls",
+    duration_seconds: int = 3600,
+    is_live: bool = True,
+) -> "StreamMetadataEvent":
+    from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
+
+    return StreamMetadataEvent(
+        schema_version=1,
+        topic=TOPIC_STREAM_METADATA,
+        platform="twitch",
+        channel="room_a",
+        timestamp="2026-06-13T10:00:00+00:00",
+        snapshot_id=snapshot_id,
+        is_live=is_live,
+        title=title,
+        game_name=game_name,
+        display_name="Streamer",
+        started_at="2026-06-13T09:00:00+00:00",
+        duration_seconds=duration_seconds,
+        viewer_count=50,
+        stream_url="https://www.twitch.tv/room_a",
+    )
+
+
+def test_stream_metadata_update_reports_only_meaningful_changes() -> None:
+    buffer = LiveContextBuffer(window_minutes=5)
+    first = _stream_metadata_event()
+    assert buffer.update_stream_metadata(first) is True
+    assert buffer.update_stream_metadata(
+        _stream_metadata_event(snapshot_id="snap-2", duration_seconds=3660)
+    ) is False
+    assert buffer.update_stream_metadata(
+        _stream_metadata_event(snapshot_id="snap-3", title="新標題")
+    ) is True

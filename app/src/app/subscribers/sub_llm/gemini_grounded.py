@@ -7,6 +7,12 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from sub_llm.ask_response import (
+    AskResponse,
+    gemini_ask_response_schema,
+    parse_ask_response,
+)
+from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.prompt_assembly import build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
@@ -94,7 +100,7 @@ class GeminiGroundedLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
+    ) -> AskResponse:
         messages = build_ask_messages(
             question,
             context=context,
@@ -108,7 +114,7 @@ class GeminiGroundedLlmClient:
             self._system_prompt,
         )
         try:
-            reply = self._generate_with_google_search(
+            raw = self._generate_with_google_search(
                 system_content,
                 user_content,
             )
@@ -117,6 +123,7 @@ class GeminiGroundedLlmClient:
                 file=sys.stderr,
                 flush=True,
             )
+            parsed = parse_ask_response(raw)
             # #region agent log
             _agent_debug_log(
                 hypothesis_id="A,B,C",
@@ -126,12 +133,14 @@ class GeminiGroundedLlmClient:
                     "system_has_trad_rule": "繁體中文" in system_content,
                     "user_has_trad_guidance": "繁體中文" in user_content,
                     "knowledge_simplified": _detect_simplified_chars(knowledge),
-                    "reply_simplified": _detect_simplified_chars(reply),
-                    "reply_preview": reply[:120],
+                    "reply_simplified": _detect_simplified_chars(parsed.reply),
+                    "reply_preview": parsed.reply[:120],
+                    "store_worthy": parsed.store_worthy,
+                    "memory_value": parsed.memory_value,
                 },
             )
             # #endregion
-            return reply
+            return parsed
         except LlmApiError as exc:
             print(
                 f"[sub-llm] google_search failed, fallback to chat: {exc}",
@@ -157,11 +166,15 @@ class GeminiGroundedLlmClient:
         )
 
     def _generate_with_google_search(self, system: str, user: str) -> str:
+        generation_config: dict[str, Any] = {"temperature": 0.7}
+        if structured_ask_enabled():
+            generation_config["responseMimeType"] = "application/json"
+            generation_config["responseSchema"] = gemini_ask_response_schema()
         payload: dict[str, Any] = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "tools": [{"google_search": {}}],
-            "generationConfig": {"temperature": 0.7},
+            "generationConfig": generation_config,
         }
         model_path = self._model
         if not model_path.startswith("models/"):

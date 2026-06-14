@@ -11,6 +11,8 @@ STACK_INGRESS = (
 
 STACK_LLM = (
     "sub-llm",
+    "sub-qa-memory-structured",
+    "sub-qa-memory-batch",
     "twitch-connector",
 )
 

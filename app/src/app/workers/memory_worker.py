@@ -8,7 +8,7 @@ from stream_store import StreamTextStore, resolve_session_for_channel
 from stream_store.models import Summary, TextRecord
 
 from app.workers.memory_config import MemoryWorkerConfig
-from app.workers.memory_publisher import NoOpSummaryPublisher, SummaryPublisher
+from app.publishing.summary_publisher import NoOpSummaryPublisher, SummaryPublisher
 from app.workers.memory_summarizer import Summarizer
 
 

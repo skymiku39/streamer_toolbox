@@ -32,7 +32,7 @@ class MemorySummaryReadyEvent:
             )
         if not self.session_id:
             raise ValueError("session_id is required")
-        if self.source not in {"chat", "stt"}:
+        if self.source not in {"chat", "stt", "qa"}:
             raise ValueError(f"unsupported source: {self.source}")
         if not self.period_start or not self.period_end:
             raise ValueError("period_start and period_end are required")

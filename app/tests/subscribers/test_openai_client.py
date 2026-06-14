@@ -24,7 +24,7 @@ def test_ask_returns_assistant_content() -> None:
     with patch("sub_llm.openai_client.urllib.request.urlopen", return_value=mock_response):
         answer = client.ask("問題", context="逐字稿", knowledge="知識")
 
-    assert answer == "這是回覆"
+    assert answer.reply == "這是回覆"
 
 
 def test_from_env_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:

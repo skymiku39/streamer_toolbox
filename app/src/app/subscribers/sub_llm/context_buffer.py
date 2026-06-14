@@ -229,10 +229,19 @@ class StreamMetadataBuffer:
         self._latest_by_channel: dict[str, StreamMetadataEvent] = {}
         self._lock = threading.Lock()
 
-    def update(self, event: StreamMetadataEvent) -> None:
+    def update(self, event: StreamMetadataEvent) -> bool:
+        """更新快照；若 is_live / title / game_name 有變才回傳 True。"""
         channel = normalize_channel(event.channel or "")
         with self._lock:
+            previous = self._latest_by_channel.get(channel)
             self._latest_by_channel[channel] = event
+        if previous is None:
+            return True
+        return (
+            previous.is_live != event.is_live
+            or (previous.title or "") != (event.title or "")
+            or (previous.game_name or "") != (event.game_name or "")
+        )
 
     def has_metadata(self, channel: str) -> bool:
         key = normalize_channel(channel)
@@ -292,8 +301,8 @@ class LiveContextBuffer:
         )
         self._stream = StreamMetadataBuffer()
 
-    def update_stream_metadata(self, event: StreamMetadataEvent) -> None:
-        self._stream.update(event)
+    def update_stream_metadata(self, event: StreamMetadataEvent) -> bool:
+        return self._stream.update(event)
 
     def add_segment(self, event: SttSegmentEvent) -> None:
         self._stt.add_segment(event)

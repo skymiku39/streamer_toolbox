@@ -7,6 +7,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from sub_llm.ask_response import AskResponse, parse_ask_response
+from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
 from sub_llm.startup_announcement import (
@@ -84,7 +86,7 @@ class OpenAiCompatibleLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
+    ) -> AskResponse:
         messages = build_ask_messages(
             question,
             context=context,
@@ -114,7 +116,8 @@ class OpenAiCompatibleLlmClient:
                 flush=True,
             )
 
-        return self._complete(messages, temperature=0.7)
+        raw = self._complete(messages, temperature=0.7)
+        return parse_ask_response(raw)
 
     def generate_startup_greeting(
         self,
@@ -140,11 +143,13 @@ class OpenAiCompatibleLlmClient:
         *,
         temperature: float,
     ) -> str:
-        payload = {
+        payload: dict[str, Any] = {
             "model": self._model,
             "messages": messages,
             "temperature": temperature,
         }
+        if structured_ask_enabled():
+            payload["response_format"] = {"type": "json_object"}
         response = self._post_json("chat/completions", payload)
         choices = response.get("choices", [])
         if not choices:

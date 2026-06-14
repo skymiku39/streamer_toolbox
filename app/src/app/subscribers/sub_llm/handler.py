@@ -102,11 +102,12 @@ class LlmSubscriber:
 
     def _handle_stream_metadata(self, payload: dict[str, Any]) -> None:
         event = StreamMetadataEvent.from_dict(payload)
-        self._context_buffer.update_stream_metadata(event)
+        if not self._context_buffer.update_stream_metadata(event):
+            return
         game = event.game_name or "-"
         title_preview = (event.title or "-")[:40]
         print(
-            f"[sub-llm] stream.metadata live={event.is_live} "
+            f"stream metadata updated live={event.is_live} "
             f"game={game} title={title_preview}",
             file=sys.stderr,
             flush=True,
@@ -204,10 +205,17 @@ class LlmSubscriber:
             )
             if game_reference:
                 print(
-                    f"[sub-llm] game_reference game={live_game} chars={len(game_reference)}",
+                    f"game_reference game={live_game} chars={len(game_reference)}",
                     file=sys.stderr,
                     flush=True,
                 )
+            author = (event.author_name or event.login or "?").strip()
+            print(
+                f"!ask triggered author={author} question={filtered_question[:80]!r} "
+                f"→ calling LLM ({type(self._llm).__name__})",
+                file=sys.stderr,
+                flush=True,
+            )
             ask_result = self._llm.ask(
                 filtered_question,
                 context=context,

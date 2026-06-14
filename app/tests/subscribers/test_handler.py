@@ -9,6 +9,7 @@ from events import (
 )
 from safety import PassThroughSafetyFilter
 
+from sub_llm.ask_response import AskResponse
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import BUSY_REPLY, LlmSubscriber
@@ -173,9 +174,9 @@ def test_stream_metadata_updates_context_for_reply() -> None:
             context: str,
             knowledge: str = "",
             game_reference: str = "",
-        ) -> str:
+        ) -> AskResponse:
             captured["context"] = context
-            return "metadata-aware reply"
+            return AskResponse(reply="metadata-aware reply")
 
     subscriber = LlmSubscriber(
         config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
@@ -205,6 +206,50 @@ def test_stream_metadata_updates_context_for_reply() -> None:
     assert len(published) == 1
     assert "Just Chatting 測試" in captured["context"]
     assert "【直播狀態" in captured["context"]
+
+
+def test_stream_metadata_duration_tick_does_not_spam_stderr(capsys) -> None:
+    from events import StreamMetadataEvent
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: None,
+    )
+
+    base = StreamMetadataEvent(
+        schema_version=1,
+        topic=TOPIC_STREAM_METADATA,
+        platform="twitch",
+        channel="demo_channel",
+        timestamp="2026-06-13T10:00:00+00:00",
+        snapshot_id="meta-1",
+        is_live=True,
+        title="Just Chatting 測試",
+        game_name="Just Chatting",
+        duration_seconds=1800,
+    )
+    subscriber.handle(base.to_dict())
+    subscriber.handle(
+        StreamMetadataEvent(
+            schema_version=1,
+            topic=TOPIC_STREAM_METADATA,
+            platform="twitch",
+            channel="demo_channel",
+            timestamp="2026-06-13T10:01:00+00:00",
+            snapshot_id="meta-2",
+            is_live=True,
+            title="Just Chatting 測試",
+            game_name="Just Chatting",
+            duration_seconds=1860,
+        ).to_dict()
+    )
+
+    stderr = capsys.readouterr().err
+    assert stderr.count("stream metadata updated") == 1
 
 
 def test_stt_context_does_not_leak_across_channels() -> None:
@@ -301,8 +346,8 @@ class _MarkdownLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
-        return "**重點**：這是*測試*回覆"
+    ) -> AskResponse:
+        return AskResponse(reply="**重點**：這是*測試*回覆")
 
 
 def test_reply_strips_markdown_for_chat() -> None:
@@ -329,8 +374,8 @@ class _LongReplyLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
-        return "這" * 80 + "。"
+    ) -> AskResponse:
+        return AskResponse(reply="這" * 80 + "。")
 
 
 def test_reply_is_capped_by_content_length() -> None:
@@ -381,9 +426,9 @@ class _CountingLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
+    ) -> AskResponse:
         self.calls += 1
-        return f"answer-{self.calls}"
+        return AskResponse(reply=f"answer-{self.calls}")
 
 
 def test_duplicate_message_id_is_ignored(tmp_path) -> None:
@@ -423,11 +468,11 @@ def test_bot_reply_appears_in_follow_up_ask_context() -> None:
             context: str,
             knowledge: str = "",
             game_reference: str = "",
-        ) -> str:
+        ) -> AskResponse:
             captured.append(context)
             if len(captured) == 1:
-                return "我們正在玩 DND 第五版"
-            return "延續上一題"
+                return AskResponse(reply="我們正在玩 DND 第五版")
+            return AskResponse(reply="延續上一題")
 
     published: list[tuple[str, dict]] = []
     subscriber = LlmSubscriber(
@@ -447,6 +492,44 @@ def test_bot_reply_appears_in_follow_up_ask_context() -> None:
     assert "我們在玩什麼？" in captured[1]
     assert "DND" in captured[1]
     assert "alice" in captured[1]
+
+
+def test_high_value_ask_publishes_memory_qa_record() -> None:
+    from events import TOPIC_MEMORY_QA_RECORD
+
+    class MemoryLlm:
+        def ask(
+            self,
+            question: str,
+            *,
+            context: str,
+            knowledge: str = "",
+            game_reference: str = "",
+        ) -> AskResponse:
+            return AskResponse(
+                reply="我們在玩 DND 第五版",
+                store_worthy=True,
+                memory_value=4,
+                memory_note="觀眾問目前在玩什麼，bot 答 DND 第五版。",
+            )
+
+    published: list[tuple[str, dict]] = []
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"], qa_memory_mode="structured"),
+        llm=MemoryLlm(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_chat_payload("!ask 現在在玩什麼？", author_name="alice"))
+
+    topics = [topic for topic, _ in published]
+    assert TOPIC_CHAT_REPLY in topics
+    assert TOPIC_MEMORY_QA_RECORD in topics
+    qa_payload = next(payload for topic, payload in published if topic == TOPIC_MEMORY_QA_RECORD)
+    assert qa_payload["memory_note"].startswith("觀眾問")
 
 
 def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -> None:

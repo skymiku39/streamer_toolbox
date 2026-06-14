@@ -40,6 +40,19 @@ def test_build() -> None:
     assert event.source == "stt"
 
 
+def test_build_qa_source() -> None:
+    event = MemorySummaryReadyEvent.build(
+        summary_id=2,
+        session_id="sess",
+        source="qa",
+        period_start="a",
+        period_end="b",
+        record_count=1,
+        content="bot 問答記憶",
+    )
+    assert event.source == "qa"
+
+
 @pytest.mark.parametrize("field_name", ["session_id", "content", "created_at"])
 def test_required_fields(field_name: str) -> None:
     payload = _sample_payload()

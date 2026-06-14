@@ -76,6 +76,8 @@ known-first-party = [
     "sub_character_voice",
     "sub_io_log",
     "sub_llm",
+    "sub_qa_memory_batch",
+    "sub_qa_memory_structured",
     "sub_show_overlay",
     "sub_tts",
     "sub_visual",

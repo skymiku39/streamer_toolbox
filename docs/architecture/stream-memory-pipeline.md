@@ -45,6 +45,18 @@ flowchart LR
 | 直播摘要 | Chroma `kb_memory` ← SQLite `summaries` | 向量 RAG，依 `period_end` 由新到舊 |
 | 遊戲資料 | `packages/game-info`（IGDB，直播中可玩分類時注入） | API + 快取 |
 
+### Bot 問答長期記憶（`QA_MEMORY_MODE`）
+
+| 模式 | 值 | 寫入 | RAG 讀取 `source=qa` | SUB |
+|------|-----|------|----------------------|-----|
+| **1. 原本** | `none`（預設） | 否 | **否**（chat/stt/靜態知識等照常） | 僅 `sub-llm` |
+| **2. 單次評分** | `structured` | 同次 JSON 評分 → `memory.qa.record` | **是** | + `sub-qa-memory-structured` |
+| **3. 多次批次** | `batch` | `chat.reply` → L2 摘要 | **是** | + `sub-qa-memory-batch` |
+
+模式 2、3 **讀取記憶行為相同**（皆含問答長期記憶）；差異僅在寫入方式。模式 1 仍保留短期 Bot 問答 buffer、STT、聊天、L2 chat/stt 摘要與靜態知識庫。
+
+三者互斥；`--stack llm` 會啟動兩個 memory SUB，非對應模式者自動 idle 退出。
+
 Prompt 來源優先順序（`LLM_SYSTEM_PROMPT` 預設）：**直播狀態 > 逐字稿/聊天 > Bot 近期問答 > 遊戲資料 > 知識庫 > 通識**；上下文沒提到時仍須作答，勿只回「沒提到」。
 
 啟動時若 LLM 推理端點不可用，仍發布降級宣告至 `chat.reply`（Degraded Mode 說明）；詳見 `sub_llm/startup_announcement.py`。

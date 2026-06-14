@@ -11,6 +11,7 @@ TOPIC_EVENTSUB_PREFIX = "eventsub."
 TOPIC_SYSTEM_ERROR = "system.error"
 TOPIC_MEMORY_SUMMARIZE_REQUEST = "memory.summarize.request"
 TOPIC_MEMORY_SUMMARY_READY = "memory.summary.ready"
+TOPIC_MEMORY_QA_RECORD = "memory.qa.record"
 
 SOURCE_LOGIC_COMMANDS = "logic-commands"
 SOURCE_LOGIC_KEYWORDS = "logic-keywords"

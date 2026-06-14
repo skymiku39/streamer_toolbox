@@ -45,7 +45,9 @@
 | `sub-visual` | Sub | ✅ | — | `chat.message` | B, C |
 | `sub-tts` | Sub | ✅ | — | `chat.message` | B, C |
 | `sub-bot-logic` | Sub | ✅ | `chat.reply` | `chat.message`, `eventsub.*` | B, C |
-| `sub-llm` | Sub | ✅ | `chat.reply` | `chat.message`, `stt.segment` | C |
+| `sub-llm` | Sub | ✅ | `chat.reply`, `memory.qa.record` | `chat.message`, `stt.segment` | C |
+| `sub-qa-memory-structured` | Sub | ✅ | `memory.summary.ready` | `memory.qa.record` | C |
+| `sub-qa-memory-batch` | Sub | ✅ | — | `chat.reply` | C |
 | `twitch-connector` | Sub | ✅ | — | `chat.reply` | B～D |
 | `sub-character-brain` | Sub | ✅ | `character.turn`, `chat.reply` | `chat.message` | D |
 | `sub-character-voice` | Sub | ✅ | `character.audio.ready` | `character.turn` | D |
@@ -61,7 +63,7 @@
 - [ ] 實作於 `app/subscribers/` 或 `app/publishers/`（對齊 streamer-toolkit）
 - [ ] 使用 `@register_subscriber` / `@register_publisher` 自動註冊
 - [ ] 僅依賴 `events`、`bus`（及該模組必要的第三方 lib）
-- [ ] **禁止** import 其他 Sub / Ingress 的業務模組
+- [ ] **禁止** import 其他 Sub / Ingress 的業務模組；跨 Sub 共用邏輯放 `app/subscribers/` 或 `app/publishing/`（例：`qa_memory_mode`、`summary_publisher`）
 
 ### 2. 契約對齊
 
@@ -493,6 +495,24 @@ LLM 問答 Sub（產品 C）。支援 `LLM_BACKEND=template|openai|gemini`；知
 - [x] 程序單例鎖（`data/process-locks/`）+ SQLite 冪等去重
 - [x] 不與 `sub-bot-logic` 共用程式碼，僅共用 topic
 - [x] 單元測試：mock LLM + safety → reply payload
+
+---
+
+### `sub-qa-memory-structured` / `sub-qa-memory-batch` ✅
+
+Bot 問答長期記憶（`QA_MEMORY_MODE=structured|batch`）。兩者互斥，非對應模式 idle 退出；共用 `app/subscribers/qa_memory_mode.py`，**禁止** import `sub_llm`。
+
+| 模組 | 訂閱 | 發布 | 說明 |
+|------|------|------|------|
+| `sub-qa-memory-structured` | `memory.qa.record` | `memory.summary.ready` | 同次 LLM JSON 評分後寫入 `summaries(source=qa)` |
+| `sub-qa-memory-batch` | `chat.reply` | — | 累積 bot 回覆，L2 worker 定時摘要 |
+
+**撰寫清單**
+
+- [x] `QA_MEMORY_MODE` 三態：`none` / `structured` / `batch`
+- [x] structured 使用 `app/publishing/summary_publisher`（非 `app.workers`）
+- [x] SQLite 冪等去重（`correlation_id`）
+- [x] 單元測試：writer + mode 解析
 
 ---
 

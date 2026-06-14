@@ -2,6 +2,7 @@ from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
 from safety import PassThroughSafetyFilter
 
 from sub_llm.config import LlmSubscriberConfig
+from sub_llm.ask_response import AskResponse
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.knowledge import EmptyKnowledgeStore
@@ -35,9 +36,9 @@ class CapturingLlm:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
+    ) -> AskResponse:
         self.last_game_reference = game_reference
-        return "ok"
+        return AskResponse(reply="ok")
 
 
 class StubGameProvider:

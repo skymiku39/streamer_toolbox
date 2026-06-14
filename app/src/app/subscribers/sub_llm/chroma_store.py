@@ -186,13 +186,19 @@ class ChromaSummaryKnowledgeStore:
         limit: int = 10,
         max_results: int = 5,
         max_snippet_chars: int = 4000,
+        include_qa_memory: bool | None = None,
     ) -> None:
+        from app.subscribers.qa_memory_mode import qa_memory_read_enabled
+
         self._store = store
         self._session_id = session_id
         self._chroma_dir = Path(chroma_dir)
         self._limit = limit
         self._max_results = max_results
         self._max_snippet_chars = max_snippet_chars
+        self._include_qa_memory = (
+            qa_memory_read_enabled() if include_qa_memory is None else include_qa_memory
+        )
         self._collection: Any | None = None
         self._client: Any | None = None
         self._preload_lock = threading.Lock()
@@ -256,6 +262,8 @@ class ChromaSummaryKnowledgeStore:
 
         summaries = self._store.list_summaries(session_id, limit=self._limit)
         chronological = list(reversed(summaries))
+        if not self._include_qa_memory:
+            chronological = [item for item in chronological if item.source != "qa"]
         fingerprint = _fingerprint_summaries(chronological)
         if self._read_memory_fingerprints().get(session_id) == fingerprint:
             return
@@ -278,6 +286,9 @@ class ChromaSummaryKnowledgeStore:
                     "period_end": summary.period_end,
                 }
             )
+
+        if not ids:
+            return
 
         self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
         self._write_memory_fingerprint(session_id, fingerprint)
@@ -313,6 +324,17 @@ class ChromaSummaryKnowledgeStore:
         except Exception as exc:
             logger.debug("Chroma 記憶查詢失敗: %s", exc)
             return ""
+
+        if not self._include_qa_memory:
+            filtered_docs: list[str] = []
+            filtered_metas: list[dict[str, str]] = []
+            for doc, meta in zip(documents, metadatas, strict=False):
+                if (meta or {}).get("source") == "qa":
+                    continue
+                filtered_docs.append(doc)
+                filtered_metas.append(meta or {})
+            documents = filtered_docs
+            metadatas = filtered_metas
 
         unique = rank_memory_snippets(documents, metadatas)
         if not unique:

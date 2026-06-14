@@ -82,8 +82,9 @@ streamer_toolbox/
 │   ├── pyproject.toml       # streamer-app
 │   ├── src/app/
 │   │   ├── main.py          # CLI 編排
+│   │   ├── publishing/      # 跨 Sub/Worker 共用發布工具（summary_publisher 等）
 │   │   ├── publishers/      # Ingress（ingress_*）
-│   │   ├── subscribers/     # Sub（sub_*、twitch_connector）
+│   │   ├── subscribers/     # Sub（sub_*、twitch_connector）、共用設定（qa_memory_mode 等）
 │   │   └── workers/         # 定時 worker（記憶層等）
 │   └── tests/
 ├── packages/
@@ -127,12 +128,22 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `sub-visual` | `egress-subtitle` | `chat.message` | — | 獨立 | `twitch_api` `runtime/subtitle.py` |
 | `sub-tts` | `egress-tts` | `chat.message` | — | 獨立 | `twitch_api` `tts/` |
 | `sub-bot-logic` | `logic-*` | `chat.message`, `eventsub.*` | `chat.reply` | 獨立 | `twitch_api` `chat_commands.py` 等 |
-| `sub-llm` | `logic-llm` | `chat.message`, `stt.segment` | `chat.reply` | 獨立 | [`llm_twitchat`](../llm_twitchat)（待 MQ 化） |
+| `sub-llm` | `logic-llm` | `chat.message`, `stt.segment` | `chat.reply`, `memory.qa.record`（structured 模式） | 獨立 | [`llm_twitchat`](../llm_twitchat)（待 MQ 化） |
+| `sub-qa-memory-structured` | qa memory L2 | `memory.qa.record` | `memory.summary.ready` | **本專案** | — |
+| `sub-qa-memory-batch` | qa memory L2 | `chat.reply` | —（寫入 L1，L2 worker 摘要） | **本專案** | — |
 | `sub-character-brain` | character brain | `chat.message` | `character.turn`, `chat.reply` | 獨立 |
 | `sub-character-voice` | character voice | `character.turn` | `character.audio.ready` | 獨立 |
 | `sub-character-face` | character face | `character.turn` | `character.expression.ready` | 獨立 |
 | `sub-character-stage` | character stage | `character.audio.ready`, `character.expression.ready` | — | 獨立 |
 | `twitch-connector` | `egress-chat-send` | `chat.reply` | — | 獨立 |
+
+### 跨 Sub 共用模組（非 process）
+
+| 模組 | 路徑 | 職責 | 被誰用 |
+|------|------|------|--------|
+| `qa_memory_mode` | `app/subscribers/qa_memory_mode.py` | `QA_MEMORY_MODE` 解析與旗標 | `sub-llm`, `sub-qa-memory-*` |
+| `summary_publisher` | `app/publishing/summary_publisher.py` | 摘要寫入 DB 後 publish `memory.summary.ready` | `app.workers`, `sub-qa-memory-structured` |
+| `stream_record_config` | `app/subscribers/stream_record_config.py` | L1 記錄設定 | `sub-stream-record`, `sub-qa-memory-*` |
 
 ## Publisher / Ingress 模組（`app/src/app/publishers/`）
 

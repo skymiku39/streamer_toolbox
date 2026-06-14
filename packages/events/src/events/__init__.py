@@ -4,6 +4,7 @@ from events.character_turn import CharacterTurnEvent
 from events.chat_message import ChatMessageEvent
 from events.chat_reply import ChatReplyEvent
 from events.eventsub_event import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
+from events.memory_qa_record import MemoryQaRecordEvent
 from events.memory_summarize_request import MemorySummarizeRequestEvent
 from events.memory_summary_ready import MemorySummaryReadyEvent
 from events.stt_segment import SttSegmentEvent
@@ -29,6 +30,7 @@ from events.topics import (
     TOPIC_SYSTEM_ERROR,
     TOPIC_MEMORY_SUMMARIZE_REQUEST,
     TOPIC_MEMORY_SUMMARY_READY,
+    TOPIC_MEMORY_QA_RECORD,
 )
 
 __all__ = [
@@ -45,6 +47,7 @@ __all__ = [
     "SOURCE_LOGIC_EVENTS",
     "SOURCE_LOGIC_KEYWORDS",
     "SOURCE_LOGIC_LLM",
+    "MemoryQaRecordEvent",
     "MemorySummarizeRequestEvent",
     "MemorySummaryReadyEvent",
     "SttSegmentEvent",
@@ -63,5 +66,6 @@ __all__ = [
     "TOPIC_SYSTEM_ERROR",
     "TOPIC_MEMORY_SUMMARIZE_REQUEST",
     "TOPIC_MEMORY_SUMMARY_READY",
+    "TOPIC_MEMORY_QA_RECORD",
     "eventsub_topic",
 ]

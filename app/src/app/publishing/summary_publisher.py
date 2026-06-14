@@ -45,7 +45,7 @@ class RabbitMqSummaryPublisher:
             if connection.is_open:
                 connection.close()
         print(
-            f"[memory-worker] published {TOPIC_MEMORY_SUMMARY_READY} id={summary.id} "
+            f"[summary-publisher] published {TOPIC_MEMORY_SUMMARY_READY} id={summary.id} "
             f"session={summary.session_id} source={summary.source}",
             file=sys.stderr,
             flush=True,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from sub_llm.ask_response import AskResponse
 from sub_llm.startup_messages import build_template_startup_announcement
 
 
@@ -13,8 +14,8 @@ class LlmClient(Protocol):
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
-        """依問題、STT 上下文、知識庫與遊戲資料產出回覆文字。"""
+    ) -> AskResponse:
+        """依問題、STT 上下文、知識庫與遊戲資料產出結構化回覆。"""
 
     def generate_startup_greeting(
         self,
@@ -35,7 +36,9 @@ class TemplateLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
-    ) -> str:
+    ) -> AskResponse:
+        from app.subscribers.qa_memory_mode import structured_ask_enabled
+
         context_hint = ""
         if context.strip():
             context_hint = "（已參考近期直播上下文）"
@@ -45,7 +48,15 @@ class TemplateLlmClient:
         game_hint = ""
         if game_reference.strip():
             game_hint = "（已參考遊戲資料）"
-        return f"關於「{question}」：這是模擬回覆{context_hint}{knowledge_hint}{game_hint}。"
+        reply = f"關於「{question}」：這是模擬回覆{context_hint}{knowledge_hint}{game_hint}。"
+        if structured_ask_enabled():
+            return AskResponse(
+                reply=reply,
+                store_worthy=False,
+                memory_value=1,
+                memory_note="",
+            )
+        return AskResponse(reply=reply)
 
     def generate_startup_greeting(
         self,

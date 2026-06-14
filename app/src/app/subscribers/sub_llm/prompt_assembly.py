@@ -3,7 +3,7 @@ from __future__ import annotations
 from sub_llm.ask_response import structured_output_guidance
 from sub_llm.chat_format import reply_length_guidance
 from sub_llm.config import resolve_reply_max_length
-from sub_llm.qa_memory_mode import structured_ask_enabled
+from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.prompts import resolve_system_prompt
 
 

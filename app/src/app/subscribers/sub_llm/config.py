@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sub_llm.qa_memory_mode import QaMemoryMode, resolve_qa_memory_mode
+from app.subscribers.qa_memory_mode import QaMemoryMode, resolve_qa_memory_mode
 
 DEFAULT_REPLY_MAX_LENGTH = 200
 TWITCH_CHAT_MAX_CHARS = 500
