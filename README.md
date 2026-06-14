@@ -6,7 +6,14 @@
 |------|------|------|
 | 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
 | 應用層 | `app/` | Pub/Sub 程序編排（`streamer-app`） |
-| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stream-store`、`tts`、`identity-oauth`、`game-info` |
+| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stream-store`、`tts`、`identity-oauth`、`game-info`、`ttvchat-lens`、`tubechat-lens` |
+
+## 使用者分流
+
+| 你是… | 從這裡開始 |
+|--------|------------|
+| **想跑直播 Bot**（安裝、驗證、啟動） | [docs/getting-started.md](docs/getting-started.md) |
+| **想開發／改程式** | [docs/development.md](docs/development.md) |
 
 ## 快速開始（開發）
 
@@ -14,11 +21,11 @@
 uv sync
 copy .env.example .env
 docker compose up -d
-uv run pytest
+powershell -NoProfile -File scripts/verify_setup.ps1
 uv run python -m app.main run
 ```
 
-詳見 [docs/development.md](docs/development.md)。架構參考見姊妹專案 [`../streamer-toolkit`](../streamer-toolkit)（非正式執行環境）。
+驗證腳本通過後應輸出 `SETUP_VERIFICATION_PASS`。詳見 [docs/development.md](docs/development.md)。架構參考見姊妹專案 [`../streamer-toolkit`](../streamer-toolkit)（非正式執行環境）。
 
 ## 姊妹專案
 
@@ -54,6 +61,7 @@ uv run python -m app.main run
 | [docs/references.md](docs/references.md) | 姊妹專案、參考程式碼、Sub/Ingress 對照、twitch_api 遷移 |
 | [docs/references/streamer-toolkit.md](docs/references/streamer-toolkit.md) | Phase 01 參考實作（streamer-toolkit） |
 | [docs/references/llm-twitchat.md](docs/references/llm-twitchat.md) | 產品 C As-is（llm_twitchat） |
+| [docs/getting-started.md](docs/getting-started.md) | **營運者**：安裝、驗證、啟動 Bot |
 | [docs/development.md](docs/development.md) | 開發環境、測試、workspace 結構 |
 | [docs/checklists/pub-sub-writing.md](docs/checklists/pub-sub-writing.md) | Pub/Sub 各 package 撰寫清單 |
 

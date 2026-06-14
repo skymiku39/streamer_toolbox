@@ -93,7 +93,9 @@ streamer_toolbox/
 │   ├── identity-oauth/      # Twitch OAuth token provider
 │   ├── safety/              # SafetyFilter Protocol
 │   ├── stream-store/        # SQLite 記錄/記憶
-│   └── tts/                 # TtsEngine Protocol
+│   ├── tts/                 # TtsEngine Protocol
+│   ├── ttvchat-lens/        # Twitch IRC 匿名唯讀（原 ttv_chat）
+│   └── tubechat-lens/       # YouTube 直播聊天唯讀（原 yt_chat）
 ├── config/
 ├── docs/
 └── docker-compose.yml
@@ -112,6 +114,8 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `app.workers`, `sub-llm` RAG |
 | `game-info` | `packages/game-info/` | IGDB 遊戲評分／簡介查詢 | 無 | `sub-llm`（直播中注入 prompt） |
 | `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
+| `ttvchat-lens` | `packages/ttvchat-lens/` | Twitch IRC 匿名唯讀 | websockets | `ingress-ttv-read` |
+| `tubechat-lens` | `packages/tubechat-lens/` | YouTube 直播聊天唯讀 | pytchat | `ingress-yt-read` |
 
 設計詳見 [architecture/identity-auth.md](architecture/identity-auth.md)。
 

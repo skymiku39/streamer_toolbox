@@ -1,0 +1,23 @@
+[project]
+name = "tubechat-lens"
+version = "0.1.0"
+description = "Read YouTube live chat streams without YouTube Data API quota."
+requires-python = ">=3.11"
+dependencies = [
+    "pytchat>=0.5.5",
+    "python-dotenv>=1.2.2",
+    "rich>=15.0.0",
+    "websockets>=16.0",
+]
+
+[project.scripts]
+tubechat-lens = "tubechat_lens:main"
+tubechat-lens-app = "tubechat_lens.app:main"
+tubechat-lens-server = "tubechat_lens.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tubechat_lens"]

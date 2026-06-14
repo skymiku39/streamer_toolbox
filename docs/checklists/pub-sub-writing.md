@@ -12,8 +12,8 @@
 
 | Package | 參考 repo | 關鍵路徑 |
 |---------|-----------|----------|
-| `ingress-ttv-read` | [`ttv_chat`](../../ttv_chat) | `src/ttvchat_lens/reader.py` |
-| `ingress-yt-read` | [`yt_chat`](../../yt_chat) | `src/tubechat_lens/reader.py` |
+| `ingress-ttv-read` | [`packages/ttvchat-lens`](../packages/ttvchat-lens) | `src/ttvchat_lens/reader.py` |
+| `ingress-yt-read` | [`packages/tubechat-lens`](../packages/tubechat-lens) | `src/tubechat_lens/reader.py` |
 | `ingress-twitch-eventsub` | [`twitch_api`](../../twitch_api) | `src/bot/chatbot.py`, `event_handlers.py` |
 | `ingress-twitch-audio` | [`llm_twitchat`](../../llm_twitchat) | `services/ingest.py`, `ingest/stt_worker.py` |
 | `sub-bot-logic` | `twitch_api` | `chat_commands.py`, `bot_responses.py`, `redemption_responses.py` |
@@ -135,8 +135,8 @@ Twitch IRC 匿名唯讀（通用產品 A ingress）。
 | 項目 | 內容 |
 |------|------|
 | 發布 | `chat.message` |
-| 依賴 | `events`, `bus`, `ttvchat_lens`（path `../../ttv_chat`） |
-| 參考 | [`ttv_chat`](../../ttv_chat)；可合併或取代 `ingress-twitch-chat` |
+| 依賴 | `events`, `bus`, `ttvchat-lens`（workspace `packages/ttvchat-lens`） |
+| 參考 | 原 [`ttv_chat`](../../ttv_chat) As-is；已收編為 workspace package |
 | 設定 | `TWITCH_CHANNEL`, `RABBITMQ_URL` |
 
 **撰寫清單**
@@ -159,8 +159,8 @@ YouTube 直播聊天唯讀。
 | 項目 | 內容 |
 |------|------|
 | 發布 | `chat.message` |
-| 依賴 | `events`, `bus`, `tubechat_lens`（path `../../yt_chat`） |
-| 參考 | [`yt_chat`](../../yt_chat) |
+| 依賴 | `events`, `bus`, `tubechat-lens`（workspace `packages/tubechat-lens`） |
+| 參考 | 原 [`yt_chat`](../../yt_chat) As-is；已收編為 workspace package |
 | 設定 | `YT_CHANNEL` 或 video id, `RABBITMQ_URL` |
 
 **撰寫清單**

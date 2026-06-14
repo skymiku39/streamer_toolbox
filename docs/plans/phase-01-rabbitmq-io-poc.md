@@ -158,7 +158,7 @@ class EventBus(Protocol):
 
 | 項目 | 說明 |
 |------|------|
-| 依賴 | `ttvchat_lens`（path 依賴 `../../ttv_chat`）或複製 reader 介面 |
+| 依賴 | `ttvchat-lens`（workspace `packages/ttvchat-lens`）或複製 reader 介面 |
 | 流程 | `LiveChatReader` → `on_message` → map 成 `ChatMessageEvent` → `bus.publish("chat.message", ...)` |
 | 入口 | `uv run ingress-twitch-chat` |
 | 禁止 | 訂閱 queue、寫業務 log 檔、呼叫 Sub |

@@ -142,7 +142,7 @@ Subscriber（`sub-*`）與 Publisher（`ingress-*`）的 As-is 參考見 [packag
 | To-be package | 參考 As-is | 備註 |
 |---------------|------------|------|
 | `ingress-yt-read` | `yt_chat` | 可直接包 `tubechat_lens.LiveChatReader` |
-| `ingress-ttv-read` | `ttv_chat` | Phase 01 建議 path 依賴 `../../ttv_chat` |
+| `ingress-ttv-read` | `packages/ttvchat-lens` | workspace 內 `ttvchat_lens` |
 | `ingress-twitch-eventsub` | `twitch_api` `bot/` | EventSub 主路徑 |
 | `sub-bot-logic` | `twitch_api` `chat_commands.py`、`bot_responses.py` | 規則 BOT |
 | `sub-tts` | `twitch_api` `tts/` | 觀眾彈幕朗讀 |

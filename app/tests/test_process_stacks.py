@@ -10,7 +10,12 @@ def test_resolve_stack_ingress_includes_twitch_stream() -> None:
 
 def test_resolve_stack_llm() -> None:
     names = resolve_stack("llm")
-    assert names == ["sub-llm", "twitch-connector"]
+    assert names == [
+        "sub-llm",
+        "sub-qa-memory-structured",
+        "sub-qa-memory-batch",
+        "twitch-connector",
+    ]
 
 
 def test_process_stacks_keys() -> None:

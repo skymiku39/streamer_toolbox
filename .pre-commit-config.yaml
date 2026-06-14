@@ -12,3 +12,16 @@ repos:
         language: system
         pass_filenames: true
         always_run: true
+
+      - id: block-retired-commit-wording
+        name: block retired commit wording in staged files
+        entry: python scripts/pre_commit_forbidden_strings.py
+        language: system
+        pass_filenames: true
+
+      - id: enforce-commit-message-format
+        name: enforce commit message format
+        entry: python scripts/pre_commit_commit_msg.py
+        language: system
+        stages: [commit-msg]
+        pass_filenames: true

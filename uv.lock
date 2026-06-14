@@ -18,6 +18,8 @@ members = [
     "streamer-app",
     "streamer-toolbox",
     "tts",
+    "ttvchat-lens",
+    "tubechat-lens",
 ]
 
 [[package]]
@@ -2899,8 +2901,8 @@ requires-dist = [
     { name = "stream-store", editable = "packages/stream-store" },
     { name = "streamlink", specifier = ">=7.0.0" },
     { name = "tts", editable = "packages/tts" },
-    { name = "ttvchat-lens", directory = "../ttv_chat" },
-    { name = "tubechat-lens", directory = "../yt_chat" },
+    { name = "ttvchat-lens", editable = "packages/ttvchat-lens" },
+    { name = "tubechat-lens", editable = "packages/tubechat-lens" },
     { name = "twitchio" },
     { name = "websockets" },
 ]
@@ -3050,7 +3052,7 @@ provides-extras = ["sapi5"]
 [[package]]
 name = "ttvchat-lens"
 version = "0.1.0"
-source = { directory = "../ttv_chat" }
+source = { editable = "packages/ttvchat-lens" }
 dependencies = [
     { name = "python-dotenv" },
     { name = "rich" },
@@ -3067,7 +3069,7 @@ requires-dist = [
 [[package]]
 name = "tubechat-lens"
 version = "0.1.0"
-source = { directory = "../yt_chat" }
+source = { editable = "packages/tubechat-lens" }
 dependencies = [
     { name = "pytchat" },
     { name = "python-dotenv" },

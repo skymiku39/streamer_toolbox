@@ -42,5 +42,5 @@ identity-oauth = { workspace = true }
 safety = { workspace = true }
 stream-store = { workspace = true }
 tts = { workspace = true }
-ttvchat-lens = { path = "../../ttv_chat" }
-tubechat-lens = { path = "../../yt_chat" }
+ttvchat-lens = { workspace = true }
+tubechat-lens = { workspace = true }

@@ -1,5 +1,7 @@
 # 開發環境設定
 
+若你**只想跑 Bot、較少改程式**，請先看 [getting-started.md](getting-started.md)（安裝布局、`verify_setup`、雙 stack 啟動）。
+
 本 repo 為**唯一正式實作根目錄**：設計文件在 `docs/`，程式在 workspace package 與 `app/`。姊妹專案 [streamer-toolkit](references/streamer-toolkit.md) 僅供架構參考。
 
 契約以 [events.md](events.md) 為準。
@@ -226,7 +228,9 @@ streamer_toolbox/
 │   ├── safety/              # 原 pkg-safety
 │   ├── stream-store/        # 原 pkg-stream-store
 │   ├── game-info/           # IGDB 遊戲資料
-│   └── tts/                 # 原 pkg-tts
+│   ├── tts/                 # 原 pkg-tts
+│   ├── ttvchat-lens/        # Twitch IRC 匿名唯讀
+│   └── tubechat-lens/       # YouTube 直播聊天唯讀
 ├── config/
 ├── docs/
 ├── docker-compose.yml

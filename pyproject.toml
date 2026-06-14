@@ -82,5 +82,7 @@ known-first-party = [
     "sub_tts",
     "sub_visual",
     "tts",
+    "ttvchat_lens",
+    "tubechat_lens",
     "twitch_connector",
 ]

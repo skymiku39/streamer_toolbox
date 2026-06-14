@@ -1,6 +1,6 @@
 # 總覽
 
-streamer-toolbox 是直播互動助手的**設計文件庫與 stream-core 實作根目錄**。目標：用可組裝的 Pub/Sub 模組，從參考專案演進出產品 A～D。開發環境見 [development.md](development.md)。
+streamer-toolbox 是直播互動助手的**設計文件庫與 stream-core 實作根目錄**。目標：用可組裝的 Pub/Sub 模組，從參考專案演進出產品 A～D。想跑 Bot 見 [getting-started.md](getting-started.md)；開發環境見 [development.md](development.md)。
 
 ## 設計約束（強制）
 
@@ -24,6 +24,7 @@ flowchart LR
 
 | 文件 | 職責 |
 |------|------|
+| [getting-started.md](getting-started.md) | **營運者**：安裝、驗證、啟動 Bot |
 | [solid.md](solid.md) | SOLID 準則、反例、新 Sub 檢查清單 |
 | [modules.md](modules.md) | 模組目錄、產品 A～D、App 啟用表 |
 | [events.md](events.md) | Topic 與 payload 契約（**唯一 schema 來源**） |
