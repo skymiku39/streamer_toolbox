@@ -1,0 +1,20 @@
+[project]
+name = "control"
+version = "0.1.0"
+description = "控制面模組註冊與 config.changed 發布"
+requires-python = ">=3.11"
+dependencies = [
+    "bus",
+    "events",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/control"]
+
+[tool.uv.sources]
+bus = { workspace = true }
+events = { workspace = true }

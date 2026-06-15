@@ -93,4 +93,5 @@ def test_gemini_grounded_ask_falls_back_on_grounding_error() -> None:
         context="【直播狀態】直播中",
         knowledge="",
         game_reference="",
+        session_recap_reference="",
     )

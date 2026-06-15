@@ -19,7 +19,15 @@ from bus.rabbitmq import (
     setup_subscriber_queue_multi,
 )
 from bus.topology import QUEUE_BOT_LOGIC_INBOX
-from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_EVENTSUB_PREFIX
+from events import (
+    TOPIC_CHAT_MESSAGE,
+    TOPIC_CHAT_REPLY,
+    TOPIC_CONFIG_CHANGED,
+    TOPIC_EVENTSUB_PREFIX,
+    ConfigChangedEvent,
+)
+
+from control import MODULE_RULE_BOT, active_profile_id
 
 from sub_bot_logic.redemption_map import RedemptionResponseMap
 from sub_bot_logic.response_map import BotResponseMap
@@ -47,6 +55,10 @@ class BotLogicSubscriber:
         self._lock = threading.Lock()
 
     def handle(self, payload: dict) -> None:
+        topic = payload.get("topic")
+        if topic == TOPIC_CONFIG_CHANGED:
+            self._handle_config_changed(payload)
+            return
         reply = self._engine.process_payload(payload)
         if reply is None:
             return
@@ -68,6 +80,23 @@ class BotLogicSubscriber:
             with self._lock:
                 count = self._reply_count
             print(f"[stats] replies_published={count}", file=sys.stderr, flush=True)
+
+    def _handle_config_changed(self, payload: dict) -> None:
+        try:
+            event = ConfigChangedEvent.from_dict(payload)
+        except (KeyError, TypeError, ValueError):
+            return
+        if event.module_id != MODULE_RULE_BOT:
+            return
+        if event.profile_id != active_profile_id():
+            return
+        with self._lock:
+            self._engine.reload()
+        print(
+            f"[{PROCESS_NAME}] reloaded config ({event.config_file})",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 @register_subscriber(
@@ -119,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         channel,
         exchange_name=exchange,
         queue_name=QUEUE_BOT_LOGIC_INBOX,
-        routing_keys=[TOPIC_CHAT_MESSAGE, f"{TOPIC_EVENTSUB_PREFIX}#"],
+        routing_keys=[TOPIC_CHAT_MESSAGE, f"{TOPIC_EVENTSUB_PREFIX}#", TOPIC_CONFIG_CHANGED],
     )
 
     subscriber = BotLogicSubscriber(engine, exchange_name=exchange, channel=channel)
@@ -132,7 +161,8 @@ def main(argv: list[str] | None = None) -> int:
     stats_thread.start()
 
     print(
-        f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE} + {TOPIC_EVENTSUB_PREFIX}#",
+        f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE} + {TOPIC_EVENTSUB_PREFIX}# + "
+        f"{TOPIC_CONFIG_CHANGED}",
         file=sys.stderr,
         flush=True,
     )

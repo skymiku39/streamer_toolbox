@@ -10,11 +10,13 @@ from events import (
     SOURCE_LOGIC_LLM,
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
+    TOPIC_CONFIG_CHANGED,
     TOPIC_MEMORY_QA_RECORD,
     TOPIC_STT_SEGMENT,
     TOPIC_STREAM_METADATA,
     ChatMessageEvent,
     ChatReplyEvent,
+    ConfigChangedEvent,
     MemoryQaRecordEvent,
     SttSegmentEvent,
     StreamMetadataEvent,
@@ -36,6 +38,8 @@ from sub_llm.llm import LlmClient
 from sub_llm.qa_memory_gate import should_persist_qa_memory
 from sub_llm.session_recap import build_session_recap_reference
 from sub_llm.triggers import TriggerMatcher
+
+from control import MODULE_LLM_BOT, active_profile_id
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
@@ -98,6 +102,9 @@ class LlmSubscriber:
 
     def handle(self, payload: dict[str, Any]) -> None:
         topic = payload.get("topic")
+        if topic == TOPIC_CONFIG_CHANGED:
+            self._handle_config_changed(payload)
+            return
         if topic == TOPIC_STT_SEGMENT:
             self._handle_stt_segment(payload)
         elif topic == TOPIC_STREAM_METADATA:
@@ -373,3 +380,30 @@ class LlmSubscriber:
             file=sys.stderr,
             flush=True,
         )
+
+    def reload_config(self, config: LlmSubscriberConfig, *, safety: SafetyFilter) -> None:
+        with self._busy:
+            self._config = config
+            self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
+            self._safety = safety
+            self._context_buffer.reconfigure(
+                window_minutes=config.context_window_minutes,
+                bot_reply_window_minutes=config.bot_reply_window_minutes,
+                bot_reply_max_pairs=config.bot_reply_max_pairs,
+            )
+
+    def _handle_config_changed(self, payload: dict[str, Any]) -> None:
+        try:
+            event = ConfigChangedEvent.from_dict(payload)
+        except (KeyError, TypeError, ValueError):
+            return
+        if event.module_id != MODULE_LLM_BOT:
+            return
+        if event.profile_id != active_profile_id():
+            return
+        if event.config_file != "llm_subscriber.json":
+            return
+        reload = getattr(self, "_config_reload", None)
+        if not callable(reload):
+            return
+        reload()

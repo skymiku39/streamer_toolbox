@@ -36,6 +36,8 @@ flowchart LR
 | [use-cases/](use-cases/) | 各產品時序圖 |
 | [architecture/identity-auth.md](architecture/identity-auth.md) | **授權與身分設計**（Helix / 雙帳號 / streamlink） |
 | [architecture/stream-memory-pipeline.md](architecture/stream-memory-pipeline.md) | L1/L2 記憶管線 |
+| [architecture/control-plane.md](architecture/control-plane.md) | **控制面**（Dashboard Shell、profile、L0～L2）；Phase 0～1 已交付 `config.changed` L1 熱重載 |
+| [plans/control-plane-phase-01.md](plans/control-plane-phase-01.md) | 控制面分階段實作計畫（Phase 0～4） |
 | [checklists/pub-sub-writing.md](checklists/pub-sub-writing.md) | Pub/Sub 各 package 撰寫清單 |
 
 ## 三種圖表

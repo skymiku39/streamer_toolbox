@@ -16,7 +16,7 @@ from bus.rabbitmq import (
     setup_subscriber_queue_bindings,
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
-from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA
+from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_CONFIG_CHANGED, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA
 from safety import BlocklistSafetyFilter
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
@@ -89,6 +89,14 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
 
+    def _build_safety(cfg: LlmSubscriberConfig) -> BlocklistSafetyFilter:
+        return BlocklistSafetyFilter(
+            blocklist=frozenset(
+                word.lower()
+                for word in (*cfg.input_blocklist, *cfg.output_blocklist)
+            ),
+        )
+
     connection = connect_blocking(rabbitmq_url())
     mq_channel = connection.channel()
     exchange_name = stream_exchange()
@@ -96,7 +104,12 @@ def main(argv: list[str] | None = None) -> int:
         mq_channel,
         exchange_name=exchange_name,
         queue_name=QUEUE_SUB_LLM,
-        routing_keys=[TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA],
+        routing_keys=[
+            TOPIC_CHAT_MESSAGE,
+            TOPIC_STT_SEGMENT,
+            TOPIC_STREAM_METADATA,
+            TOPIC_CONFIG_CHANGED,
+        ],
     )
 
     def publish(topic: str, payload: dict) -> None:
@@ -162,9 +175,23 @@ def main(argv: list[str] | None = None) -> int:
         skip_trigger_logins=skip_logins,
     )
 
+    def _reload_config_from_disk() -> None:
+        nonlocal config, safety
+        config = _load_config(config_path if config_path.is_file() else None)
+        safety = _build_safety(config)
+        os.environ.setdefault("LLM_MAX_REPLY_LENGTH", str(config.reply_max_length))
+        subscriber.reload_config(config, safety=safety)
+        print(
+            f"[{PROCESS_NAME}] reloaded config (llm_subscriber.json)",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    subscriber._config_reload = _reload_config_from_disk
+
     print(
         f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT}, "
-        f"{TOPIC_STREAM_METADATA} "
+        f"{TOPIC_STREAM_METADATA}, {TOPIC_CONFIG_CHANGED} "
         f"(backend={args.llm_backend!r}, qa_memory_mode={config.qa_memory_mode!r}, "
         f"knowledge=RAG/chroma, "
         f"game_info={game_info_mode!r}, triggers={config.trigger_prefixes!r})",

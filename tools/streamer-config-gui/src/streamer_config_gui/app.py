@@ -17,12 +17,11 @@ from streamer_config.bootstrap import ensure_layout
 from streamer_config.paths import ConfigPaths, default_config_dir
 from streamer_config.validate import ValidationError, validate_json_content, validate_knowledge_filename
 
+from control import CONFIG_FILE_MODULE_ID
+from control.publisher import try_publish_config_changed
+
 RESTART_HINTS = [
-    {"file": "bot_responses.json", "process": "sub-bot-logic"},
-    {"file": "redemption_responses.json", "process": "sub-bot-logic"},
-    {"file": "llm_subscriber.json", "process": "sub-llm"},
     {"file": "knowledge/*.md", "process": "sub-llm"},
-    {"file": "sub_visual.json", "process": "sub-visual"},
 ]
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -59,6 +58,18 @@ def _write_json(path: Path, content: str) -> dict[str, Any]:
     return payload
 
 
+def _save_json_config(path: Path, content: str) -> dict[str, Any]:
+    payload = _write_json(path, content)
+    module_id = CONFIG_FILE_MODULE_ID.get(path.name)
+    if module_id:
+        try_publish_config_changed(module_id=module_id, config_file=path.name)
+    return payload
+
+
+def _saved_reload_response() -> dict[str, str]:
+    return {"status": "saved", "reload": "config.changed"}
+
+
 def create_app(*, paths: ConfigPaths | None = None) -> FastAPI:
     config_paths = paths or _load_paths()
     app = FastAPI(title="Streamer Config GUI", docs_url="/api/docs")
@@ -91,8 +102,8 @@ def create_app(*, paths: ConfigPaths | None = None) -> FastAPI:
 
     @app.put("/api/bot-responses")
     def put_bot_responses(payload: TextPayload) -> dict[str, str]:
-        _write_json(config_paths.bot_responses, payload.content)
-        return {"status": "saved", "restart": "sub-bot-logic"}
+        _save_json_config(config_paths.bot_responses, payload.content)
+        return _saved_reload_response()
 
     @app.get("/api/redemption-responses")
     def get_redemption_responses() -> dict[str, str]:
@@ -100,8 +111,8 @@ def create_app(*, paths: ConfigPaths | None = None) -> FastAPI:
 
     @app.put("/api/redemption-responses")
     def put_redemption_responses(payload: TextPayload) -> dict[str, str]:
-        _write_json(config_paths.redemption_responses, payload.content)
-        return {"status": "saved", "restart": "sub-bot-logic"}
+        _save_json_config(config_paths.redemption_responses, payload.content)
+        return _saved_reload_response()
 
     @app.get("/api/llm-subscriber")
     def get_llm_subscriber() -> dict[str, str]:
@@ -109,8 +120,8 @@ def create_app(*, paths: ConfigPaths | None = None) -> FastAPI:
 
     @app.put("/api/llm-subscriber")
     def put_llm_subscriber(payload: TextPayload) -> dict[str, str]:
-        _write_json(config_paths.llm_subscriber, payload.content)
-        return {"status": "saved", "restart": "sub-llm"}
+        _save_json_config(config_paths.llm_subscriber, payload.content)
+        return _saved_reload_response()
 
     @app.get("/api/sub-visual")
     def get_sub_visual() -> dict[str, str]:
@@ -118,8 +129,8 @@ def create_app(*, paths: ConfigPaths | None = None) -> FastAPI:
 
     @app.put("/api/sub-visual")
     def put_sub_visual(payload: TextPayload) -> dict[str, str]:
-        _write_json(config_paths.sub_visual, payload.content)
-        return {"status": "saved", "restart": "sub-visual"}
+        _save_json_config(config_paths.sub_visual, payload.content)
+        return _saved_reload_response()
 
     @app.get("/api/knowledge")
     def list_knowledge() -> dict[str, list[str]]:

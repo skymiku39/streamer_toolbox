@@ -34,7 +34,7 @@
 | `egress-chat-send` | Egress | 已有 | `twitch-connector` | `send_message` |
 | `egress-tts` | Egress | 已有 | `sub-tts` | `tts/` |
 | `egress-subtitle` | Egress | 已有 | `sub-visual` | `subtitle.py` |
-| `local-dashboard` | LocalPC | 暫緩 | （客製 UI 層） | `twitch_api` `ui/main_window.py`；**不作為 Sub 設計**，將來可作 MQ 輸入端 |
+| `local-dashboard` | Control | 規劃中 | Dashboard Shell | 見 [architecture/control-plane.md](architecture/control-plane.md)；承接 `system.*` 監控與模組分頁，**不作為業務 Sub** |
 | `local-show` | LocalPC | 已有 | `sub-show-overlay` | overlay / desktop |
 | `local-vts` | LocalPC | Future | — | VTS 整合目前嵌在 `sub-character-face` |
 | `voice-clone` | LocalPC | 已有 | `voice-clone` | 離線語音克隆 CLI（OmniVoice）；可選、不接入 app/MQ |

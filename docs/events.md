@@ -22,6 +22,11 @@
 | `character.expression.ready` | character-face | character-stage | D |
 | `system.health` | 各 Sub | dashboard, monitor | 全部 |
 | `system.error` | 各 Sub | dashboard, monitor | 全部 |
+| `config.changed` | `streamer-config-gui`、Dashboard Shell（規劃） | 各 Sub（依 `module_id` filter） | 控制面 ✅ |
+| `control.profile.switch` | Dashboard Shell | App runner, 各 Sub（可選） | 控制面 📋 |
+| `control.llm.persona` | Dashboard Shell | `sub-llm` | 控制面 📋 |
+| `overlay.update` | Dashboard Shell | `sub-show-overlay`, obs-widgets | Show 📋 |
+| `control.module.enable` | Dashboard Shell | App runner | 控制面 🔮 |
 
 命名規則：`{domain}.{action}`；EventSub 事件為 `eventsub.{event_name}`（如 `eventsub.follow`）。
 
@@ -259,9 +264,99 @@ Twitch 直播 metadata 快照（`ingress-twitch-stream` 輪詢 GQL 發布；`sub
 }
 ```
 
+## 控制面 topic
+
+> **狀態：** `config.changed` **已實作**（Phase 1，`streamer-config-gui` 與 Sub 熱重載）；其餘 control topic **規劃中** — 詳見 [architecture/control-plane.md](architecture/control-plane.md)、[plans/control-plane-phase-01.md](plans/control-plane-phase-01.md)。  
+> 僅 **Dashboard Shell** 或受信任 CLI 可 publish；觀眾聊天 **不得** 觸發。
+
+### `config.changed`（L1 溫設定）
+
+設定檔已寫入 Config Store 後發布；訂閱者依 `module_id` 決定是否 reload。
+
+```json
+{
+  "schema_version": 1,
+  "topic": "config.changed",
+  "module_id": "rule-bot",
+  "profile_id": "default",
+  "config_file": "bot_responses.json",
+  "timestamp": "2026-06-15T10:00:00+08:00"
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `module_id` | 對應 [ModuleDescriptor](architecture/control-plane.md#moduledescriptor模組註冊契約) |
+| `profile_id` | 作用中的 profile；單 profile 部署可固定 `default` |
+| `config_file` | 變更的檔名（相對該 profile 目錄） |
+
+### `control.profile.switch`
+
+切換 active profile（換主播／測試對象、或整包設定）。
+
+```json
+{
+  "schema_version": 1,
+  "topic": "control.profile.switch",
+  "profile_id": "alice",
+  "previous_profile_id": "default",
+  "timestamp": "2026-06-15T10:00:00+08:00"
+}
+```
+
+### `control.llm.persona`（L2 熱設定）
+
+不切換整包 profile，僅切換 LLM 人格／prompt 模板。
+
+```json
+{
+  "schema_version": 1,
+  "topic": "control.llm.persona",
+  "profile_id": "default",
+  "persona_id": "playful",
+  "timestamp": "2026-06-15T10:00:00+08:00"
+}
+```
+
+### `overlay.update`（L2 熱設定）
+
+OBS Browser Source / overlay 文案即時更新。
+
+```json
+{
+  "schema_version": 1,
+  "topic": "overlay.update",
+  "widget_id": "title-marquee",
+  "scene": "default",
+  "html": "<div class=\"marquee\">今晚主題：...</div>",
+  "template_vars": {},
+  "timestamp": "2026-06-15T10:00:00+08:00"
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `widget_id` | 積木內元件 ID（跑馬燈、checklist 等） |
+| `html` | 完整 HTML 片段，或與 `template_vars` 搭配模板 |
+| `scene` | 可選；多場景 overlay 時區分 |
+
+### `control.module.enable`（🔮 Future）
+
+請求啟用或停用某 `module_id` 對應程序；實作可能僅「下次 `app.main` 啟動生效」。
+
+```json
+{
+  "schema_version": 1,
+  "topic": "control.module.enable",
+  "module_id": "schedule-announcer",
+  "enabled": true,
+  "timestamp": "2026-06-15T10:00:00+08:00"
+}
+```
+
 ## `system.health` / `system.error`
 
-供 App monitor 與 dashboard；各 Sub 可選發布。
+供 App monitor 與 Dashboard Shell Monitor 分頁；各 Sub 可選發布。
 
 ```json
 {
@@ -288,3 +383,4 @@ Twitch 直播 metadata 快照（`ingress-twitch-stream` 輪詢 GQL 發布；`sub
 - [modules.md](modules.md) — 誰 publish / subscribe
 - [packages.md](packages.md) — `events` 定義處（`packages/events`）
 - [solid.md](solid.md) — 依賴反轉
+- [architecture/control-plane.md](architecture/control-plane.md) — 控制面設計

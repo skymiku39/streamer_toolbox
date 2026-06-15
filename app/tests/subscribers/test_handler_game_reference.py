@@ -36,6 +36,7 @@ class CapturingLlm:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         self.last_game_reference = game_reference
         return AskResponse(reply="ok")

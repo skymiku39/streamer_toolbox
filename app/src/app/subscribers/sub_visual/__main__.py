@@ -11,9 +11,11 @@ from app.processes.registry import register_subscriber
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_VISUAL_CHAT_MESSAGE
 
 from bus.config import rabbitmq_url, stream_exchange
-from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
+from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_multi
 from bus.topology import QUEUE_VISUAL_CHAT_MESSAGE
-from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from events import TOPIC_CHAT_MESSAGE, TOPIC_CONFIG_CHANGED, ChatMessageEvent, ConfigChangedEvent
+
+from control import MODULE_VISUAL_EGRESS, active_profile_id
 
 from sub_visual.config import SubtitleConfig
 from sub_visual.service import SubtitleService
@@ -24,13 +26,18 @@ _DEFAULT_VISUAL_CONFIG = repo_root() / "config" / "sub_visual.json"
 
 
 class VisualSubscriber:
-    def __init__(self, service: SubtitleService, *, verbose: bool) -> None:
+    def __init__(self, service: SubtitleService, *, verbose: bool, config_path: Path) -> None:
         self._service = service
         self._verbose = verbose
+        self._config_path = config_path
         self._count = 0
         self._filtered = 0
 
     def handle(self, payload: dict) -> None:
+        topic = payload.get("topic")
+        if topic == TOPIC_CONFIG_CHANGED:
+            self._handle_config_changed(payload)
+            return
         event = ChatMessageEvent.from_dict(payload)
         update = self._service.handle_chat_message(event)
         if update is None:
@@ -57,6 +64,25 @@ class VisualSubscriber:
     @property
     def stats(self) -> tuple[int, int]:
         return self._count, self._filtered
+
+    def _handle_config_changed(self, payload: dict) -> None:
+        try:
+            event = ConfigChangedEvent.from_dict(payload)
+        except (KeyError, TypeError, ValueError):
+            return
+        if event.module_id != MODULE_VISUAL_EGRESS:
+            return
+        if event.profile_id != active_profile_id():
+            return
+        if event.config_file != "sub_visual.json":
+            return
+        config = SubtitleConfig.from_json_path(self._config_path)
+        self._service.reload_config(config)
+        print(
+            f"[{PROCESS_NAME}] reloaded config ({event.config_file})",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 @register_subscriber(
@@ -95,22 +121,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    config = SubtitleConfig.from_json_path(Path(args.config))
+    config_path = Path(args.config)
+    config = SubtitleConfig.from_json_path(config_path)
     if args.output_file:
         config.output_file = args.output_file
     if args.backend:
         config.backend = args.backend
 
     service = SubtitleService(config)
-    subscriber = VisualSubscriber(service, verbose=args.verbose)
+    subscriber = VisualSubscriber(service, verbose=args.verbose, config_path=config_path)
 
     connection = connect_blocking(rabbitmq_url())
     channel = connection.channel()
-    setup_subscriber_queue(
+    setup_subscriber_queue_multi(
         channel,
         exchange_name=stream_exchange(),
         queue_name=QUEUE_VISUAL_CHAT_MESSAGE,
-        routing_key=TOPIC_CHAT_MESSAGE,
+        routing_keys=[TOPIC_CHAT_MESSAGE, TOPIC_CONFIG_CHANGED],
     )
 
     print(

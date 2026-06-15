@@ -174,6 +174,7 @@ def test_stream_metadata_updates_context_for_reply() -> None:
             context: str,
             knowledge: str = "",
             game_reference: str = "",
+            session_recap_reference: str = "",
         ) -> AskResponse:
             captured["context"] = context
             return AskResponse(reply="metadata-aware reply")
@@ -346,6 +347,7 @@ class _MarkdownLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         return AskResponse(reply="**重點**：這是*測試*回覆")
 
@@ -374,6 +376,7 @@ class _LongReplyLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         return AskResponse(reply="這" * 80 + "。")
 
@@ -426,6 +429,7 @@ class _CountingLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         self.calls += 1
         return AskResponse(reply=f"answer-{self.calls}")
@@ -468,6 +472,7 @@ def test_bot_reply_appears_in_follow_up_ask_context() -> None:
             context: str,
             knowledge: str = "",
             game_reference: str = "",
+            session_recap_reference: str = "",
         ) -> AskResponse:
             captured.append(context)
             if len(captured) == 1:
@@ -505,6 +510,7 @@ def test_high_value_ask_publishes_memory_qa_record() -> None:
             context: str,
             knowledge: str = "",
             game_reference: str = "",
+            session_recap_reference: str = "",
         ) -> AskResponse:
             return AskResponse(
                 reply="我們在玩 DND 第五版",
@@ -589,3 +595,28 @@ def test_failed_output_releases_idempotency_for_retry(tmp_path) -> None:
     assert llm.calls == 2
     assert published == []
     store.close()
+
+
+def test_reload_config_updates_triggers() -> None:
+    published: list[tuple[str, dict]] = []
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+    )
+
+    subscriber.handle(_chat_payload("!quiz 第一題"))
+    assert published == []
+
+    subscriber.reload_config(
+        LlmSubscriberConfig(trigger_prefixes=["!quiz"]),
+        safety=PassThroughSafetyFilter(),
+    )
+    subscriber.handle(_chat_payload("!quiz 第一題"))
+
+    assert len(published) == 1
+    assert published[0][0] == TOPIC_CHAT_REPLY

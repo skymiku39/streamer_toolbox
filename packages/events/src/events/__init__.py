@@ -1,3 +1,4 @@
+from events.config_changed import ConfigChangedEvent
 from events.character_audio_ready import CharacterAudioReadyEvent
 from events.character_expression_ready import CharacterExpressionReadyEvent
 from events.character_turn import CharacterTurnEvent
@@ -33,9 +34,15 @@ from events.topics import (
     TOPIC_MEMORY_SUMMARIZE_REQUEST,
     TOPIC_MEMORY_SUMMARY_READY,
     TOPIC_MEMORY_QA_RECORD,
+    TOPIC_CONFIG_CHANGED,
+    TOPIC_CONTROL_PROFILE_SWITCH,
+    TOPIC_CONTROL_LLM_PERSONA,
+    TOPIC_OVERLAY_UPDATE,
+    TOPIC_CONTROL_MODULE_ENABLE,
 )
 
 __all__ = [
+    "ConfigChangedEvent",
     "CharacterAudioReadyEvent",
     "CharacterExpressionReadyEvent",
     "CharacterTurnEvent",
@@ -70,5 +77,10 @@ __all__ = [
     "TOPIC_MEMORY_SUMMARIZE_REQUEST",
     "TOPIC_MEMORY_SUMMARY_READY",
     "TOPIC_MEMORY_QA_RECORD",
+    "TOPIC_CONFIG_CHANGED",
+    "TOPIC_CONTROL_PROFILE_SWITCH",
+    "TOPIC_CONTROL_LLM_PERSONA",
+    "TOPIC_OVERLAY_UPDATE",
+    "TOPIC_CONTROL_MODULE_ENABLE",
     "eventsub_topic",
 ]

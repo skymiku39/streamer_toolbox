@@ -353,3 +353,16 @@ class LiveContextBuffer:
 
     def live_game_name(self, channel: str) -> str | None:
         return self._stream.live_game_name(channel)
+
+    def reconfigure(
+        self,
+        *,
+        window_minutes: int,
+        bot_reply_window_minutes: int,
+        bot_reply_max_pairs: int,
+    ) -> None:
+        window_seconds = max(1, window_minutes) * 60
+        self._stt._window_seconds = window_seconds
+        self._chat._window_seconds = window_seconds
+        self._bot_replies._window_seconds = max(1, bot_reply_window_minutes) * 60
+        self._bot_replies._max_pairs = max(1, bot_reply_max_pairs)

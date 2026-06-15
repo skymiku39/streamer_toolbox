@@ -104,21 +104,32 @@ Phase 01 的 RabbitMQ Pub/Sub 已於本專案 `streamer_toolbox` 實作（topic 
 | `system.health` | 各 Sub 週期發布；App 彙總 |
 | `system.error` | 例外與降級 |
 | 集中 log | App 收集各 Sub stdout 或 structlog |
-| Dashboard | 可選訂閱 `system.*` 與 `chat.message` 監控 |
+| Dashboard Shell | 見 [architecture/control-plane.md](architecture/control-plane.md)；訂閱 `system.*`、publish `config.*` / `control.*`（規劃中） |
 
 App **只監控不處理**業務事件內容（SOLID **S**）。
+
+## 部署拓撲
+
+程序跑在哪台機器（All-local、All-GCP、自架 VPS、Hybrid STT）見 [architecture/control-plane.md § 部署拓撲](architecture/control-plane.md#部署拓撲)。
+
+| 拓撲 | 文件 |
+|------|------|
+| GCP GCE 全後端 | [deployment-gcp.md](deployment-gcp.md) |
+| 自架 VPS | 同 GCP compose；[control-plane.md](architecture/control-plane.md) T3 |
+| 本機 STT + 遠端邏輯 | [control-plane.md](architecture/control-plane.md) T4 |
 
 ## 未來演進
 
 | 變更 | 條件 |
 |------|------|
-| **GCP 產品 C（AI 問答）** | [deployment-gcp.md](deployment-gcp.md) — GCE VM + Docker Compose 混合部署 |
-| Backend 上 VPS | 外部 MQ；Dashboard WebSocket 遠端 |
+| **Control Plane Dashboard** | [control-plane-phase-01.md](plans/control-plane-phase-01.md) |
 | EventSub Webhook | `ingress-webhook` + HTTPS |
-| 多頻道 | App 多 tenant 設定 |
+| Profile 多主播切換 | [control-plane.md](architecture/control-plane.md) |
 | LLM / 角色雲端化 | Sub 可部署 GPU 節點，仍經 MQ |
 
 ## 相關文件
 
+- [architecture/control-plane.md](architecture/control-plane.md) — 部署拓撲 T1～T4、Dashboard Shell
+- [deployment-gcp.md](deployment-gcp.md) — GCE runbook
 - [packages.md](packages.md) — 各 package 部署單元
 - [solid.md](solid.md) — 依賴規則

@@ -47,7 +47,37 @@ def test_meta_lists_paths(config_env):
     assert response.status_code == 200
     payload = response.json()
     assert payload["paths"]["root"] == str(paths.root)
-    assert len(payload["restart_hints"]) >= 4
+    assert len(payload["restart_hints"]) >= 1
+
+
+def test_put_bot_responses_publishes_config_changed(config_env, monkeypatch):
+    _, client = config_env
+    calls: list[tuple[str, str]] = []
+
+    def _fake_publish(*, module_id: str, config_file: str, profile_id: str | None = None) -> bool:
+        calls.append((module_id, config_file))
+        return True
+
+    monkeypatch.setattr(
+        "streamer_config_gui.app.try_publish_config_changed",
+        _fake_publish,
+    )
+    valid = json.dumps(
+        {
+            "schema_version": 2,
+            "keyword": [
+                {
+                    "trigger": "安安",
+                    "response": "哈囉 {author}",
+                    "match_mode": "contains",
+                }
+            ],
+        }
+    )
+    ok = client.put("/api/bot-responses", json={"content": valid})
+    assert ok.status_code == 200
+    assert ok.json() == {"status": "saved", "reload": "config.changed"}
+    assert calls == [("rule-bot", "bot_responses.json")]
 
 
 def test_put_bot_responses_validates_and_saves(config_env):

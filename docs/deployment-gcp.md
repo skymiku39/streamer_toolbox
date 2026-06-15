@@ -1,8 +1,13 @@
-# GCP 部署（產品 C：AI 問答）
+# GCP 部署（LLM Bot — AI Q&A）
 
 將 **Backend 全數部署在 GCE VM**，實況機**不必**跑 Python stack。對應 [operator-modes.md § AI 問答](operator-modes.md#方案ai-問答)：`ingress` stack 收聊天 + STT，`llm` stack 處理 `!ask` 並經 `twitch-connector` 發話。
 
-一般部署拓撲見 [deployment.md](deployment.md)；本文件為 GCP 混合架構 runbook。
+| 文件 | 內容 |
+|------|------|
+| [deployment.md](deployment.md) | Pub/Sub 部署邊界 |
+| [architecture/control-plane.md § 部署拓撲](architecture/control-plane.md#部署拓撲) | T2 All-GCP、T4 Hybrid 等拓撲對照 |
+
+本文件為 **T2 All-GCP** 的 GCE runbook（Compose、Secret Manager、bootstrap）。
 
 ## 架構
 

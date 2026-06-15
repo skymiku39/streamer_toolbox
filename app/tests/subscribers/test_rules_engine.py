@@ -137,3 +137,47 @@ def test_chat_reply_round_trip_via_engine(engine: BotRulesEngine) -> None:
     restored = json.loads(reply.to_json())
     assert restored["source"] == SOURCE_LOGIC_COMMANDS
     assert restored["correlation_id"] == "msg-001"
+
+
+def test_reload_picks_up_updated_ping_template(tmp_path: Path) -> None:
+    bot_path = tmp_path / "bot_responses.json"
+    redemption_path = tmp_path / "redemption_responses.json"
+    bot_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "command": {
+                    "templates": {"ping": "舊版 pong {author}"},
+                    "permissions": {"ping": {"enabled": True, "min_role": "viewer"}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    redemption_path.write_text("{}", encoding="utf-8")
+
+    engine = BotRulesEngine(
+        BotResponseMap(bot_path),
+        RedemptionResponseMap(redemption_path),
+        bot_identity="Test Bot",
+    )
+    before = engine.process_chat_message(_chat_message(content="!ping"))
+    assert before is not None
+    assert "舊版 pong" in before.content
+
+    bot_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "command": {
+                    "templates": {"ping": "新版 pong {author}"},
+                    "permissions": {"ping": {"enabled": True, "min_role": "viewer"}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    engine.reload()
+    after = engine.process_chat_message(_chat_message(content="!ping"))
+    assert after is not None
+    assert "新版 pong" in after.content

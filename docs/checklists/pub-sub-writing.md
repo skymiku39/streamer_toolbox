@@ -45,10 +45,10 @@
 | `app.workers` | Worker | ✅ | `memory.summary.ready` | —（讀 SQLite） | 記憶層 L2 |
 | `sub-memory-board` | Sub | ✅ | — | —（HTTP 讀 DB） | 維運 |
 | `sub-show-overlay` | Sub | ✅ | — | `chat.message` | A～D |
-| `sub-visual` | Sub | ✅ | — | `chat.message` | B, C |
+| `sub-visual` | Sub | ✅ | — | `chat.message`, `config.changed` | B, C |
 | `sub-tts` | Sub | ✅ | — | `chat.message` | B, C |
-| `sub-bot-logic` | Sub | ✅ | `chat.reply` | `chat.message`, `eventsub.*` | B, C |
-| `sub-llm` | Sub | ✅ | `chat.reply`, `memory.qa.record` | `chat.message`, `stt.segment` | C |
+| `sub-bot-logic` | Sub | ✅ | `chat.reply` | `chat.message`, `eventsub.*`, `config.changed` | B, C |
+| `sub-llm` | Sub | ✅ | `chat.reply`, `memory.qa.record` | `chat.message`, `stt.segment`, `stream.metadata`, `config.changed` | C |
 | `sub-qa-memory-structured` | Sub | ✅ | `memory.summary.ready` | `memory.qa.record` | C |
 | `sub-qa-memory-batch` | Sub | ✅ | — | `chat.reply` | C |
 | `twitch-connector` | Sub | ✅ | — | `chat.reply` | B～D |
@@ -607,6 +607,25 @@ OBS / 舞台同步（等 audio + face 就緒）。
 - [x] 以 `turn_id` 合併兩路事件（buffer 逾時策略）
 - [x] 觸發 OBS WebSocket 或場景切換（`STAGE_DRIVER=obs`）
 - [x] 不訂閱 `chat.message`（產品 D 第二層管線）
+
+---
+
+## 控制面（`packages/control`）
+
+| 項目 | 內容 |
+|------|------|
+| 套件 | `packages/control`：`ModuleDescriptor`、Registry、`try_publish_config_changed` |
+| 發布 | `config.changed`（`streamer-config-gui`、Dashboard Shell） |
+| 訂閱 | `sub-bot-logic`、`sub-llm`、`sub-visual`（依 `module_id` filter） |
+
+**撰寫清單**
+
+- [x] `events`：`TOPIC_CONFIG_CHANGED`、`ConfigChangedEvent` round-trip 測試
+- [x] Registry：`register()` / `get()` / `all_descriptors()`；重複 `module_id` 拒絕
+- [x] builtins：`rule-bot`、`llm-bot`、`show-overlay`、`visual-egress`
+- [x] Publisher：`publish_config_changed_blocking`、`try_publish_config_changed`（MQ 不可用時 warning）
+- [x] Sub 訂閱 `config.changed` 並 in-process reload（L1）
+- [x] `streamer-config-gui` PUT 儲存後 publish；knowledge `.md` 仍為 L0 重啟提示
 
 ---
 

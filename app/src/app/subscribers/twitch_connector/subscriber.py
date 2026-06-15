@@ -69,30 +69,6 @@ class ReplySubscriber:
                 )
                 return
             except UnsupportedPlatformError as exc:
-                # #region agent log
-                import json
-                import time
-                from pathlib import Path
-
-                Path("debug-5542a6.log").open("a", encoding="utf-8").write(
-                    json.dumps(
-                        {
-                            "sessionId": "5542a6",
-                            "hypothesisId": "E",
-                            "location": "subscriber.py:handle",
-                            "message": "unsupported platform on chat.reply",
-                            "data": {
-                                "platform": event.platform,
-                                "channel": event.channel,
-                                "error": str(exc)[:120],
-                            },
-                            "timestamp": int(time.time() * 1000),
-                        },
-                        ensure_ascii=False,
-                    )
-                    + "\n"
-                )
-                # #endregion
                 self._report_error(
                     str(exc),
                     detail={

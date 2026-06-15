@@ -42,6 +42,7 @@ testpaths = [
     "packages/stream-store/tests",
     "packages/identity-oauth/tests",
     "packages/game-info/tests",
+    "packages/control/tests",
     "packages/emotes/tests",
     "packages/voice-clone/tests",
     "tools/streamer-config-gui/tests",
@@ -53,6 +54,7 @@ pythonpath = [
     "app/src/app/publishers",
     "packages/emotes/src",
     "packages/streamer-config/src",
+    "packages/control/src",
     "packages/voice-clone/src",
     "tools/streamer-config-gui/src",
 ]
@@ -68,6 +70,7 @@ select = ["E", "F", "W", "I", "UP"]
 known-first-party = [
     "app",
     "bus",
+    "control",
     "emotes",
     "game_info",
     "identity_oauth",
