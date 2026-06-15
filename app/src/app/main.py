@@ -108,13 +108,22 @@ def cmd_run(args: argparse.Namespace) -> int:
             "與 stream.metadata（標題／遊戲）。",
             file=sys.stderr,
         )
+    elif args.stack == "status":
+        print(
+            "[runner] 提示：status stack 僅發布直播狀態至聊天室（不含 !ask）。"
+            "請在另一終端執行 "
+            "`uv run python -m app.main run --stack ingress`，"
+            "否則收不到 stream.metadata。"
+            "若需 !ask 問答請改跑 `--stack llm`（勿與 status 同時跑，會重複 twitch-connector）。",
+            file=sys.stderr,
+        )
 
     if not specs:
         print("No matching processes found.", file=sys.stderr)
         return 1
 
     if args.stack:
-        from app.processes.process_lock import acquire, release, stack_lock_name
+        from app.processes.process_lock import acquire, release, stack_lock_name, stop_all_command_hint
 
         lock_name = stack_lock_name(args.stack)
         if not acquire(lock_name, os.getpid()):
@@ -123,7 +132,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             print(
-                "[runner] 可執行：powershell -File scripts/stop_all.ps1",
+                f"[runner] 可執行：{stop_all_command_hint()}",
                 file=sys.stderr,
             )
             return 1

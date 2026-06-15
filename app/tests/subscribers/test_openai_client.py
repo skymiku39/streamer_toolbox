@@ -53,3 +53,52 @@ def test_ask_raises_on_http_error() -> None:
     with patch("sub_llm.openai_client.urllib.request.urlopen", side_effect=error):
         with pytest.raises(LlmApiError, match="500"):
             client.ask("問題", context="", knowledge="")
+
+
+def test_generate_startup_greeting_omits_json_mode_when_structured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("QA_MEMORY_MODE", "structured")
+    client = OpenAiCompatibleLlmClient(
+        base_url="https://example.com/v1",
+        api_key="test-key",
+        model="test-model",
+    )
+    seen_payloads: list[dict] = []
+
+    def fake_post(_path: str, payload: dict) -> dict:
+        seen_payloads.append(payload)
+        return {"choices": [{"message": {"content": "哈囉，我上線了！"}}]}
+
+    with patch.object(client, "_post_json", side_effect=fake_post):
+        greeting = client.generate_startup_greeting(
+            channel="skymiku39",
+            trigger_prefixes=("!ask",),
+        )
+
+    assert greeting == "哈囉，我上線了！"
+    assert seen_payloads
+    assert "response_format" not in seen_payloads[0]
+
+
+def test_generate_startup_greeting_unwraps_json_message(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("QA_MEMORY_MODE", "structured")
+    client = OpenAiCompatibleLlmClient(
+        base_url="https://example.com/v1",
+        api_key="test-key",
+        model="test-model",
+    )
+    content = json.dumps({"message": "哈囉！"}, ensure_ascii=False)
+
+    def fake_post(_path: str, _payload: dict) -> dict:
+        return {"choices": [{"message": {"content": content}}]}
+
+    with patch.object(client, "_post_json", side_effect=fake_post):
+        greeting = client.generate_startup_greeting(
+            channel="skymiku39",
+            trigger_prefixes=("!ask",),
+        )
+
+    assert greeting == "哈囉！"

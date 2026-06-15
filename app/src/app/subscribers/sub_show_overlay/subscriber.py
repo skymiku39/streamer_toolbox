@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import sys
 import threading
 from typing import Any
 
+from emotes import BadgeCatalog
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
 from bus.topology import QUEUE_SHOW_OVERLAY_CHAT_MESSAGE
@@ -21,7 +23,12 @@ class ShowOverlaySubscriber:
     def __init__(self, settings: OverlaySettings) -> None:
         self._settings = settings
         self._message_queue = OverlayMessageQueue(maxsize=settings.queue_size)
-        self._worker = OverlayRenderWorker(settings, self._message_queue)
+        badge_sources = self._load_badge_sources()
+        self._worker = OverlayRenderWorker(
+            settings,
+            self._message_queue,
+            badge_sources=badge_sources,
+        )
         self._http = OverlayHttpServer(
             host=settings.http_host,
             port=settings.http_port,
@@ -31,6 +38,18 @@ class ShowOverlaySubscriber:
 
     def handle(self, payload: dict[str, Any]) -> None:
         self._message_queue.put(payload)
+
+    @staticmethod
+    def _load_badge_sources() -> dict[str, str]:
+        try:
+            catalog = asyncio.run(BadgeCatalog.load_from_env())
+        except Exception as exc:
+            print(f"badge catalog unavailable: {exc}", file=sys.stderr, flush=True)
+            return {}
+        badge_urls = catalog.badge_urls
+        if badge_urls:
+            print(f"Loaded {len(badge_urls)} Twitch badge image URLs", file=sys.stderr, flush=True)
+        return badge_urls
 
     def _snapshot_payload(self) -> dict:
         writers = self._worker.writers

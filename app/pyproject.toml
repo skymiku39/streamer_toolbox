@@ -8,6 +8,7 @@ dependencies = [
     "bus",
     "chromadb>=0.5.0",
     "discord.py",
+    "emotes",
     "events",
     "faster-whisper>=1.1.0",
     "game-info",
@@ -19,6 +20,7 @@ dependencies = [
     "safety",
     "sounddevice>=0.5.0",
     "stream-store",
+    "streamer-config",
     "streamlink>=7.0.0",
     "ttvchat-lens",
     "tubechat-lens",
@@ -36,11 +38,13 @@ packages = ["src/app"]
 
 [tool.uv.sources]
 bus = { workspace = true }
+emotes = { workspace = true }
 events = { workspace = true }
 game-info = { workspace = true }
 identity-oauth = { workspace = true }
 safety = { workspace = true }
 stream-store = { workspace = true }
+streamer-config = { workspace = true }
 tts = { workspace = true }
 ttvchat-lens = { workspace = true }
 tubechat-lens = { workspace = true }

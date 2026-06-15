@@ -21,6 +21,7 @@ from events import (
 )
 from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
+from stream_store import StreamTextStore
 from stream_store.idempotency import IdempotencyStore
 
 from game_info import GameInfoProvider
@@ -30,8 +31,10 @@ from sub_llm.config import TWITCH_CHAT_MAX_CHARS, LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
+from sub_llm.live_activity import current_activity_context_hint, is_current_activity_question
 from sub_llm.llm import LlmClient
 from sub_llm.qa_memory_gate import should_persist_qa_memory
+from sub_llm.session_recap import build_session_recap_reference
 from sub_llm.triggers import TriggerMatcher
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
@@ -75,6 +78,7 @@ class LlmSubscriber:
         *,
         idempotency: IdempotencyStore | None = None,
         game_info: GameInfoProvider | None = None,
+        stream_store: StreamTextStore | None = None,
         skip_trigger_author_ids: frozenset[str] = frozenset(),
         skip_trigger_logins: frozenset[str] = frozenset(),
     ) -> None:
@@ -86,6 +90,7 @@ class LlmSubscriber:
         self._publish = publish
         self._idempotency = idempotency
         self._game_info = game_info
+        self._stream_store = stream_store
         self._skip_trigger_author_ids = skip_trigger_author_ids
         self._skip_trigger_logins = skip_trigger_logins
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
@@ -129,6 +134,31 @@ class LlmSubscriber:
         question = self._triggers.extract_question(event.content)
         if question is None:
             return
+
+        if event.platform == "youtube":
+            # #region agent log
+            import json
+            import time
+            from pathlib import Path
+
+            Path("debug-5542a6.log").open("a", encoding="utf-8").write(
+                json.dumps(
+                    {
+                        "sessionId": "5542a6",
+                        "hypothesisId": "E",
+                        "location": "handler.py:_handle_chat_message",
+                        "message": "youtube !ask trigger seen",
+                        "data": {
+                            "channel": event.channel,
+                            "message_id": (event.message_id or "")[:12],
+                        },
+                        "timestamp": int(time.time() * 1000),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+            # #endregion
 
         if _is_skipped_trigger_author(
             event,
@@ -178,10 +208,18 @@ class LlmSubscriber:
 
             busy_acquired = True
             channel = event.channel or ""
-            context = self._context_buffer.context_text(channel)
             stt_count, chat_count, bot_reply_count, context_len, has_stream = (
                 self._context_buffer.stats(channel)
             )
+            context = self._context_buffer.context_text(channel)
+            if is_current_activity_question(filtered_question):
+                context = (
+                    f"{context}\n\n" if context else ""
+                ) + current_activity_context_hint(has_stt=stt_count > 0)
+            elif stt_count == 0:
+                context = (
+                    f"{context}\n\n" if context else ""
+                ) + current_activity_context_hint(has_stt=False)
             print(
                 f"[sub-llm] context stream={has_stream} stt={stt_count} "
                 f"chat={chat_count} bot_replies={bot_reply_count} chars={context_len}",
@@ -209,6 +247,20 @@ class LlmSubscriber:
                     file=sys.stderr,
                     flush=True,
                 )
+            session_recap = build_session_recap_reference(
+                filtered_question,
+                channel=channel,
+                store=self._stream_store,
+            )
+            if session_recap.text:
+                print(
+                    f"session_recap summaries={session_recap.summary_count} "
+                    f"raw_stt={session_recap.raw_stt_count} "
+                    f"qa_excluded={session_recap.qa_summary_count} "
+                    f"chars={len(session_recap.text)}",
+                    file=sys.stderr,
+                    flush=True,
+                )
             author = (event.author_name or event.login or "?").strip()
             print(
                 f"!ask triggered author={author} question={filtered_question[:80]!r} "
@@ -221,6 +273,7 @@ class LlmSubscriber:
                 context=context,
                 knowledge=knowledge,
                 game_reference=game_reference,
+                session_recap_reference=session_recap.text,
             )
             filtered_reply = self._safety.filter_output(ask_result.reply)
             if filtered_reply is None:

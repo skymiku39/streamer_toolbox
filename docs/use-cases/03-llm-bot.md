@@ -8,6 +8,9 @@
 
 產品 B 基礎上增加 `sub-llm`。預設僅觸發詞（如 `!ask`）或 redemption 觸發 LLM。
 
+> **運作模式**：若只要 `!ask`、不要規則 Bot，用 [AI 問答](operator-modes.md#方案ai-問答)。  
+> 若要規則 Bot + LLM，用 [規則 Bot + AI](operator-modes.md#方案規則-bot--ai)。
+
 ## 現況：本專案已實作
 
 產品 C 已由 **streamer-toolbox** 內的 `sub-llm`、`ingress-twitch-audio`、`ingress-twitch-stream`、`twitch-connector` 等程序組裝，經 RabbitMQ 協作；記憶管線見 `sub-stream-record` + `app.workers`。啟動方式見 [getting-started.md](../getting-started.md) §3.4（`--stack ingress` + `--stack llm`）。

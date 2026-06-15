@@ -96,3 +96,23 @@ def test_chroma_summary_store_includes_qa_memory_when_mode_structured(
     }
     assert upsert_sources == {"chat", "qa"}
     store.close()
+
+
+def test_chroma_summary_store_excludes_qa_for_current_activity_question(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("QA_MEMORY_MODE", "structured")
+    store = _setup_store_with_qa_and_chat(tmp_path)
+    _mock_chroma(monkeypatch)
+
+    knowledge = ChromaSummaryKnowledgeStore(
+        store,
+        session_id=None,
+        chroma_dir=tmp_path / "chroma",
+    )
+    snippet = knowledge.query("主播剛剛在幹嘛", channel="room_a")
+
+    assert "777" in snippet or "梗" in snippet
+    assert "蒜頭王八" not in snippet
+    store.close()

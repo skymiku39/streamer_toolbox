@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 
 import pytest
 
@@ -12,6 +13,7 @@ from app.processes.process_lock import (
     pid_is_alive,
     release,
     stack_lock_name,
+    stop_all_command_hint,
     _lock_path,
 )
 
@@ -98,3 +100,11 @@ def test_legacy_stack_colon_name_is_sanitized(tmp_path, monkeypatch) -> None:
     assert acquire("stack:llm", 100, lock_dir=lock_dir) is True
     assert (lock_dir / "stack_llm.pid").is_file()
     release("stack:llm", 100, lock_dir=lock_dir)
+
+
+def test_stop_all_command_hint_platform_specific() -> None:
+    hint = stop_all_command_hint()
+    if sys.platform == "win32":
+        assert "stop_all.ps1" in hint
+    else:
+        assert "stop_all.sh" in hint

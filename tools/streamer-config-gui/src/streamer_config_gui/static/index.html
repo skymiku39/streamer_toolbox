@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streamer 設定小工具</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Streamer 設定小工具</h1>
+    <p class="subtitle">方案 A：只讀寫外部設定目錄，不介入 Bot 運作</p>
+  </header>
+
+  <section id="meta" class="panel">
+    <div class="meta-row">
+      <span><strong>設定目錄：</strong><code id="config-root">載入中…</code></span>
+      <span><strong>頻道：</strong><code id="channel-name">—</code></span>
+      <button id="bootstrap-btn" type="button">初始化範例檔</button>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="bot" type="button">指令與關鍵字</button>
+    <button class="tab" data-tab="redemption" type="button">點數兌換</button>
+    <button class="tab" data-tab="llm" type="button">LLM</button>
+    <button class="tab" data-tab="visual" type="button">字幕</button>
+  </nav>
+
+  <main>
+    <section class="tab-panel active" data-panel="bot">
+      <h2>bot_responses.json</h2>
+      <textarea id="bot-editor" spellcheck="false"></textarea>
+      <div class="actions">
+        <button type="button" data-save="bot-responses">儲存</button>
+        <button type="button" class="secondary" data-reload="bot-responses">重新載入</button>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="redemption">
+      <h2>redemption_responses.json</h2>
+      <textarea id="redemption-editor" spellcheck="false"></textarea>
+      <div class="actions">
+        <button type="button" data-save="redemption-responses">儲存</button>
+        <button type="button" class="secondary" data-reload="redemption-responses">重新載入</button>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="llm">
+      <h2>llm_subscriber.json</h2>
+      <textarea id="llm-config-editor" spellcheck="false"></textarea>
+      <div class="actions">
+        <button type="button" data-save="llm-subscriber">儲存</button>
+        <button type="button" class="secondary" data-reload="llm-subscriber">重新載入</button>
+      </div>
+
+      <h2 id="knowledge-title">knowledge/*.md</h2>
+      <select id="knowledge-select"></select>
+      <textarea id="knowledge-editor" spellcheck="false"></textarea>
+      <div class="actions">
+        <button type="button" data-save-knowledge>儲存知識庫</button>
+        <button type="button" class="secondary" data-reload-knowledge>重新載入</button>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-panel="visual">
+      <h2>sub_visual.json</h2>
+      <textarea id="visual-editor" spellcheck="false"></textarea>
+      <div class="actions">
+        <button type="button" data-save="sub-visual">儲存</button>
+        <button type="button" class="secondary" data-reload="sub-visual">重新載入</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="panel">
+    <p id="status" class="status">就緒</p>
+    <ul id="restart-hints"></ul>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

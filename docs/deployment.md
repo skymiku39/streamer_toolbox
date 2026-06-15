@@ -112,6 +112,7 @@ App **只監控不處理**業務事件內容（SOLID **S**）。
 
 | 變更 | 條件 |
 |------|------|
+| **GCP 產品 C（AI 問答）** | [deployment-gcp.md](deployment-gcp.md) — GCE VM + Docker Compose 混合部署 |
 | Backend 上 VPS | 外部 MQ；Dashboard WebSocket 遠端 |
 | EventSub Webhook | `ingress-webhook` + HTTPS |
 | 多頻道 | App 多 tenant 設定 |

@@ -4,6 +4,7 @@ import hashlib
 from datetime import datetime
 from typing import Any
 
+from emotes import EmoteRegistry, parse_irc_emotes_tag
 from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 from ttvchat_lens import ChatMessage
 
@@ -60,13 +61,21 @@ def should_publish(msg: ChatMessage) -> bool:
     return True
 
 
-def map_chat_message(msg: ChatMessage, channel: str) -> ChatMessageEvent | None:
+def map_chat_message(
+    msg: ChatMessage,
+    channel: str,
+    *,
+    emote_registry: EmoteRegistry | None = None,
+) -> ChatMessageEvent | None:
     """將 ttvchat_lens.ChatMessage 轉成 pkg-events ChatMessageEvent。"""
     if not should_publish(msg):
         return None
 
     message_id = msg.message_id.strip() or _fallback_message_id(msg, channel)
     tags = msg.raw if isinstance(msg.raw, dict) else {}
+    emote_url_map = parse_irc_emotes_tag(str(tags.get("emotes", "") or ""), msg.message)
+    if emote_registry is not None:
+        emote_url_map = emote_registry.enrich(msg.message, emote_url_map)
 
     return ChatMessageEvent(
         schema_version=1,
@@ -81,5 +90,6 @@ def map_chat_message(msg: ChatMessage, channel: str) -> ChatMessageEvent | None:
         else str(msg.timestamp),
         channel=channel,
         badges=_parse_badges(tags),
+        emote_url_map=emote_url_map,
         raw=_build_raw(msg),
     )

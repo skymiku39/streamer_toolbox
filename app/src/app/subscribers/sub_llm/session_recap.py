@@ -1,0 +1,175 @@
+from __future__ import annotations
+
+import os
+import re
+from dataclasses import dataclass
+
+from stream_store import StreamTextStore, resolve_session_for_channel
+
+from sub_llm.live_activity import is_current_activity_question
+
+_SESSION_RECAP = re.compile(
+    r"今天|本場|這場|開台以來|整場|做了哪些|做了什麼|實現了|完成哪些|進度如何|實作了|開發了",
+)
+
+_RECAP_GUIDANCE = (
+    "請依下方摘要與語音原文逐條列舉具體工作項目（工具名、功能名、開啟的軟體等）；"
+    "勿以「有提到但沒詳細說／目前還不清楚」當主體回覆。"
+    "若摘要與原文皆無細節，才允許一句交代。"
+    "勿把觀眾暱稱當成主播名字；「今天 XXX 做了…」應指實況主本人。"
+)
+
+_RECAP_SUMMARY_SOURCES = frozenset({"chat", "stt"})
+
+
+def _debug_log(*, hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    # #region agent log
+    try:
+        import json
+        import time
+
+        payload = {
+            "sessionId": "6eed9f",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }
+        with open("debug-6eed9f.log", "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+    # #endregion
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _recap_summary_limit() -> int:
+    return max(1, int(os.environ.get("LLM_SESSION_RECAP_SUMMARY_LIMIT", "30")))
+
+
+def _recap_raw_stt_limit() -> int:
+    return max(1, int(os.environ.get("LLM_SESSION_RECAP_RAW_STT_LIMIT", "80")))
+
+
+def _recap_max_chars() -> int:
+    return max(100, int(os.environ.get("LLM_SESSION_RECAP_MAX_CHARS", "8000")))
+
+
+def should_enrich_session_recap(question: str) -> bool:
+    """觀眾明確問及本場／今天進度時才查；一般知識題與當下實況題不查。"""
+    if not _env_bool("LLM_SESSION_RECAP_ENABLED", True):
+        return False
+    stripped = question.strip()
+    if not stripped:
+        return False
+    if is_current_activity_question(stripped):
+        return False
+    return bool(_SESSION_RECAP.search(stripped))
+
+
+@dataclass(frozen=True)
+class SessionRecapReference:
+    text: str
+    summary_count: int
+    raw_stt_count: int
+    qa_summary_count: int = 0
+
+
+def build_session_recap_reference(
+    question: str,
+    *,
+    channel: str,
+    store: StreamTextStore | None,
+    session_id: str | None = None,
+) -> SessionRecapReference:
+    """依問題意圖從 L2 摘要與未摘要 STT 組裝本場回顧參考（按需 enrichment）。"""
+    empty = SessionRecapReference(text="", summary_count=0, raw_stt_count=0)
+    if store is None or not should_enrich_session_recap(question):
+        return empty
+
+    explicit = (session_id or (os.environ.get("STREAM_SESSION_ID") or "").strip() or None)
+    resolved_session = resolve_session_for_channel(
+        store,
+        channel,
+        explicit_session_id=explicit,
+    )
+    if resolved_session is None:
+        _debug_log(
+            hypothesis_id="H1",
+            location="session_recap.py:build_session_recap_reference",
+            message="no session_id",
+            data={"channel": channel},
+        )
+        return empty
+
+    all_summaries = store.list_summaries(
+        resolved_session,
+        limit=_recap_summary_limit(),
+        ascending=True,
+    )
+    qa_summary_count = sum(1 for item in all_summaries if item.source == "qa")
+    summaries = [
+        item for item in all_summaries if item.source in _RECAP_SUMMARY_SOURCES
+    ]
+    stt_pending = store.fetch_unsummarized_stt(
+        resolved_session,
+        channel=channel or None,
+        limit=_recap_raw_stt_limit(),
+        recent=True,
+    )
+    stt_range = ""
+    if stt_pending:
+        stt_range = f"{stt_pending[0].timestamp[:19]}..{stt_pending[-1].timestamp[:19]}"
+
+    _debug_log(
+        hypothesis_id="H2,H3",
+        location="session_recap.py:build_session_recap_reference",
+        message="recap sources",
+        data={
+            "session_id": resolved_session,
+            "all_summaries": len(all_summaries),
+            "qa_summaries": qa_summary_count,
+            "chat_stt_summaries": len(summaries),
+            "raw_stt": len(stt_pending),
+            "stt_range": stt_range,
+        },
+    )
+
+    if not summaries and not stt_pending:
+        return empty
+
+    sections: list[str] = ["【本場回顧參考】", _RECAP_GUIDANCE, ""]
+    if summaries:
+        sections.append(
+            f"【本場時間軸摘要（共 {len(summaries)} 段 chat/stt，依時間由舊到新）】"
+        )
+        for summary in summaries:
+            sections.append(
+                f"[{summary.source}] {summary.period_start} .. {summary.period_end}\n"
+                f"{summary.content.strip()}"
+            )
+        sections.append("")
+
+    if stt_pending:
+        sections.append(f"【最新語音原文（尚未摘要，{len(stt_pending)} 段）】")
+        for record in stt_pending:
+            sections.append(f"[{record.timestamp}] {record.text.strip()}")
+
+    text = "\n".join(sections).strip()
+    max_chars = _recap_max_chars()
+    if len(text) > max_chars:
+        text = text[: max_chars - 3] + "..."
+
+    return SessionRecapReference(
+        text=text,
+        summary_count=len(summaries),
+        raw_stt_count=len(stt_pending),
+        qa_summary_count=qa_summary_count,
+    )

@@ -16,6 +16,12 @@ def _resolve_lock_dir(lock_dir: Path | None) -> Path:
     return lock_dir if lock_dir is not None else _LOCK_DIR
 
 
+def stop_all_command_hint() -> str:
+    if sys.platform == "win32":
+        return "powershell -NoProfile -File scripts/stop_all.ps1"
+    return "bash scripts/stop_all.sh"
+
+
 def _sanitize_lock_name(process_name: str) -> str:
     """Windows 不允許 `:` 等字元；`stack:llm` 會變成 ADS 檔 `stack`，導致鎖失效。"""
     safe = process_name.replace("/", "_").replace("\\", "_")
@@ -141,7 +147,7 @@ def acquire_process_lock(
     if process_name in held:
         print(
             f"process '{process_name}' 已在目前程序中持有鎖。"
-            f"請先 Ctrl+C 關閉舊程序，或執行 scripts/stop_all.ps1",
+            f"請先 Ctrl+C 關閉舊程序，或執行 {stop_all_command_hint()}",
             file=sys.stderr,
         )
         raise SystemExit(1)
@@ -151,7 +157,7 @@ def acquire_process_lock(
         holder_text = f"（PID {holder}）"
         print(
             f"process '{process_name}' 已在執行{holder_text}。"
-            f"請先 Ctrl+C 關閉舊程序，或執行 scripts/stop_all.ps1",
+            f"請先 Ctrl+C 關閉舊程序，或執行 {stop_all_command_hint()}",
             file=sys.stderr,
         )
         raise SystemExit(1)
@@ -161,7 +167,7 @@ def acquire_process_lock(
             holder_text = f"（PID {holder}）"
             print(
                 f"process '{process_name}' 已在執行{holder_text}。"
-                f"請先 Ctrl+C 關閉舊程序，或執行 scripts/stop_all.ps1",
+                f"請先 Ctrl+C 關閉舊程序，或執行 {stop_all_command_hint()}",
                 file=sys.stderr,
             )
             raise SystemExit(1)

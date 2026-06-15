@@ -7,7 +7,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from sub_llm.ask_response import AskResponse, parse_ask_response
+from sub_llm.ask_response import AskResponse, parse_ask_response, parse_plain_llm_text
 from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
@@ -86,12 +86,14 @@ class OpenAiCompatibleLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         messages = build_ask_messages(
             question,
             context=context,
             knowledge=knowledge,
             game_reference=game_reference,
+            session_recap_reference=session_recap_reference,
             system_prompt=self._system_prompt,
         )
         if os.environ.get("LLM_DEBUG_PROMPT", "").strip().lower() in {"1", "true", "yes", "on"}:
@@ -100,6 +102,7 @@ class OpenAiCompatibleLlmClient:
                 context=context,
                 knowledge=knowledge,
                 game_reference=game_reference,
+                session_recap_reference=session_recap_reference,
                 system_prompt=self._system_prompt,
             )
             print(
@@ -107,9 +110,11 @@ class OpenAiCompatibleLlmClient:
                 f"context_len={analysis['context_len']} "
                 f"knowledge_len={analysis['knowledge_len']} "
                 f"game_len={analysis['game_reference_len']} "
+                f"session_recap_len={analysis['session_recap_len']} "
                 f"stt={analysis['has_stt_marker']} "
                 f"chat={analysis['has_chat_marker']} "
                 f"game_ref={analysis['has_game_reference_marker']} "
+                f"session_recap={analysis['has_session_recap_marker']} "
                 f"static_kb={analysis['has_static_kb_marker']} "
                 f"memory={analysis['has_memory_marker']}",
                 file=sys.stderr,
@@ -135,20 +140,23 @@ class OpenAiCompatibleLlmClient:
                 ),
             },
         ]
-        return self._complete(messages, temperature=0.9)
+        raw = self._complete(messages, temperature=0.9, json_mode=False)
+        return parse_plain_llm_text(raw)
 
     def _complete(
         self,
         messages: list[dict[str, str]],
         *,
         temperature: float,
+        json_mode: bool | None = None,
     ) -> str:
         payload: dict[str, Any] = {
             "model": self._model,
             "messages": messages,
             "temperature": temperature,
         }
-        if structured_ask_enabled():
+        use_json = structured_ask_enabled() if json_mode is None else json_mode
+        if use_json:
             payload["response_format"] = {"type": "json_object"}
         response = self._post_json("chat/completions", payload)
         choices = response.get("choices", [])

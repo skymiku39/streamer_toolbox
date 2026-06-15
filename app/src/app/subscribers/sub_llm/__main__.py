@@ -23,12 +23,20 @@ from stream_store.idempotency import IdempotencyStore, default_idempotency_db_pa
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
-from sub_llm.factory import create_knowledge_store, create_llm_client, preload_knowledge_store
+from sub_llm.factory import (
+    create_knowledge_store,
+    create_llm_client,
+    create_stream_text_store,
+    preload_knowledge_store,
+)
 from sub_llm.game_context import create_game_info_provider
 from sub_llm.startup_announcement import publish_startup_announcement, resolve_announcement_channel
+from streamer_config.paths import repo_root, resolve_path
 
 PROCESS_NAME = "sub-llm"
-DEFAULT_CONFIG_PATH = "config/llm_subscriber.json"
+_REPO_ROOT = repo_root()
+DEFAULT_CONFIG_PATH = _REPO_ROOT / "config" / "llm_subscriber.json"
+DEFAULT_KNOWLEDGE_PATH = _REPO_ROOT / "data" / "knowledge"
 NAMESPACE_STARTUP = "sub_llm.startup"
 
 
@@ -51,7 +59,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--config",
-        default=os.environ.get("LLM_SUBSCRIBER_CONFIG", DEFAULT_CONFIG_PATH),
+        default=str(
+            resolve_path("llm_subscriber", legacy_default=DEFAULT_CONFIG_PATH)
+        ),
         help="觸發詞與安全設定 JSON 路徑（可選，缺省讀環境變數）",
     )
     parser.add_argument(
@@ -62,7 +72,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--knowledge-path",
-        default=os.environ.get("LLM_KNOWLEDGE_PATH", ""),
+        default=str(
+            resolve_path("knowledge_dir", legacy_default=DEFAULT_KNOWLEDGE_PATH)
+        ),
         help="知識庫檔案或目錄路徑（可選）",
     )
     args = parser.parse_args(argv)
@@ -128,6 +140,7 @@ def main(argv: list[str] | None = None) -> int:
 
     idempotency = IdempotencyStore(default_idempotency_db_path())
     game_info = create_game_info_provider()
+    stream_store = create_stream_text_store()
     game_info_mode = "igdb" if game_info is not None else "disabled"
     context_buffer = LiveContextBuffer(
         window_minutes=config.context_window_minutes,
@@ -144,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
         publish=publish,
         idempotency=idempotency,
         game_info=game_info,
+        stream_store=stream_store,
         skip_trigger_author_ids=skip_author_ids,
         skip_trigger_logins=skip_logins,
     )

@@ -158,19 +158,24 @@ class StreamTextStore:
         *,
         channel: str | None = None,
         limit: int = 500,
+        recent: bool = False,
     ) -> list[TextRecord]:
         channel_sql, channel_params = self._channel_clause(channel)
+        order = "DESC" if recent else "ASC"
         rows = self._conn.execute(
             f"""
             SELECT id, session_id, source, timestamp, text, author, channel, message_id
             FROM text_records
             WHERE session_id = ? AND source = 'stt' AND summarized = 0{channel_sql}
-            ORDER BY timestamp ASC
+            ORDER BY timestamp {order}
             LIMIT ?
             """,
             (session_id, *channel_params, limit),
         ).fetchall()
-        return [_row_to_record(row) for row in rows]
+        records = [_row_to_record(row) for row in rows]
+        if recent:
+            records.reverse()
+        return records
 
     def fetch_unsummarized_merged(
         self,

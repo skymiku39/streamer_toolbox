@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from app.processes.registry import register_publisher
 from bus.topology import DEFAULT_EXCHANGE
 
+from emotes import EmoteRegistry
+
 from identity_oauth import MultiAccountTokenProvider
 from ingress_twitch_eventsub.bot import EventSubIngressBot
 from ingress_twitch_eventsub.publisher import MqEventPublisher
@@ -67,6 +69,14 @@ async def run(channel: str) -> None:
     publisher = MqEventPublisher(exchange, publish_chat=publish_chat)
 
     normalized_channel = channel.lstrip("#")
+    emote_registry = await EmoteRegistry.load_for_user_id(channel_creds.broadcaster_id)
+    if emote_registry.token_map:
+        print(
+            f"Loaded {len(emote_registry.token_map)} third-party emote tokens",
+            file=sys.stderr,
+            flush=True,
+        )
+
     bot = EventSubIngressBot(
         client_id=channel_creds.client_id,
         client_secret=channel_creds.client_secret,
@@ -79,6 +89,7 @@ async def run(channel: str) -> None:
         broadcaster_id=channel_creds.broadcaster_id,
         broadcaster_type=channel_creds.broadcaster_type,
         publisher=publisher,
+        emote_registry=emote_registry,
     )
 
     print(

@@ -7,12 +7,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from sub_llm.ask_response import (
-    AskResponse,
-    gemini_ask_response_schema,
-    parse_ask_response,
-)
-from app.subscribers.qa_memory_mode import structured_ask_enabled
+from sub_llm.ask_response import AskResponse, parse_ask_response
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.prompt_assembly import build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
@@ -100,12 +95,14 @@ class GeminiGroundedLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         messages = build_ask_messages(
             question,
             context=context,
             knowledge=knowledge,
             game_reference=game_reference,
+            session_recap_reference=session_recap_reference,
             system_prompt=self._system_prompt,
         )
         user_content = next(m["content"] for m in messages if m["role"] == "user")
@@ -152,6 +149,7 @@ class GeminiGroundedLlmClient:
                 context=context,
                 knowledge=knowledge,
                 game_reference=game_reference,
+                session_recap_reference=session_recap_reference,
             )
 
     def generate_startup_greeting(
@@ -166,10 +164,9 @@ class GeminiGroundedLlmClient:
         )
 
     def _generate_with_google_search(self, system: str, user: str) -> str:
+        # Google Search 工具與 responseMimeType=application/json 不相容；
+        # structured 模式改由 prompt 要求 JSON，再由 parse_ask_response 解析。
         generation_config: dict[str, Any] = {"temperature": 0.7}
-        if structured_ask_enabled():
-            generation_config["responseMimeType"] = "application/json"
-            generation_config["responseSchema"] = gemini_ask_response_schema()
         payload: dict[str, Any] = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],

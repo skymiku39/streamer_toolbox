@@ -133,6 +133,31 @@ def test_fallback_message_id_is_stable_without_timestamp() -> None:
     assert first.message_id == second.message_id
 
 
+def test_map_irc_emotes_tag() -> None:
+    msg = _text_message(
+        message="Hello Kappa",
+        raw={
+            "id": "msg-001",
+            "display-name": "Viewer",
+            "user-id": "999",
+            "emotes": "25:6-10",
+        },
+    )
+    event = map_chat_message(msg, "skymiku39")
+    assert event is not None
+    assert event.emote_url_map["Kappa"].endswith("/static/dark/2.0")
+
+
+def test_map_third_party_emotes_via_registry() -> None:
+    from emotes import EmoteRegistry
+
+    registry = EmoteRegistry({"PepeLaugh": "https://cdn.example/pepe.png"})
+    msg = _text_message(message="nice PepeLaugh")
+    event = map_chat_message(msg, "skymiku39", emote_registry=registry)
+    assert event is not None
+    assert event.emote_url_map["PepeLaugh"] == "https://cdn.example/pepe.png"
+
+
 def test_empty_author_name_falls_back_to_anonymous() -> None:
     msg = _text_message(author_name="")
     event = map_chat_message(msg, "skymiku39")

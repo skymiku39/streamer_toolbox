@@ -25,6 +25,7 @@ flowchart LR
 | 文件 | 職責 |
 |------|------|
 | [getting-started.md](getting-started.md) | **營運者**：安裝、驗證、啟動 Bot |
+| [operator-modes.md](operator-modes.md) | **營運者**：方案選擇、**分層**啟用表（Ingress/Logic/Egress） |
 | [solid.md](solid.md) | SOLID 準則、反例、新 Sub 檢查清單 |
 | [modules.md](modules.md) | 模組目錄、產品 A～D、App 啟用表 |
 | [events.md](events.md) | Topic 與 payload 契約（**唯一 schema 來源**） |

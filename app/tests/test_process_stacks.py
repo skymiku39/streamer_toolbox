@@ -19,4 +19,9 @@ def test_resolve_stack_llm() -> None:
 
 
 def test_process_stacks_keys() -> None:
-    assert set(PROCESS_STACKS) == {"ingress", "llm"}
+    assert set(PROCESS_STACKS) == {"ingress", "status", "llm"}
+
+
+def test_resolve_stack_status() -> None:
+    names = resolve_stack("status")
+    assert names == ["sub-live-status", "twitch-connector"]

@@ -14,10 +14,13 @@ import re
 import signal
 import threading
 import time
+import urllib.error
+import urllib.request
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import unquote, urlparse
 
 import pytchat
 
@@ -50,10 +53,68 @@ _YT_URL_PATTERNS = (
     re.compile(r"(?:youtu\.be/|youtube\.com/(?:watch\?v=|live/|embed/|shorts/))([\w\-]{11})"),
     re.compile(r"[?&]v=([\w\-]{11})"),
 )
+_YT_HANDLE_PATH = re.compile(r"^/@([^/]+)")
+_OG_WATCH_URL = re.compile(
+    r'property="og:url" content="https://www\.youtube\.com/watch\?v=([\w\-]{11})"'
+)
+_FETCH_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/126.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+}
+
+
+def _extract_channel_handle(video: str) -> str | None:
+    """從頻道 handle、@ 網址或 hello_streamer 風格的頻道名稱抽出 handle。"""
+
+    text = video.strip()
+    if not text or re.fullmatch(r"[\w\-]{11}", text):
+        return None
+
+    for pattern in _YT_URL_PATTERNS:
+        if pattern.search(text):
+            return None
+
+    parsed = urlparse(text if "://" in text else f"https://{text}")
+    host = parsed.netloc.lower().removeprefix("www.")
+    if host == "youtube.com":
+        handle_match = _YT_HANDLE_PATH.match(unquote(parsed.path))
+        if handle_match:
+            return handle_match.group(1)
+
+    if text.startswith("@"):
+        handle = text[1:].strip()
+        return handle or None
+
+    if re.fullmatch(r"[\w.\-]{3,30}", text):
+        return text
+
+    return None
+
+
+def _fetch_live_video_id_from_handle(handle: str, *, timeout: float = 15.0) -> str:
+    """透過 /@handle/live 的 og:url 解析目前直播影片 ID（對齊 hello_streamer fallback）。"""
+
+    url = f"https://www.youtube.com/@{handle}/live"
+    req = urllib.request.Request(url, headers=_FETCH_HEADERS)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            html = response.read().decode("utf-8", errors="replace")
+    except urllib.error.URLError as exc:
+        raise ValueError(f"無法取得 YouTube 頻道直播頁面: @{handle}") from exc
+
+    match = _OG_WATCH_URL.search(html)
+    if match:
+        return match.group(1)
+
+    raise ValueError(f"頻道 @{handle} 目前沒有進行中的直播，或無法解析直播影片 ID")
 
 
 def normalize_video_id(video: str) -> str:
-    """從輸入抽出 11 碼影片 ID。"""
+    """從輸入抽出 11 碼影片 ID；亦支援頻道 handle / @ 網址（自動解析直播）。"""
 
     video = video.strip()
     if re.fullmatch(r"[\w\-]{11}", video):
@@ -63,6 +124,11 @@ def normalize_video_id(video: str) -> str:
         match = pattern.search(video)
         if match:
             return match.group(1)
+
+    handle = _extract_channel_handle(video)
+    if handle:
+        return _fetch_live_video_id_from_handle(handle)
+
     raise ValueError(f"無法從輸入解析出 YouTube 影片 ID: {video!r}")
 
 
@@ -190,10 +256,50 @@ class LiveChatReader:
         self._stopped = False
         with _suppress_signal_in_thread():
             self._chat = pytchat.create(video_id=self.video_id)
+        # #region agent log
+        import json
+        import time
+        from pathlib import Path
+
+        def _agent_log(hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
+            Path("debug-5542a6.log").open("a", encoding="utf-8").write(
+                json.dumps(
+                    {
+                        "sessionId": "5542a6",
+                        "hypothesisId": hypothesis_id,
+                        "location": location,
+                        "message": message,
+                        "data": data or {},
+                        "timestamp": int(time.time() * 1000),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+
+        _agent_log(
+            "C",
+            "reader.py:iter_messages",
+            "pytchat created",
+            {"video_id": self.video_id, "is_alive": bool(self._chat.is_alive())},
+        )
+        # #endregion
+        poll_rounds = 0
         try:
             while self._chat.is_alive() and not self._stopped:
+                poll_rounds += 1
                 items = list(self._chat.get().sync_items())
                 if not items:
+                    if poll_rounds in {1, 5, 30}:
+                        _agent_log(
+                            "C",
+                            "reader.py:iter_messages",
+                            "poll empty",
+                            {
+                                "poll_rounds": poll_rounds,
+                                "is_alive": bool(self._chat.is_alive()),
+                            },
+                        )
                     if self._stopped:
                         break
                     time.sleep(self.poll_interval)
@@ -203,6 +309,18 @@ class LiveChatReader:
                         break
                     yield ChatMessage.from_pytchat(item)
         finally:
+            # #region agent log
+            _agent_log(
+                "C",
+                "reader.py:iter_messages",
+                "iter_messages exit",
+                {
+                    "poll_rounds": poll_rounds,
+                    "is_alive": bool(self._chat.is_alive()) if self._chat else False,
+                    "stopped": self._stopped,
+                },
+            )
+            # #endregion
             self.close()
 
     def start(self) -> None:

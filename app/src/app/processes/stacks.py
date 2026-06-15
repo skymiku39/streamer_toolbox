@@ -16,8 +16,15 @@ STACK_LLM = (
     "twitch-connector",
 )
 
+# 僅發布直播狀態至聊天室（不含 !ask 問答）；需搭配 --stack ingress 收 metadata。
+STACK_STATUS = (
+    "sub-live-status",
+    "twitch-connector",
+)
+
 PROCESS_STACKS: dict[str, tuple[str, ...]] = {
     "ingress": STACK_INGRESS,
+    "status": STACK_STATUS,
     "llm": STACK_LLM,
 }
 

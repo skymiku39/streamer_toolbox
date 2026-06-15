@@ -82,6 +82,11 @@ def _create_static_knowledge_store(knowledge_path: str) -> KnowledgeStore:
     )
 
 
+def create_stream_text_store() -> StreamTextStore:
+    db_path = os.environ.get("STREAM_DB_PATH", "data/stream_text.db")
+    return StreamTextStore(db_path)
+
+
 def create_knowledge_store(path: str | None = None) -> KnowledgeStore:
     stores: list[KnowledgeStore] = []
 

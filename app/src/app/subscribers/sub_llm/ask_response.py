@@ -49,13 +49,44 @@ def gemini_ask_response_schema() -> dict:
     }
 
 
+_PLAIN_TEXT_KEYS = ("reply", "message", "content", "text")
+
+
+def _strip_json_fence(text: str) -> str:
+    if text.startswith("```"):
+        return _JSON_FENCE.sub("", text).strip()
+    return text
+
+
+def _extract_plain_text_from_json_dict(data: dict) -> str:
+    for key in _PLAIN_TEXT_KEYS:
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def parse_plain_llm_text(raw: str) -> str:
+    """從 LLM 原始輸出取得可發送至聊天室的純文字（若為 JSON 則抽取常見欄位）。"""
+    text = _strip_json_fence(raw.strip())
+    if not text:
+        return ""
+    if text.startswith("{") and text.endswith("}"):
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+        if isinstance(data, dict):
+            extracted = _extract_plain_text_from_json_dict(data)
+            if extracted:
+                return extracted
+    return text
+
+
 def parse_ask_response(raw: str) -> AskResponse:
-    text = raw.strip()
+    text = _strip_json_fence(raw.strip())
     if not text:
         return AskResponse(reply="")
-
-    if text.startswith("```"):
-        text = _JSON_FENCE.sub("", text).strip()
 
     if text.startswith("{") and text.endswith("}"):
         try:
@@ -63,7 +94,7 @@ def parse_ask_response(raw: str) -> AskResponse:
         except json.JSONDecodeError:
             data = None
         if isinstance(data, dict):
-            reply = str(data.get("reply", "")).strip()
+            reply = _extract_plain_text_from_json_dict(data)
             if reply:
                 return AskResponse(
                     reply=reply,

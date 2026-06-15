@@ -1,0 +1,3 @@
+[submodule "packages/voice-clone/vendor/OmniVoice"]
+	path = packages/voice-clone/vendor/OmniVoice
+	url = https://github.com/k2-fsa/OmniVoice.git

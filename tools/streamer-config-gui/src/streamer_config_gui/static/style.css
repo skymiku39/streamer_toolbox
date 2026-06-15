@@ -1,0 +1,156 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #0f1419;
+  color: #e7ecf3;
+  min-height: 100vh;
+}
+
+header,
+.panel,
+main,
+.tabs {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+header {
+  padding-top: 1.5rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: #9aa7b8;
+}
+
+.panel {
+  margin-top: 1rem;
+  background: #1a2330;
+  border: 1px solid #2a3647;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+code {
+  background: #0b1016;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.tab {
+  background: #1a2330;
+  color: #c5d0de;
+  border: 1px solid #2a3647;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #2d6cdf;
+  border-color: #2d6cdf;
+  color: #fff;
+}
+
+main {
+  padding-bottom: 1rem;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem;
+}
+
+textarea,
+select {
+  width: 100%;
+  background: #0b1016;
+  color: #e7ecf3;
+  border: 1px solid #2a3647;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 0.9rem;
+}
+
+textarea {
+  min-height: 320px;
+  resize: vertical;
+}
+
+select {
+  margin-bottom: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+button {
+  background: #2d6cdf;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #2a3647;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+.status {
+  margin: 0;
+}
+
+.status.ok {
+  color: #7ddea2;
+}
+
+.status.error {
+  color: #ff8f8f;
+}
+
+footer ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: #9aa7b8;
+}

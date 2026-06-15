@@ -16,8 +16,9 @@ def _answer_guidance(reply_max_length: int | None = None) -> str:
     return (
         "【回答方式】直接回答觀眾問題，語氣自然，全文繁體中文（台灣），禁止簡體字。"
         + reply_length_guidance(limit)
-        + "上下文沒提到的，最多一句帶過，仍須用知識庫、遊戲資料、網路搜尋或通識補足；"
+        +         "上下文沒提到的，最多一句帶過，仍須用知識庫、遊戲資料、網路搜尋或通識補足；"
         "勿反覆「直播中…」，勿只說沒提到就結束。"
+        "知識庫與記憶摘要為歷史紀錄，不代表此刻畫面；直播標題僅供參考，不可當成當下實況描述。"
         "知識庫摘要若記載你過去曾回「沒提到」，那是歷史紀錄，不代表這次也要這樣答。"
     )
 
@@ -28,6 +29,7 @@ def build_ask_messages(
     context: str,
     knowledge: str = "",
     game_reference: str = "",
+    session_recap_reference: str = "",
     system_prompt: str | None = None,
     reply_max_length: int | None = None,
 ) -> list[dict[str, str]]:
@@ -52,6 +54,8 @@ def build_ask_messages(
         user_sections.append(f"知識庫參考：\n{knowledge.strip()}")
     if game_reference.strip():
         user_sections.append(f"遊戲資料參考：\n{game_reference.strip()}")
+    if session_recap_reference.strip():
+        user_sections.append(f"本場回顧參考：\n{session_recap_reference.strip()}")
     user_sections.append(_answer_guidance(limit))
     if structured_ask_enabled():
         user_sections.append(structured_output_guidance(limit))
@@ -66,6 +70,7 @@ def analyze_prompt_payload(
     context: str,
     knowledge: str = "",
     game_reference: str = "",
+    session_recap_reference: str = "",
     system_prompt: str | None = None,
 ) -> dict:
     """剖析 prompt 各區塊是否含預期記憶標記。"""
@@ -74,6 +79,7 @@ def analyze_prompt_payload(
         context=context,
         knowledge=knowledge,
         game_reference=game_reference,
+        session_recap_reference=session_recap_reference,
         system_prompt=system_prompt,
     )
     user_content = next(m["content"] for m in messages if m["role"] == "user")
@@ -89,7 +95,16 @@ def analyze_prompt_payload(
         knowledge_body = knowledge_body.strip()
     game_body = ""
     if "遊戲資料參考：" in user_content:
-        game_body = user_content.split("遊戲資料參考：", 1)[1].split("\n\n觀眾問題：", 1)[0].strip()
+        game_body = user_content.split("遊戲資料參考：", 1)[1].split("\n\n本場回顧參考：", 1)[0]
+        if "\n\n觀眾問題：" in game_body:
+            game_body = game_body.split("\n\n觀眾問題：", 1)[0]
+        game_body = game_body.strip()
+    session_recap_body = ""
+    if "本場回顧參考：" in user_content:
+        session_recap_body = user_content.split("本場回顧參考：", 1)[1].split("\n\n觀眾問題：", 1)[0]
+        if "\n\n【回答方式】" in session_recap_body:
+            session_recap_body = session_recap_body.split("\n\n【回答方式】", 1)[0]
+        session_recap_body = session_recap_body.strip()
     context_body = ""
     if "近期直播上下文：" in user_content:
         context_body = user_content.split("近期直播上下文：", 1)[1].split("\n\n知識庫參考：", 1)[0]
@@ -104,6 +119,7 @@ def analyze_prompt_payload(
         "context_len": len(context_body),
         "knowledge_len": len(knowledge_body),
         "game_reference_len": len(game_body),
+        "session_recap_len": len(session_recap_body),
         "user_len": len(user_content),
         "has_stt_marker": "【直播逐字稿" in context_body,
         "has_chat_marker": "【近期聊天室" in context_body,
@@ -111,6 +127,7 @@ def analyze_prompt_payload(
         "has_static_kb_marker": "【實況主知識庫】" in knowledge_body,
         "has_memory_marker": "【近期直播摘要】" in knowledge_body,
         "has_game_reference_marker": "【遊戲資料參考：" in game_body,
+        "has_session_recap_marker": "【本場回顧參考】" in session_recap_body,
         "has_general_knowledge_hint": "通識" in system_content,
         "messages": messages,
     }

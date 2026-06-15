@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from emotes import EmoteRegistry, twitch_emote_cdn_url
 from events import ChatMessageEvent, EventSubEvent, TOPIC_CHAT_MESSAGE, eventsub_topic
 
 SCHEMA_VERSION = 1
@@ -56,9 +57,7 @@ def _build_emote_url_map(message: Any) -> dict[str, str]:
             continue
         formats = getattr(emote, "format", []) or []
         fmt = "animated" if "animated" in formats else "static"
-        emote_map[frag_text] = (
-            f"https://static-cdn.jtvnw.net/emoticons/v2/{emote_id}/{fmt}/dark/2.0"
-        )
+        emote_map[frag_text] = twitch_emote_cdn_url(emote_id, animated=fmt == "animated")
     return emote_map
 
 
@@ -74,7 +73,12 @@ def _badges_from_chatter(chatter: Any) -> list[dict[str, str]]:
     return badges
 
 
-def chat_message_from_eventsub(message: Any, *, default_channel: str = "") -> ChatMessageEvent:
+def chat_message_from_eventsub(
+    message: Any,
+    *,
+    default_channel: str = "",
+    emote_registry: EmoteRegistry | None = None,
+) -> ChatMessageEvent:
     chatter = getattr(message, "chatter", None)
     broadcaster = getattr(message, "broadcaster", None)
     channel = _login_name(broadcaster) or default_channel.lstrip("#")
@@ -96,6 +100,11 @@ def chat_message_from_eventsub(message: Any, *, default_channel: str = "") -> Ch
         raw["shared_chat"] = True
         raw["source_channel"] = _login_name(source_broadcaster)
 
+    content = str(getattr(message, "text", "") or "")
+    emote_url_map = _build_emote_url_map(message)
+    if emote_registry is not None:
+        emote_url_map = emote_registry.enrich(content, emote_url_map)
+
     return ChatMessageEvent(
         schema_version=SCHEMA_VERSION,
         topic=TOPIC_CHAT_MESSAGE,
@@ -104,11 +113,11 @@ def chat_message_from_eventsub(message: Any, *, default_channel: str = "") -> Ch
         author_name=_display_name(chatter),
         login=_login_name(chatter),
         author_id=_user_id(chatter),
-        content=str(getattr(message, "text", "") or ""),
+        content=content,
         timestamp=_iso(getattr(message, "timestamp", None)),
         channel=channel,
         badges=_badges_from_chatter(chatter),
-        emote_url_map=_build_emote_url_map(message),
+        emote_url_map=emote_url_map,
         reply=reply_payload,
         raw=raw,
     )

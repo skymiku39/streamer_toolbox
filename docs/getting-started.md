@@ -2,6 +2,9 @@
 
 本文件給**想實際跑直播 Bot、較少改程式**的使用者。若你要開發或修改模組，請改看 [development.md](development.md)。
 
+**不確定要開哪種 Bot？** 請先看 **[運作模式指南](operator-modes.md)**（用兩個問題選方案）。  
+本文件 §3 walkthrough 的是 **「AI 問答」方案**——含 `!ask`，**不含**規則 Bot。若要規則 + AI，見 [規則 Bot + AI](operator-modes.md#方案規則-bot--ai)。
+
 整體流程：安裝 → 自動驗證 → 手動看聊天（Phase 01）→ 設定 OAuth 與 LLM → 雙終端跑 Bot。
 
 ## 前置需求
@@ -105,9 +108,10 @@ uv run python -m app.main run ingress-ttv-read
 
 ---
 
-## 第 3 層：實際跑 LLM Bot
+## 第 3 層：實際跑 LLM Bot（AI 問答方案）
 
-要讓 Bot 在聊天室**發話**並回覆 `!ask`，需額外設定 OAuth、LLM 與知識庫。
+要讓 Bot 在聊天室**發話**並回覆 `!ask`，需額外設定 OAuth、LLM 與知識庫。  
+**本節不會啟動規則 Bot**；完整版見 [規則 Bot + AI](operator-modes.md#方案規則-bot--ai)。
 
 ### 3.1 最少 `.env` 設定
 
@@ -152,14 +156,24 @@ uv run python -m identity_oauth --role bot
 
 詳細設計見 [architecture/identity-auth.md](architecture/identity-auth.md)、[use-cases/04-oauth.md](use-cases/04-oauth.md)。
 
-### 3.3 知識庫
+### 3.3 知識庫與外部設定目錄
 
 ```powershell
-# 複製範本到 data/knowledge/（僅目標不存在時）
+# 建立外部設定目錄（方案 A；含知識庫範本）
+powershell -NoProfile -File scripts/setup_user_config.ps1
+
+# 或僅複製知識庫到 data/knowledge/（舊路徑，仍相容）
 powershell -NoProfile -File scripts/setup_knowledge.ps1
 ```
 
-編輯 `data/knowledge/{TWITCH_CHANNEL}.md`（人設、指令、回覆風格等）。格式說明見 [config/knowledge/README.md](../config/knowledge/README.md)。
+編輯知識庫：
+
+- **建議**（有設 `STREAMER_CONFIG_DIR`）：`%USERPROFILE%\streamer-config\knowledge\{TWITCH_CHANNEL}.md`
+- **相容路徑**：`data/knowledge/{TWITCH_CHANNEL}.md`
+
+可用設定小工具編輯：`uv run streamer-config-gui` → http://127.0.0.1:1426
+
+格式說明見 [config/knowledge/README.md](../config/knowledge/README.md)。
 
 驗證 Chroma 是否可讀：
 
@@ -225,6 +239,7 @@ powershell -NoProfile -File scripts/stop_all.ps1
 
 | 目標 | 文件 |
 |------|------|
+| **選運作模式**（LLM only / 規則 Bot / 完整版） | [operator-modes.md](operator-modes.md) |
 | 開發、測試、pre-commit | [development.md](development.md) |
 | 模組與產品組合 | [modules.md](modules.md) |
 | OAuth 與雙帳號設計 | [architecture/identity-auth.md](architecture/identity-auth.md) |

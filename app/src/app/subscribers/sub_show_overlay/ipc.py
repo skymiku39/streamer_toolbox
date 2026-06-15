@@ -69,6 +69,16 @@ class OverlaySnapshotWriter:
             self._emote_assets = updated
             self._content_revision += 1
 
+    def merge_badge_sources(self, badge_sources: dict[str, str]) -> None:
+        if not badge_sources:
+            return
+        updated = dict(self._badge_sources)
+        updated.update(badge_sources)
+        if updated != self._badge_sources:
+            self._badge_sources = updated
+            self._presentation_revision += 1
+            self.write_snapshot()
+
     def snapshot_dict(self) -> dict[str, Any]:
         return {
             "version": 3,

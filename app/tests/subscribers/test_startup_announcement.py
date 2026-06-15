@@ -6,6 +6,7 @@ from safety import PassThroughSafetyFilter
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.llm import TemplateLlmClient
 from sub_llm.startup_announcement import (
+    ensure_trigger_instruction,
     publish_startup_announcement,
     resolve_announcement_channel,
     startup_announcement_enabled,
@@ -26,6 +27,17 @@ def test_startup_announcement_can_be_disabled(monkeypatch) -> None:
 def test_resolve_announcement_channel_strips_hash(monkeypatch) -> None:
     monkeypatch.setenv("TWITCH_CHANNEL", "#skymiku39")
     assert resolve_announcement_channel() == "skymiku39"
+
+
+def test_ensure_trigger_instruction_appends_when_missing() -> None:
+    result = ensure_trigger_instruction("大家好！", ("!ask",))
+    assert "!ask" in result
+    assert "你的問題" in result
+
+
+def test_ensure_trigger_instruction_keeps_existing_trigger() -> None:
+    original = "有問題請打 !ask 提問"
+    assert ensure_trigger_instruction(original, ("!ask",)) == original
 
 
 def test_publish_startup_announcement_publishes_chat_reply(monkeypatch) -> None:

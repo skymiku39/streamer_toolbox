@@ -24,6 +24,7 @@ from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_EVENTSUB_PREFIX
 from sub_bot_logic.redemption_map import RedemptionResponseMap
 from sub_bot_logic.response_map import BotResponseMap
 from sub_bot_logic.rules_engine import BotRulesEngine
+from streamer_config.paths import resolve_path
 
 PROCESS_NAME = "sub-bot-logic"
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -82,12 +83,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--responses",
-        default=os.environ.get("BOT_RESPONSES_PATH", str(DEFAULT_RESPONSES)),
+        default=str(
+            resolve_path("bot_responses", legacy_default=DEFAULT_RESPONSES)
+        ),
         help="bot_responses.json 路徑",
     )
     parser.add_argument(
         "--redemptions",
-        default=os.environ.get("BOT_REDEMPTIONS_PATH", str(DEFAULT_REDEMPTIONS)),
+        default=str(
+            resolve_path("redemption_responses", legacy_default=DEFAULT_REDEMPTIONS)
+        ),
         help="redemption_responses.json 路徑",
     )
     parser.add_argument(

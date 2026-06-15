@@ -8,6 +8,7 @@ from collections.abc import Callable
 from events import SOURCE_LOGIC_LLM, TOPIC_CHAT_REPLY, ChatReplyEvent
 from safety import SafetyFilter
 
+from sub_llm.ask_response import parse_plain_llm_text
 from sub_llm.chat_format import cap_reply_for_chat, plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
@@ -17,11 +18,19 @@ from sub_llm.startup_messages import build_degraded_startup_announcement
 _STARTUP_SYSTEM_PROMPT = (
     "你是 Twitch 直播聊天室的 AI 助手，剛完成上線。"
     "請用一句有趣、親切、不油膩的繁體中文（台灣用語）向觀眾打招呼，禁止簡體字，"
-    "並自然提到可以用觸發詞提問。"
+    "並明確告訴觀眾要用觸發詞提問。"
     "語氣像直播間朋友，可帶一點幽默或可愛感。"
     "勿使用 Markdown，一兩句即可，正文不超過 120 字（不含 @ 標記與標點）。"
-    "勿在訊息中逐字寫出觸發詞（例如 !ask），改以口語描述如何提問。"
+    "必須在訊息中逐字寫出觸發詞（例如 !ask），並示範格式「!ask 你的問題」。"
 )
+
+
+def ensure_trigger_instruction(text: str, trigger_prefixes: tuple[str, ...]) -> str:
+    """確保上線宣告含可操作的觸發詞用法。"""
+    primary = trigger_prefixes[0] if trigger_prefixes else "!ask"
+    if primary in text:
+        return text
+    return f"{text.rstrip()} 有問題請輸入「{primary} 你的問題」！"
 
 
 def startup_announcement_enabled() -> bool:
@@ -80,7 +89,14 @@ def publish_startup_announcement(
             error=exc,
         )
 
-    filtered_reply = safety.filter_output(plain_text_for_chat(raw_reply))
+    filtered_reply = safety.filter_output(
+        plain_text_for_chat(
+            ensure_trigger_instruction(
+                parse_plain_llm_text(raw_reply),
+                tuple(config.trigger_prefixes),
+            )
+        )
+    )
     if not filtered_reply:
         print("[sub-llm] startup announcement blocked by safety filter", file=sys.stderr, flush=True)
         return False

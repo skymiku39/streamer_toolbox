@@ -15,7 +15,7 @@ type: emoji [AI] subject
 
 - 正文使用**繁體中文**，聚焦「為何變更」
 - 僅允許上述 `type: emoji [AI] subject` 格式
-- **僅在使用者明確要求時**才 commit
+- **禁止**舊式 commit 前綴（以 `[AI` 開頭、後接已停用的提交標記）；`pre-commit` 的 `commit-msg` hook 會直接拒絕
 - 不提交 `.env`、憑證、token 等機密檔案
 - `pre-commit` 的 `commit-msg` hook 會拒絕不符合格式的訊息
 

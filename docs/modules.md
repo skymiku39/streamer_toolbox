@@ -37,6 +37,7 @@
 | `local-dashboard` | LocalPC | 暫緩 | （客製 UI 層） | `twitch_api` `ui/main_window.py`；**不作為 Sub 設計**，將來可作 MQ 輸入端 |
 | `local-show` | LocalPC | 已有 | `sub-show-overlay` | overlay / desktop |
 | `local-vts` | LocalPC | Future | — | VTS 整合目前嵌在 `sub-character-face` |
+| `voice-clone` | LocalPC | 已有 | `voice-clone` | 離線語音克隆 CLI（OmniVoice）；可選、不接入 app/MQ |
 
 ## 產品定義
 
@@ -63,7 +64,14 @@
 
 ### 產品 C — LLM BOT
 
-產品 B Required + `logic-llm` + `safety-filter`（輸入+輸出）+ `ingress-twitch-audio`（STT，可選但建議）+ `ingress-twitch-stream`（直播 metadata，建議）+ 記憶管線（`stream-record`、`memory-worker`；可選 `qa-memory-*`、`memory-board`）。
+**完整定義**：產品 B 模組 + `logic-llm` + `safety-filter` + `ingress-twitch-audio`（建議）+ `ingress-twitch-stream`（建議）+ 記憶管線。
+
+**實務上有兩種開法**（詳見 [operator-modes.md](operator-modes.md)）：
+
+| 開法 | 含 `sub-bot-logic`？ | 典型啟動 |
+|------|:--------------------:|----------|
+| **精簡**（`getting-started` 預設） | 否 | `--stack ingress` + `--stack llm` |
+| **完整** | 是 | `ingress-twitch-eventsub` + `sub-bot-logic` + `--stack llm` |
 
 → [03-llm-bot.md](use-cases/03-llm-bot.md) · 記憶管線詳見 [architecture/stream-memory-pipeline.md](architecture/stream-memory-pipeline.md)
 
@@ -101,7 +109,7 @@
 | Pub | topic | A | B | C | D |
 |-----|-------|:-:|:-:|:-:|:-:|
 | `ingress-yt/ttv-read` | `chat.message` | ● | —² | —² | ○ |
-| `ingress-twitch-eventsub` | `chat.message` | ○ | ● | ● | ○ |
+| `ingress-twitch-eventsub` | `chat.message` | ○ | ● | ●⁶ | ○ |
 | 同上 | `eventsub.*` | — | ● | ● | — |
 | `ingress-twitch-audio` | `stt.segment` | — | — | ○ | — |
 | `ingress-twitch-stream` | `stream.metadata` | — | — | ○ | — |
@@ -119,7 +127,7 @@
 | `sub-show-overlay` | `chat.message` | ● | ○ | ○ | ○ |
 | `sub-visual` | `chat.message` | — | ○ | ○ | — |
 | `sub-tts` | `chat.message` | — | ○ | ○ | — |
-| `sub-bot-logic` | `chat.message`, `eventsub.*` | — | ● | ● | — |
+| `sub-bot-logic` | `chat.message`, `eventsub.*` | — | ● | ○⁵ | — |
 | `sub-llm` | `chat.message`, `stt.segment`, `stream.metadata` | — | — | ● | — |
 | `sub-stream-record` | `chat.message`, `stt.segment` | — | ○ | ○ | — |
 | `sub-qa-memory-structured` | `memory.qa.record` | — | — | ○⁴ | — |
@@ -135,6 +143,10 @@
 
 ⁴ 依 `QA_MEMORY_MODE` 擇一啟用；`--stack llm` 會啟動兩者，非對應模式者自動 idle 退出。
 
+⁵ 產品 C **精簡**（`--stack ingress` + `--stack llm`）不啟動；**完整**版才需要 ●。
+
+⁶ 產品 C **精簡**用 `--stack ingress`（內含 `ingress-ttv-read`）；**完整**版用 `ingress-twitch-eventsub`。
+
 客製控制面板（UI 層）暫不納入啟用表；原則上可作 **Publisher** 將操作轉為 topic（契約待定）。
 
 ### Worker（非 MQ Sub）
@@ -149,7 +161,8 @@
 A: ingress-read → MQ → sub-show
 B: oauth → ingress-eventsub → MQ → sub-bot → connector
    （降級: ingress-ttv-read 取代 eventsub）
-C: B + --stack ingress + --stack llm + app.workers（記憶）
+C: 精簡: --stack ingress + --stack llm（無 sub-bot-logic）
+   完整: ingress-eventsub + sub-bot-logic + --stack llm + app.workers（可選）
    ingress stack: ingress-ttv-read, ingress-twitch-audio, ingress-twitch-stream, sub-stream-record
    llm stack: sub-llm, sub-qa-memory-*, twitch-connector
 D: ingress → MQ → character-brain → character.turn → (voice + face) → stage → OBS

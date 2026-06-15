@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from app.processes.registry import register_publisher
 from bus.topology import DEFAULT_EXCHANGE
 
+from emotes import EmoteRegistry
+
 from ingress_ttv_read.publisher import run_publisher
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
@@ -50,8 +52,16 @@ async def run(channel: str) -> None:
         flush=True,
     )
 
+    emote_registry = await EmoteRegistry.load_for_channel_login(channel.lstrip("#"))
+    if emote_registry.token_map:
+        print(
+            f"Loaded {len(emote_registry.token_map)} third-party emote tokens",
+            file=sys.stderr,
+            flush=True,
+        )
+
     try:
-        await run_publisher(channel, publish)
+        await run_publisher(channel, publish, emote_registry=emote_registry)
     finally:
         idempotency.close()
         await connection.close()

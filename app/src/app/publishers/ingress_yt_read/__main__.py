@@ -26,6 +26,29 @@ def _resolve_video(*, cli_video: str) -> str:
     return ""
 
 
+def _agent_log(hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
+    # #region agent log
+    import json
+    import time
+    from pathlib import Path
+
+    Path("debug-5542a6.log").open("a", encoding="utf-8").write(
+        json.dumps(
+            {
+                "sessionId": "5542a6",
+                "hypothesisId": hypothesis_id,
+                "location": location,
+                "message": message,
+                "data": data or {},
+                "timestamp": int(time.time() * 1000),
+            },
+            ensure_ascii=False,
+        )
+        + "\n"
+    )
+    # #endregion
+
+
 async def run(video: str) -> None:
     connection = await connect_async(rabbitmq_url())
     mq_channel = await connection.channel()
@@ -68,6 +91,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     video = _resolve_video(cli_video=args.video)
+    _agent_log(
+        "B",
+        "ingress_yt_read/__main__.py:main",
+        "resolved video config",
+        {
+            "has_cli_video": bool(args.video.strip()),
+            "has_yt_channel_env": bool(os.environ.get("YT_CHANNEL", "").strip()),
+            "has_yt_video_env": bool(os.environ.get("YT_VIDEO", "").strip()),
+            "resolved": bool(video),
+        },
+    )
     if not video:
         print("YT_CHANNEL, YT_VIDEO must be set or pass --video", file=sys.stderr)
         return 1

@@ -32,3 +32,12 @@ debug-*.log
 
 # Runtime data (SQLite, exports)
 data/
+
+# voice-clone runtime artifacts
+packages/voice-clone/models/
+packages/voice-clone/checkpoints/
+packages/voice-clone/outputs/
+packages/voice-clone/.voice_clone_cache/
+packages/voice-clone/vendor/OmniVoice/.venv/
+packages/voice-clone/_ref_text.txt
+packages/voice-clone/_target_text.txt

@@ -14,8 +14,9 @@ class LlmClient(Protocol):
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
-        """依問題、STT 上下文、知識庫與遊戲資料產出結構化回覆。"""
+        """依問題、STT 上下文、知識庫、遊戲資料與本場回顧參考產出結構化回覆。"""
 
     def generate_startup_greeting(
         self,
@@ -36,6 +37,7 @@ class TemplateLlmClient:
         context: str,
         knowledge: str = "",
         game_reference: str = "",
+        session_recap_reference: str = "",
     ) -> AskResponse:
         from app.subscribers.qa_memory_mode import structured_ask_enabled
 
@@ -48,7 +50,13 @@ class TemplateLlmClient:
         game_hint = ""
         if game_reference.strip():
             game_hint = "（已參考遊戲資料）"
-        reply = f"關於「{question}」：這是模擬回覆{context_hint}{knowledge_hint}{game_hint}。"
+        recap_hint = ""
+        if session_recap_reference.strip():
+            recap_hint = "（已參考本場回顧）"
+        reply = (
+            f"關於「{question}」：這是模擬回覆"
+            f"{context_hint}{knowledge_hint}{game_hint}{recap_hint}。"
+        )
         if structured_ask_enabled():
             return AskResponse(
                 reply=reply,

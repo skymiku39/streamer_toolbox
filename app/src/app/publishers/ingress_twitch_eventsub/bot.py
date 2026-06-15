@@ -32,6 +32,8 @@ from twitchio.models.eventsub_ import (
     StreamOnline,
 )
 
+from emotes import EmoteRegistry
+
 from ingress_twitch_eventsub.chat_status import (
     CHAT_FALLBACK_EXIT_CODE,
     CHAT_INGRESS_EVENTSUB,
@@ -88,6 +90,7 @@ class EventSubIngressBot(commands.Bot):
         broadcaster_id: str,
         broadcaster_type: str,
         publisher: EventPublisher,
+        emote_registry: EmoteRegistry | None = None,
     ) -> None:
         super().__init__(
             client_id=client_id,
@@ -104,6 +107,7 @@ class EventSubIngressBot(commands.Bot):
         self.broadcaster_type = broadcaster_type
         self.bot_channels = channels
         self._publisher = publisher
+        self._emote_registry = emote_registry
         self._first_chat = FirstChatTracker()
         self.chat_read_ok = False
         self._failed_subs: list[tuple] = []
@@ -186,7 +190,11 @@ class EventSubIngressBot(commands.Bot):
 
     async def event_message(self, message: ChatMessage) -> None:
         default_channel = self.bot_channels[0].lstrip("#") if self.bot_channels else ""
-        chat_event = chat_message_from_eventsub(message, default_channel=default_channel)
+        chat_event = chat_message_from_eventsub(
+            message,
+            default_channel=default_channel,
+            emote_registry=self._emote_registry,
+        )
         await self._publisher.publish_chat(chat_event)
 
         source_broadcaster = getattr(message, "source_broadcaster", None)

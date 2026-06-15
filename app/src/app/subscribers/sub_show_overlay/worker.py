@@ -18,10 +18,12 @@ class OverlayRenderWorker:
         self,
         settings: OverlaySettings,
         message_queue: OverlayMessageQueue,
+        *,
+        badge_sources: dict[str, str] | None = None,
     ) -> None:
         self._settings = settings
         self._message_queue = message_queue
-        self._writers = self._build_writers(settings)
+        self._writers = self._build_writers(settings, badge_sources=badge_sources or {})
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name="overlay-render", daemon=True)
         self._processed = 0
@@ -45,7 +47,12 @@ class OverlayRenderWorker:
         self._stop.set()
         self._thread.join(timeout=5)
 
-    def _build_writers(self, settings: OverlaySettings) -> list[OverlaySnapshotWriter]:
+    def _build_writers(
+        self,
+        settings: OverlaySettings,
+        *,
+        badge_sources: dict[str, str],
+    ) -> list[OverlaySnapshotWriter]:
         writers: list[OverlaySnapshotWriter] = []
         if settings.layout in {LayoutMode.CHAT, LayoutMode.BOTH}:
             writers.append(
@@ -69,6 +76,8 @@ class OverlayRenderWorker:
             )
         if not writers:
             raise ValueError("at least one overlay writer is required")
+        for writer in writers:
+            writer.merge_badge_sources(badge_sources)
         return writers
 
     def _run(self) -> None:

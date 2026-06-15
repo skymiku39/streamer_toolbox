@@ -17,6 +17,7 @@ SOURCE_LOGIC_COMMANDS = "logic-commands"
 SOURCE_LOGIC_KEYWORDS = "logic-keywords"
 SOURCE_LOGIC_EVENTS = "logic-events"
 SOURCE_LOGIC_LLM = "logic-llm"
+SOURCE_LOGIC_STATUS = "logic-status"
 SOURCE_CHARACTER_BRAIN = "character-brain"
 
 REPLY_SOURCES = frozenset(
@@ -25,6 +26,7 @@ REPLY_SOURCES = frozenset(
         SOURCE_LOGIC_KEYWORDS,
         SOURCE_LOGIC_EVENTS,
         SOURCE_LOGIC_LLM,
+        SOURCE_LOGIC_STATUS,
         SOURCE_CHARACTER_BRAIN,
     }
 )

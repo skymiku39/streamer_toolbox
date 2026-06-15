@@ -1,0 +1,37 @@
+[project]
+name = "voice-clone"
+version = "0.5.0"
+description = "離線語音克隆：提供樣本音檔即可合成輸出（OmniVoice）"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "scipy>=1.11",
+    "soundfile>=0.12",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+]
+stt = [
+    "faster-whisper>=1.1.0",
+]
+
+[project.scripts]
+voice-clone = "voice_clone.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/voice_clone"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

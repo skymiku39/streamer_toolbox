@@ -7,6 +7,7 @@ import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from emotes import EmoteRegistry
 from ttvchat_lens import ChatMessage, LiveChatReader, normalize_channel
 
 from ingress_ttv_read.mapper import map_chat_message
@@ -61,6 +62,7 @@ async def run_publisher(
     *,
     queue_size: int = 2048,
     reconnect_delay: float = _RECONNECT_DELAY_SEC,
+    emote_registry: EmoteRegistry | None = None,
 ) -> None:
     """包裝 LiveChatReader：handler 僅入隊，async 迴圈負責 publish。"""
     normalized = normalize_channel(channel)
@@ -85,7 +87,7 @@ async def run_publisher(
                     break
                 continue
 
-            event = map_chat_message(msg, normalized)
+            event = map_chat_message(msg, normalized, emote_registry=emote_registry)
             if event is None:
                 continue
 

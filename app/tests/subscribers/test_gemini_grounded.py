@@ -59,7 +59,7 @@ def test_gemini_grounded_ask_uses_google_search_tool(monkeypatch) -> None:
     request = urlopen.call_args.args[0]
     payload = json.loads(request.data.decode("utf-8"))
     assert payload["tools"] == [{"google_search": {}}]
-    assert payload["generationConfig"]["responseMimeType"] == "application/json"
+    assert "responseMimeType" not in payload["generationConfig"]
     assert "蒜頭王八" in payload["contents"][0]["parts"][0]["text"]
 
 

@@ -96,6 +96,7 @@ streamer_toolbox/
 │   ├── safety/              # SafetyFilter Protocol
 │   ├── stream-store/        # SQLite 記錄/記憶
 │   ├── tts/                 # TtsEngine Protocol
+│   ├── voice-clone/         # 離線語音克隆 CLI（OmniVoice；可選、GPU、不進 app 依賴）
 │   ├── ttvchat-lens/        # Twitch IRC 匿名唯讀（原 ttv_chat）
 │   └── tubechat-lens/       # YouTube 直播聊天唯讀（原 yt_chat）
 ├── config/
@@ -118,6 +119,7 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
 | `ttvchat-lens` | `packages/ttvchat-lens/` | Twitch IRC 匿名唯讀 | websockets | `ingress-ttv-read` |
 | `tubechat-lens` | `packages/tubechat-lens/` | YouTube 直播聊天唯讀 | pytchat | `ingress-yt-read` |
+| `voice-clone` | `packages/voice-clone/` | 離線零樣本語音克隆 CLI（OmniVoice subprocess） | numpy, scipy, soundfile | **獨立 CLI**；不接入 app/MQ（可選 `--group voice-clone`） |
 
 設計詳見 [architecture/identity-auth.md](architecture/identity-auth.md)。
 

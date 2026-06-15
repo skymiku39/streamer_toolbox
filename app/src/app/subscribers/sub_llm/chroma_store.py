@@ -9,7 +9,9 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from sub_llm.knowledge import iter_text_documents
+from sub_llm.live_activity import is_current_activity_question
 from sub_llm.memory_ranking import rank_memory_snippets
+from sub_llm.session_recap import should_enrich_session_recap
 
 logger = logging.getLogger(__name__)
 
@@ -325,7 +327,12 @@ class ChromaSummaryKnowledgeStore:
             logger.debug("Chroma 記憶查詢失敗: %s", exc)
             return ""
 
-        if not self._include_qa_memory:
+        exclude_qa_memory = (
+            not self._include_qa_memory
+            or is_current_activity_question(question)
+            or should_enrich_session_recap(question)
+        )
+        if exclude_qa_memory:
             filtered_docs: list[str] = []
             filtered_metas: list[dict[str, str]] = []
             for doc, meta in zip(documents, metadatas, strict=False):

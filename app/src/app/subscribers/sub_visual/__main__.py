@@ -17,8 +17,10 @@ from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 from sub_visual.config import SubtitleConfig
 from sub_visual.service import SubtitleService
+from streamer_config.paths import repo_root, resolve_path
 
 PROCESS_NAME = "sub-visual"
+_DEFAULT_VISUAL_CONFIG = repo_root() / "config" / "sub_visual.json"
 
 
 class VisualSubscriber:
@@ -70,7 +72,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--config",
-        default=os.environ.get("VISUAL_CONFIG_PATH", "config/sub_visual.json"),
+        default=str(
+            resolve_path("sub_visual", legacy_default=_DEFAULT_VISUAL_CONFIG)
+        ),
         help="字幕與過濾設定 JSON 路徑",
     )
     parser.add_argument(

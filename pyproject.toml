@@ -16,17 +16,22 @@ package = false
 members = [
     "app",
     "packages/*",
+    "tools/streamer-config-gui",
 ]
 
 [tool.uv.sources]
 streamer-app = { workspace = true }
+streamer-config-gui = { workspace = true }
+voice-clone = { workspace = true }
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.0",
     "pytest>=9.0",
     "ruff>=0.11",
+    "streamer-config-gui",
 ]
+voice-clone = ["voice-clone"]
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -37,13 +42,19 @@ testpaths = [
     "packages/stream-store/tests",
     "packages/identity-oauth/tests",
     "packages/game-info/tests",
+    "packages/emotes/tests",
+    "packages/voice-clone/tests",
+    "tools/streamer-config-gui/tests",
     "app/tests",
 ]
 pythonpath = [
     "app/src",
     "app/src/app/subscribers",
     "app/src/app/publishers",
-    "packages/game-info/src",
+    "packages/emotes/src",
+    "packages/streamer-config/src",
+    "packages/voice-clone/src",
+    "tools/streamer-config-gui/src",
 ]
 
 [tool.ruff]
@@ -57,7 +68,7 @@ select = ["E", "F", "W", "I", "UP"]
 known-first-party = [
     "app",
     "bus",
-    "events",
+    "emotes",
     "game_info",
     "identity_oauth",
     "ingress_discord",
@@ -84,5 +95,8 @@ known-first-party = [
     "tts",
     "ttvchat_lens",
     "tubechat_lens",
+    "voice_clone",
     "twitch_connector",
+    "streamer_config",
+    "streamer_config_gui",
 ]

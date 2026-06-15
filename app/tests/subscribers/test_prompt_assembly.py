@@ -23,3 +23,14 @@ def test_analyze_prompt_payload_detects_game_reference_marker() -> None:
     )
     assert analysis["has_game_reference_marker"]
     assert analysis["game_reference_len"] > 0
+
+
+def test_build_ask_messages_orders_session_recap_after_game_reference() -> None:
+    messages = build_ask_messages(
+        "今天做了什麼",
+        context="",
+        game_reference="【遊戲資料參考：Demo】",
+        session_recap_reference="【本場回顧參考】\n摘要",
+    )
+    user = next(m["content"] for m in messages if m["role"] == "user")
+    assert user.index("遊戲資料參考：") < user.index("本場回顧參考：")
