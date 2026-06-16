@@ -111,6 +111,10 @@ def main(argv: list[str] | None = None) -> int:
 
     config_path = Path(args.config)
     config = _load_config(config_path if config_path.is_file() else None)
+    if args.llm_backend == "hybrid":
+        from app.subscribers.qa_memory_mode import resolve_qa_memory_mode
+
+        config.qa_memory_mode = resolve_qa_memory_mode()
     os.environ.setdefault("LLM_MAX_REPLY_LENGTH", str(config.reply_max_length))
 
     def _build_safety(cfg: LlmSubscriberConfig) -> SafetyFilter:
