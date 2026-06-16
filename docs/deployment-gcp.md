@@ -49,7 +49,21 @@ flowchart TB
 | OAuth 首次授權 | **本機**（瀏覽器 callback） |
 | OBS / overlay | 不在本方案範圍（實況機可完全不裝 Bot） |
 
-**不部署**：`ingress-twitch-audio`、`ingress-local-audio`、`app.workers`（L2 語音摘要，Phase 2 可選）。
+**不部署**：`ingress-twitch-audio`、`ingress-local-audio`、`app.workers`（L2 摘要，預設不啟用）。
+
+> **長期記憶（RAG）限制**：T2 預設不跑 `app.workers`，因此 **L2 摘要不會產生**，Chroma `kb_memory` 會是空的——`!ask` 只能用短期上下文 buffer、`LLM_KNOWLEDGE_PATH` 靜態知識與（Gemini）Google Search，**沒有跨時段的長期直播記憶**。短期記憶（程序內 buffer 與可選的 `kb_shortterm`）不受影響。
+>
+> 若需要本場／跨時段的長期問答記憶，請啟用下方「[chat-only 記憶 worker](#chat-only-記憶-worker可選)」；否則請把「長期記憶不可用」視為此純文字方案的已知邊界。
+
+### chat-only 記憶 worker（可選）
+
+純文字方案沒有 STT，因此 worker 只需摘要聊天室。新增第三個 compose service 常駐執行：
+
+```bash
+uv run python -m app.workers --llm-backend gemini
+```
+
+搭配 `.env`：`RECORD_MODE=chat`（只記聊天）、`MEMORY_LLM_BACKEND=gemini`、`MEMORY_INTERVAL_MINUTES=30`。worker 會把 SQLite `summaries` 同步到 Chroma `kb_memory`，`sub-llm` 才會在 `!ask` 時讀到長期記憶（需 `LLM_MEMORY_FROM_DB=true`，預設即是）。
 
 ## 前置需求
 
@@ -209,7 +223,7 @@ OAuth token 過期：在本機重跑 `first_time_auth.py`，更新 Secret 後 `b
 
 | 項目 | 說明 |
 |------|------|
-| `app.workers` | 新增第三個 compose service（L2 **聊天**摘要） |
+| `app.workers` | 新增第三個 compose service（L2 **聊天**摘要）；啟用後長期記憶 RAG 才會有內容，見上方 [chat-only 記憶 worker](#chat-only-記憶-worker可選) |
 | 雲端 STT | **不建議**；改採 T4 本機 `ingress-local-audio` → 遠端 MQ |
 | GKE | 每程序一 Deployment + PVC |
 | EventSub Webhook | 需 HTTPS Load Balancer + `ingress-webhook` |
