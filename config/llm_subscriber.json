@@ -1,6 +1,6 @@
 {
   "trigger_prefixes": ["!ask"],
-  "context_window_minutes": 5,
+  "context_window_minutes": 15,
   "reply_max_length": 200,
   "input_blocklist": [],
   "output_blocklist": []

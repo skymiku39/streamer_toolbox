@@ -29,7 +29,7 @@ def _env_bool(name: str, default: bool) -> bool:
 @dataclass
 class LlmSubscriberConfig:
     trigger_prefixes: list[str] = field(default_factory=lambda: ["!ask"])
-    context_window_minutes: int = 5
+    context_window_minutes: int = 15
     bot_reply_window_minutes: int = 30
     bot_reply_max_pairs: int = 5
     reply_max_length: int = DEFAULT_REPLY_MAX_LENGTH
@@ -59,7 +59,7 @@ class LlmSubscriberConfig:
         )
         return cls(
             trigger_prefixes=list(prefixes),
-            context_window_minutes=int(data.get("context_window_minutes", 5)),
+            context_window_minutes=int(data.get("context_window_minutes", 15)),
             bot_reply_window_minutes=int(data.get("bot_reply_window_minutes", 30)),
             bot_reply_max_pairs=int(data.get("bot_reply_max_pairs", 5)),
             reply_max_length=int(
