@@ -146,6 +146,16 @@ class OpenAiCompatibleLlmClient:
         raw = self._complete(messages, temperature=0.9, json_mode=False)
         return parse_plain_llm_text(raw)
 
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float = 0.7,
+        json_mode: bool | None = None,
+    ) -> str:
+        """以原始 messages 直接呼叫 chat completion（供路由等輕量用途）。"""
+        return self._complete(messages, temperature=temperature, json_mode=json_mode)
+
     def _complete(
         self,
         messages: list[dict[str, str]],

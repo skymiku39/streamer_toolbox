@@ -23,9 +23,15 @@ from bus.rabbitmq import (
     setup_subscriber_queue_bindings,
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
-from safety import BlocklistSafetyFilter
+from safety import (
+    BlocklistSafetyFilter,
+    CompositeSafetyFilter,
+    PromptInjectionFilter,
+    SafetyFilter,
+)
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 from streamer_config.paths import repo_root, resolve_path
+from sub_llm.ask_flow_guard import AskFlowGuard
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.factory import (
@@ -36,6 +42,12 @@ from sub_llm.factory import (
 )
 from sub_llm.game_context import create_game_info_provider
 from sub_llm.handler import LlmSubscriber
+from sub_llm.poc_hybrid import (
+    apply_hybrid_poc_env_defaults,
+    hybrid_poc_feature_flags,
+    log_hybrid_poc_startup,
+)
+from sub_llm.short_term_rag import ShortTermRagStore
 from sub_llm.startup_announcement import publish_startup_announcement, resolve_announcement_channel
 
 PROCESS_NAME = "sub-llm"
@@ -43,6 +55,13 @@ _REPO_ROOT = repo_root()
 DEFAULT_CONFIG_PATH = _REPO_ROOT / "config" / "llm_subscriber.json"
 DEFAULT_KNOWLEDGE_PATH = _REPO_ROOT / "data" / "knowledge"
 NAMESPACE_STARTUP = "sub_llm.startup"
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
 
 
 def _load_config(config_path: Path | None) -> LlmSubscriberConfig:
@@ -72,8 +91,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--llm-backend",
         default=os.environ.get("LLM_BACKEND", "template"),
-        choices=["template", "openai", "gemini"],
-        help="LLM 後端：template（佔位）、openai、gemini",
+        choices=["template", "openai", "gemini", "hybrid"],
+        help="LLM 後端：template（佔位）、openai、gemini、hybrid（本地小 Agent + 雲端 Gemini）",
     )
     parser.add_argument(
         "--knowledge-path",
@@ -84,23 +103,28 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    hybrid_defaults_applied: list[str] = []
+    if args.llm_backend == "hybrid":
+        hybrid_defaults_applied = apply_hybrid_poc_env_defaults(
+            knowledge_path=args.knowledge_path or None,
+        )
+
     config_path = Path(args.config)
     config = _load_config(config_path if config_path.is_file() else None)
     os.environ.setdefault("LLM_MAX_REPLY_LENGTH", str(config.reply_max_length))
-    safety = BlocklistSafetyFilter(
-        blocklist=frozenset(
-            word.lower()
-            for word in (*config.input_blocklist, *config.output_blocklist)
-        ),
-    )
 
-    def _build_safety(cfg: LlmSubscriberConfig) -> BlocklistSafetyFilter:
-        return BlocklistSafetyFilter(
+    def _build_safety(cfg: LlmSubscriberConfig) -> SafetyFilter:
+        blocklist = BlocklistSafetyFilter(
             blocklist=frozenset(
                 word.lower()
                 for word in (*cfg.input_blocklist, *cfg.output_blocklist)
             ),
         )
+        if not _env_bool("LLM_INJECTION_GUARD", True):
+            return blocklist
+        return CompositeSafetyFilter([PromptInjectionFilter(), blocklist])
+
+    safety = _build_safety(config)
 
     connection = connect_blocking(rabbitmq_url())
     mq_channel = connection.channel()
@@ -166,6 +190,26 @@ def main(argv: list[str] | None = None) -> int:
         bot_reply_window_minutes=config.bot_reply_window_minutes,
         bot_reply_max_pairs=config.bot_reply_max_pairs,
     )
+    flow_guard = AskFlowGuard.from_env()
+    short_term_rag: ShortTermRagStore | None = None
+    short_term_enabled = (
+        os.environ.get("LLM_SHORT_TERM_RAG_ENABLED", "true") or "true"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    if short_term_enabled:
+        short_term_rag = ShortTermRagStore(
+            window_minutes=int(os.environ.get("LLM_SHORT_TERM_RAG_MINUTES", "30")),
+            max_pairs=int(os.environ.get("LLM_SHORT_TERM_RAG_MAX_PAIRS", "20")),
+        )
+    print(
+        f"[sub-llm] flow_guard=on short_term_rag={short_term_enabled!r}",
+        file=sys.stderr,
+        flush=True,
+    )
+    if args.llm_backend == "hybrid":
+        log_hybrid_poc_startup(
+            applied_defaults=hybrid_defaults_applied,
+            flags=hybrid_poc_feature_flags(),
+        )
     subscriber = LlmSubscriber(
         config=config,
         llm=llm,
@@ -178,6 +222,8 @@ def main(argv: list[str] | None = None) -> int:
         stream_store=stream_store,
         skip_trigger_author_ids=skip_author_ids,
         skip_trigger_logins=skip_logins,
+        flow_guard=flow_guard,
+        short_term_rag=short_term_rag,
     )
 
     def _reload_config_from_disk() -> None:

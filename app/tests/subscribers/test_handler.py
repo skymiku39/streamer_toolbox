@@ -613,12 +613,16 @@ def test_high_value_ask_publishes_memory_qa_record() -> None:
     assert qa_payload["memory_note"].startswith("觀眾問")
 
 
-def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -> None:
-    from stream_store.idempotency import IdempotencyStore
+def test_duplicate_ask_content_returns_cached_reply_without_recalling_llm() -> None:
+    from sub_llm.ask_flow_guard import AskFlowGuard
 
     published: list[tuple[str, dict]] = []
     llm = _CountingLlmClient()
-    store = IdempotencyStore(tmp_path / "dedup.db")
+    guard = AskFlowGuard(
+        window_seconds=120,
+        canned_reply="canned-soft",
+        hard_canned_reply="canned-hard",
+    )
 
     subscriber = LlmSubscriber(
         config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
@@ -627,15 +631,123 @@ def test_duplicate_ask_content_with_different_message_ids_is_ignored(tmp_path) -
         knowledge=EmptyKnowledgeStore(),
         context_buffer=LiveContextBuffer(window_minutes=5),
         publish=lambda topic, payload: published.append((topic, payload)),
-        idempotency=store,
+        flow_guard=guard,
     )
 
     subscriber.handle(_chat_payload("!ask 同一題", message_id="msg-a"))
     subscriber.handle(_chat_payload("!ask 同一題", message_id="msg-b"))
 
     assert llm.calls == 1
+    assert len(published) == 2
+    assert published[0][1]["content"] == "answer-1"
+    assert published[1][1]["content"] == "answer-1"
+
+
+def test_third_repeat_ask_returns_hard_canned_reply() -> None:
+    from sub_llm.ask_flow_guard import AskFlowGuard
+
+    published: list[tuple[str, dict]] = []
+    llm = _CountingLlmClient()
+    guard = AskFlowGuard(
+        window_seconds=120,
+        canned_reply="canned-soft",
+        hard_canned_reply="canned-hard",
+    )
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        flow_guard=guard,
+    )
+
+    subscriber.handle(_chat_payload("!ask 同題", message_id="m1"))
+    subscriber.handle(_chat_payload("!ask 同題", message_id="m2"))
+    subscriber.handle(_chat_payload("!ask 同題", message_id="m3"))
+
+    assert llm.calls == 1
+    assert published[1][1]["content"] == "answer-1"
+    assert published[2][1]["content"] == "canned-hard"
+
+
+class _RecordingShortTermRag:
+    def __init__(self, query_result: str = "") -> None:
+        self.indexed: list[tuple[str, str, str]] = []
+        self._query_result = query_result
+
+    def query(self, channel: str, question: str) -> str:
+        return self._query_result
+
+    def index(
+        self,
+        channel: str,
+        question: str,
+        reply: str,
+        *,
+        timestamp: float | None = None,
+    ) -> None:
+        self.indexed.append((channel, question, reply))
+
+
+def test_short_term_rag_indexes_after_reply() -> None:
+    published: list[tuple[str, dict]] = []
+    rag = _RecordingShortTermRag()
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=TemplateLlmClient(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        short_term_rag=rag,
+    )
+
+    subscriber.handle(_chat_payload("!ask 問題"))
+
     assert len(published) == 1
-    store.close()
+    assert len(rag.indexed) == 1
+    assert rag.indexed[0][1] == "問題"
+
+
+def test_short_term_rag_query_is_injected_into_knowledge() -> None:
+    from sub_llm.short_term_rag import SHORT_TERM_MARKER
+
+    captured: dict[str, str] = {}
+    rag = _RecordingShortTermRag(
+        query_result=f"{SHORT_TERM_MARKER}\n1. 問：X\n   答：Y"
+    )
+
+    class CapturingLlm:
+        def ask(
+            self,
+            question: str,
+            *,
+            context: str,
+            knowledge: str = "",
+            game_reference: str = "",
+            session_recap_reference: str = "",
+        ) -> AskResponse:
+            captured["knowledge"] = knowledge
+            return AskResponse(reply="ok")
+
+    published: list[tuple[str, dict]] = []
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=CapturingLlm(),
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        short_term_rag=rag,
+    )
+
+    subscriber.handle(_chat_payload("!ask 問題"))
+
+    assert SHORT_TERM_MARKER in captured["knowledge"]
 
 
 def test_failed_output_releases_idempotency_for_retry(tmp_path) -> None:

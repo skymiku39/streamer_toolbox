@@ -42,6 +42,10 @@ def create_llm_client(backend: str | None = None) -> LlmClient:
     selected = (backend or os.environ.get("LLM_BACKEND", "template") or "template").lower()
     if selected == "template":
         return TemplateLlmClient()
+    if selected == "hybrid":
+        from sub_llm.hybrid_client import HybridGeminiLlmClient
+
+        return HybridGeminiLlmClient.from_env()
     if selected == "gemini" and _env_bool("LLM_WEB_SEARCH", True):
         from sub_llm.gemini_grounded import GeminiGroundedLlmClient
 

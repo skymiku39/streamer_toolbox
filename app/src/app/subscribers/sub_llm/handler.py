@@ -28,6 +28,7 @@ from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
 from stream_store import StreamTextStore
 from stream_store.idempotency import IdempotencyStore
+from sub_llm.ask_flow_guard import AskFlowGuard
 from sub_llm.chat_format import cap_reply_for_chat, cap_reply_for_twitch, plain_text_for_chat
 from sub_llm.config import TWITCH_CHAT_MAX_CHARS, LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
@@ -35,23 +36,16 @@ from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.live_activity import current_activity_context_hint, is_current_activity_question
 from sub_llm.llm import LlmClient
+from sub_llm.observability import log_event
 from sub_llm.qa_memory_gate import should_persist_qa_memory
 from sub_llm.resilience import CircuitBreaker, LlmApiError
 from sub_llm.session_recap import build_session_recap_reference
+from sub_llm.short_term_rag import ShortTermRagStore
 from sub_llm.triggers import TriggerMatcher
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
 DEGRADED_REPLY = "⚠️ AI 暫時無法回應，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
-NAMESPACE_ASK_CONTENT = "sub_llm.chat.ask_content"
-ASK_CONTENT_DEDUP_WINDOW_SECONDS = 120
-
-
-def _ask_content_dedup_key(event: ChatMessageEvent, question: str) -> str:
-    bucket = int(time.time()) // ASK_CONTENT_DEDUP_WINDOW_SECONDS
-    channel = (event.channel or "").strip().lower()
-    author = (event.author_id or event.login or event.author_name or "").strip().lower()
-    return f"{bucket}:{channel}:{author}:{question.strip().lower()}"
 
 
 def _is_skipped_trigger_author(
@@ -86,6 +80,8 @@ class LlmSubscriber:
         skip_trigger_author_ids: frozenset[str] = frozenset(),
         skip_trigger_logins: frozenset[str] = frozenset(),
         circuit_breaker: CircuitBreaker | None = None,
+        flow_guard: AskFlowGuard | None = None,
+        short_term_rag: ShortTermRagStore | None = None,
     ) -> None:
         self._config = config
         self._llm = llm
@@ -99,6 +95,8 @@ class LlmSubscriber:
         self._skip_trigger_author_ids = skip_trigger_author_ids
         self._skip_trigger_logins = skip_trigger_logins
         self._circuit = circuit_breaker or CircuitBreaker.from_env()
+        self._flow_guard = flow_guard
+        self._short_term_rag = short_term_rag
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -160,21 +158,11 @@ class LlmSubscriber:
         if filtered_question is None:
             return
 
-        content_key: str | None = None
-        content_claimed = False
+        channel = event.channel or ""
+
         trigger_claimed = False
         if self._idempotency is not None:
-            content_key = _ask_content_dedup_key(event, filtered_question)
-            if not self._idempotency.claim(NAMESPACE_ASK_CONTENT, content_key):
-                print(
-                    f"[sub-llm] skip duplicate ask content message_id={event.message_id[:8]}",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return
-            content_claimed = True
             if not self._idempotency.claim(NAMESPACE_CHAT_TRIGGER, event.message_id):
-                self._idempotency.release(NAMESPACE_ASK_CONTENT, content_key)
                 print(
                     f"[sub-llm] skip duplicate trigger message_id={event.message_id[:8]}",
                     file=sys.stderr,
@@ -186,6 +174,25 @@ class LlmSubscriber:
         published = False
         busy_acquired = False
         try:
+            if self._flow_guard is not None:
+                decision = self._flow_guard.check(channel, filtered_question)
+                if not decision.should_call_llm:
+                    log_event(
+                        "ask_decision",
+                        action=decision.action,
+                        message_id=event.message_id[:8],
+                        channel=channel,
+                        llm_called=False,
+                    )
+                    self._publish_reply(
+                        event,
+                        decision.reply,
+                        question=filtered_question,
+                        remember=False,
+                    )
+                    published = True
+                    return
+
             if not self._busy.acquire(blocking=False):
                 self._publish_reply(
                     event, BUSY_REPLY, question=filtered_question, remember=False
@@ -193,7 +200,6 @@ class LlmSubscriber:
                 return
 
             busy_acquired = True
-            channel = event.channel or ""
             stt_count, chat_count, bot_reply_count, context_len, has_stream = (
                 self._context_buffer.stats(channel)
             )
@@ -221,6 +227,17 @@ class LlmSubscriber:
                     flush=True,
                 )
             knowledge = self._knowledge.query(filtered_question, channel=channel)
+            short_term_hit = False
+            if self._short_term_rag is not None:
+                short_term = self._short_term_rag.query(channel, filtered_question)
+                if short_term:
+                    short_term_hit = True
+                    knowledge = f"{short_term}\n\n{knowledge}" if knowledge else short_term
+                    print(
+                        f"[sub-llm] short-term RAG hit chars={len(short_term)}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
             live_game = resolve_live_game_name(self._context_buffer, channel)
             game_reference = build_game_reference(
                 filtered_question,
@@ -249,11 +266,12 @@ class LlmSubscriber:
                 )
             author = (event.author_name or event.login or "?").strip()
             if not self._circuit.allow():
-                print(
-                    "[sub-llm] circuit open, serving degraded reply "
-                    f"message_id={event.message_id[:8]}",
-                    file=sys.stderr,
-                    flush=True,
+                log_event(
+                    "ask_decision",
+                    action="circuit_open",
+                    message_id=event.message_id[:8],
+                    channel=channel,
+                    llm_called=False,
                 )
                 self._publish_reply(
                     event, DEGRADED_REPLY, question=filtered_question, remember=False
@@ -266,6 +284,7 @@ class LlmSubscriber:
                 file=sys.stderr,
                 flush=True,
             )
+            started_at = time.monotonic()
             try:
                 ask_result = self._llm.ask(
                     filtered_question,
@@ -276,16 +295,22 @@ class LlmSubscriber:
                 )
             except LlmApiError as exc:
                 self._circuit.record_failure()
-                print(
-                    f"[sub-llm] LLM call failed, serving degraded reply: {exc}",
-                    file=sys.stderr,
-                    flush=True,
+                log_event(
+                    "ask_decision",
+                    action="degraded",
+                    message_id=event.message_id[:8],
+                    channel=channel,
+                    llm_called=True,
+                    status=exc.status_code,
+                    latency_ms=int((time.monotonic() - started_at) * 1000),
+                    error=str(exc)[:120],
                 )
                 self._publish_reply(
                     event, DEGRADED_REPLY, question=filtered_question, remember=False
                 )
                 published = True
                 return
+            latency_ms = int((time.monotonic() - started_at) * 1000)
             self._circuit.record_success()
             filtered_reply = self._safety.filter_output(ask_result.reply)
             if filtered_reply is None:
@@ -305,6 +330,24 @@ class LlmSubscriber:
                 return
             self._publish_reply(event, filtered_reply, question=filtered_question)
             published = True
+            log_event(
+                "ask_decision",
+                action="llm",
+                message_id=event.message_id[:8],
+                channel=channel,
+                llm_called=True,
+                backend=type(self._llm).__name__,
+                latency_ms=latency_ms,
+                reply_len=len(filtered_reply),
+                knowledge_hit=bool(knowledge),
+                short_term_hit=short_term_hit,
+                game_ref=bool(game_reference),
+                session_recap=bool(session_recap.text),
+            )
+            if self._flow_guard is not None:
+                self._flow_guard.record_reply(channel, filtered_question, filtered_reply)
+            if self._short_term_rag is not None:
+                self._short_term_rag.index(channel, filtered_question, filtered_reply)
             if self._config.qa_memory_mode == "structured" and should_persist_qa_memory(
                 ask_result,
                 question=filtered_question,
@@ -321,14 +364,11 @@ class LlmSubscriber:
         finally:
             if busy_acquired:
                 self._busy.release()
-            if not published and self._idempotency is not None:
-                if content_claimed and content_key is not None:
-                    self._idempotency.release(NAMESPACE_ASK_CONTENT, content_key)
-                if trigger_claimed:
-                    self._idempotency.release(
-                        NAMESPACE_CHAT_TRIGGER,
-                        event.message_id,
-                    )
+            if not published and self._idempotency is not None and trigger_claimed:
+                self._idempotency.release(
+                    NAMESPACE_CHAT_TRIGGER,
+                    event.message_id,
+                )
 
     def _publish_reply(
         self,
