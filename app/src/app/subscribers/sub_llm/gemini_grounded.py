@@ -152,9 +152,13 @@ class GeminiGroundedLlmClient:
                 data = json.loads(raw) if raw else {}
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            raise LlmApiError(f"Gemini grounding failed ({exc.code}): {detail}") from exc
+            raise LlmApiError(
+                f"Gemini grounding failed ({exc.code}): {detail}", status_code=exc.code
+            ) from exc
         except urllib.error.URLError as exc:
-            raise LlmApiError(f"Gemini grounding network error: {exc}") from exc
+            raise LlmApiError(
+                f"Gemini grounding network error: {exc}", status_code=None
+            ) from exc
 
         candidates = data.get("candidates", [])
         if not candidates:

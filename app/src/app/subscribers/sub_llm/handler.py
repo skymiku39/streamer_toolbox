@@ -36,10 +36,12 @@ from sub_llm.knowledge import KnowledgeStore
 from sub_llm.live_activity import current_activity_context_hint, is_current_activity_question
 from sub_llm.llm import LlmClient
 from sub_llm.qa_memory_gate import should_persist_qa_memory
+from sub_llm.resilience import CircuitBreaker, LlmApiError
 from sub_llm.session_recap import build_session_recap_reference
 from sub_llm.triggers import TriggerMatcher
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
+DEGRADED_REPLY = "⚠️ AI 暫時無法回應，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
 NAMESPACE_ASK_CONTENT = "sub_llm.chat.ask_content"
 ASK_CONTENT_DEDUP_WINDOW_SECONDS = 120
@@ -83,6 +85,7 @@ class LlmSubscriber:
         stream_store: StreamTextStore | None = None,
         skip_trigger_author_ids: frozenset[str] = frozenset(),
         skip_trigger_logins: frozenset[str] = frozenset(),
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         self._config = config
         self._llm = llm
@@ -95,6 +98,7 @@ class LlmSubscriber:
         self._stream_store = stream_store
         self._skip_trigger_author_ids = skip_trigger_author_ids
         self._skip_trigger_logins = skip_trigger_logins
+        self._circuit = circuit_breaker or CircuitBreaker.from_env()
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -183,7 +187,9 @@ class LlmSubscriber:
         busy_acquired = False
         try:
             if not self._busy.acquire(blocking=False):
-                self._publish_reply(event, BUSY_REPLY, question=filtered_question)
+                self._publish_reply(
+                    event, BUSY_REPLY, question=filtered_question, remember=False
+                )
                 return
 
             busy_acquired = True
@@ -242,19 +248,45 @@ class LlmSubscriber:
                     flush=True,
                 )
             author = (event.author_name or event.login or "?").strip()
+            if not self._circuit.allow():
+                print(
+                    "[sub-llm] circuit open, serving degraded reply "
+                    f"message_id={event.message_id[:8]}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                self._publish_reply(
+                    event, DEGRADED_REPLY, question=filtered_question, remember=False
+                )
+                published = True
+                return
             print(
                 f"!ask triggered author={author} question={filtered_question[:80]!r} "
                 f"→ calling LLM ({type(self._llm).__name__})",
                 file=sys.stderr,
                 flush=True,
             )
-            ask_result = self._llm.ask(
-                filtered_question,
-                context=context,
-                knowledge=knowledge,
-                game_reference=game_reference,
-                session_recap_reference=session_recap.text,
-            )
+            try:
+                ask_result = self._llm.ask(
+                    filtered_question,
+                    context=context,
+                    knowledge=knowledge,
+                    game_reference=game_reference,
+                    session_recap_reference=session_recap.text,
+                )
+            except LlmApiError as exc:
+                self._circuit.record_failure()
+                print(
+                    f"[sub-llm] LLM call failed, serving degraded reply: {exc}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                self._publish_reply(
+                    event, DEGRADED_REPLY, question=filtered_question, remember=False
+                )
+                published = True
+                return
+            self._circuit.record_success()
             filtered_reply = self._safety.filter_output(ask_result.reply)
             if filtered_reply is None:
                 return
@@ -304,6 +336,7 @@ class LlmSubscriber:
         content: str,
         *,
         question: str = "",
+        remember: bool = True,
     ) -> None:
         reply = ChatReplyEvent(
             schema_version=1,
@@ -317,6 +350,9 @@ class LlmSubscriber:
             correlation_id=trigger.message_id,
         )
         self._publish(TOPIC_CHAT_REPLY, reply.to_dict())
+        # 罐頭／降級回覆不寫入近期問答 buffer，避免污染後續 LLM 上下文。
+        if not remember:
+            return
         reply_to = (trigger.author_name or trigger.login or "").strip()
         self._context_buffer.add_bot_reply(
             trigger.channel or "",

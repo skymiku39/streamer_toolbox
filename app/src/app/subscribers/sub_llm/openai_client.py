@@ -11,14 +11,13 @@ from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.ask_response import AskResponse, parse_ask_response, parse_plain_llm_text
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
+from sub_llm.resilience import LlmApiError, RetryPolicy, call_with_retry
 from sub_llm.startup_announcement import (
     _STARTUP_SYSTEM_PROMPT,
     build_startup_user_prompt,
 )
 
-
-class LlmApiError(RuntimeError):
-    pass
+__all__ = ["LlmApiError", "OpenAiCompatibleLlmClient"]
 
 
 class OpenAiCompatibleLlmClient:
@@ -32,12 +31,14 @@ class OpenAiCompatibleLlmClient:
         model: str,
         system_prompt: str = "",
         timeout_sec: float = 60.0,
+        retry_policy: RetryPolicy | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._model = model
         self._system_prompt = system_prompt.strip()
         self._timeout_sec = timeout_sec
+        self._retry_policy = retry_policy or RetryPolicy.from_env()
 
     @classmethod
     def from_env(cls, *, backend: str | None = None) -> OpenAiCompatibleLlmClient:
@@ -173,21 +174,40 @@ class OpenAiCompatibleLlmClient:
     def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         url = f"{self._base_url}/{path.lstrip('/')}"
         body = json.dumps(payload).encode("utf-8")
-        request = urllib.request.Request(
-            url,
-            data=body,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
+
+        def _do_request() -> dict[str, Any]:
+            request = urllib.request.Request(
+                url,
+                data=body,
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=self._timeout_sec) as response:
+                    raw = response.read().decode("utf-8")
+                    return json.loads(raw) if raw else {}
+            except urllib.error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")
+                raise LlmApiError(
+                    f"LLM API failed ({exc.code}): {detail}", status_code=exc.code
+                ) from exc
+            except urllib.error.URLError as exc:
+                raise LlmApiError(f"LLM API network error: {exc}", status_code=None) from exc
+
+        return call_with_retry(
+            _do_request,
+            policy=self._retry_policy,
+            on_retry=self._log_retry,
         )
-        try:
-            with urllib.request.urlopen(request, timeout=self._timeout_sec) as response:
-                raw = response.read().decode("utf-8")
-                return json.loads(raw) if raw else {}
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
-            raise LlmApiError(f"LLM API failed ({exc.code}): {detail}") from exc
-        except urllib.error.URLError as exc:
-            raise LlmApiError(f"LLM API network error: {exc}") from exc
+
+    @staticmethod
+    def _log_retry(attempt: int, error: LlmApiError, delay: float) -> None:
+        print(
+            f"[sub-llm] LLM API retry attempt={attempt} "
+            f"status={error.status_code} delay={delay:.2f}s: {error}",
+            file=sys.stderr,
+            flush=True,
+        )

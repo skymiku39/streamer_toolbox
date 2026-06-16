@@ -435,6 +435,81 @@ class _CountingLlmClient:
         return AskResponse(reply=f"answer-{self.calls}")
 
 
+class _FailingLlmClient:
+    def __init__(self, *, status_code: int = 503) -> None:
+        self.calls = 0
+        self._status_code = status_code
+
+    def ask(
+        self,
+        question: str,
+        *,
+        context: str,
+        knowledge: str = "",
+        game_reference: str = "",
+        session_recap_reference: str = "",
+    ) -> AskResponse:
+        from sub_llm.resilience import LlmApiError
+
+        self.calls += 1
+        raise LlmApiError("upstream down", status_code=self._status_code)
+
+
+def test_llm_failure_publishes_degraded_reply_and_keeps_idempotency(tmp_path) -> None:
+    from stream_store.idempotency import IdempotencyStore
+
+    from sub_llm.handler import DEGRADED_REPLY
+
+    published: list[tuple[str, dict]] = []
+    llm = _FailingLlmClient()
+    store = IdempotencyStore(tmp_path / "dedup.db")
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        idempotency=store,
+    )
+
+    subscriber.handle(_chat_payload("!ask 會壞掉的問題", message_id="msg-fail-1"))
+
+    assert len(published) == 1
+    assert published[0][1]["content"] == DEGRADED_REPLY
+    # 失敗回覆視為已處理：不釋放冪等鍵，避免同訊息立即重試打爆故障端點。
+    subscriber.handle(_chat_payload("!ask 會壞掉的問題", message_id="msg-fail-1"))
+    assert llm.calls == 1
+    store.close()
+
+
+def test_open_circuit_serves_degraded_without_calling_llm() -> None:
+    from sub_llm.handler import DEGRADED_REPLY
+    from sub_llm.resilience import CircuitBreaker
+
+    published: list[tuple[str, dict]] = []
+    llm = _CountingLlmClient()
+    breaker = CircuitBreaker(failure_threshold=1, reset_timeout_sec=60.0)
+    breaker.record_failure()  # 直接開啟斷路器
+
+    subscriber = LlmSubscriber(
+        config=LlmSubscriberConfig(trigger_prefixes=["!ask"]),
+        llm=llm,
+        safety=PassThroughSafetyFilter(),
+        knowledge=EmptyKnowledgeStore(),
+        context_buffer=LiveContextBuffer(window_minutes=5),
+        publish=lambda topic, payload: published.append((topic, payload)),
+        circuit_breaker=breaker,
+    )
+
+    subscriber.handle(_chat_payload("!ask 斷路器開啟時的問題"))
+
+    assert llm.calls == 0
+    assert len(published) == 1
+    assert published[0][1]["content"] == DEGRADED_REPLY
+
+
 def test_duplicate_message_id_is_ignored(tmp_path) -> None:
     from stream_store.idempotency import IdempotencyStore
 
