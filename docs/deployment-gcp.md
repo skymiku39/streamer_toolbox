@@ -1,13 +1,15 @@
-# GCP 部署（LLM Bot — AI Q&A）
+# GCP 部署（LLM Bot — 純文字 AI 問答）
 
-將 **Backend 全數部署在 GCE VM**，實況機**不必**跑 Python stack。對應 [operator-modes.md § AI 問答](operator-modes.md#方案ai-問答)：`ingress` stack 收聊天 + STT，`llm` stack 處理 `!ask` 並經 `twitch-connector` 發話。
+將 **Backend 全數部署在 GCE VM**，實況機**不必**跑 Python stack。對應 [operator-modes.md § AI 問答](operator-modes.md#方案ai-問答) 的**純文字**路線：`ingress-chat` stack 收 Twitch 聊天與直播 metadata，`llm` stack 處理 `!ask` 並經 `twitch-connector` 發話。
+
+> **範圍**：本 runbook **不含**雲端 STT（`ingress-twitch-audio`）、本機麥克風 STT、語音記憶摘要。若需 STT，見 [control-plane.md § T4 Hybrid STT](architecture/control-plane.md#t4--hybrid-stt)。
 
 | 文件 | 內容 |
 |------|------|
 | [deployment.md](deployment.md) | Pub/Sub 部署邊界 |
 | [architecture/control-plane.md § 部署拓撲](architecture/control-plane.md#部署拓撲) | T2 All-GCP、T4 Hybrid 等拓撲對照 |
 
-本文件為 **T2 All-GCP** 的 GCE runbook（Compose、Secret Manager、bootstrap）。
+本文件為 **T2 All-GCP（純文字）** 的 GCE runbook（Compose、Secret Manager、bootstrap）。
 
 ## 架構
 
@@ -22,7 +24,7 @@ flowchart TB
     subgraph gce [GCE VM]
         Compose["docker compose gcp"]
         MQ[(RabbitMQ)]
-        Ing[ingress-stack]
+        Ing[ingress-chat stack]
         Llm[llm-stack]
         Data["/data 持久磁碟"]
         Compose --> MQ
@@ -41,11 +43,13 @@ flowchart TB
 
 | 元件 | 位置 |
 |------|------|
-| RabbitMQ、`ingress-*`、`sub-llm`、`twitch-connector` | GCE VM（[deploy/docker-compose.gcp.yml](../deploy/docker-compose.gcp.yml)） |
+| RabbitMQ、`ingress-ttv-read`、`ingress-twitch-stream`、`sub-stream-record`、`sub-llm`、`twitch-connector` | GCE VM（[deploy/docker-compose.gcp.yml](../deploy/docker-compose.gcp.yml)） |
 | SQLite、Chroma、日誌 | VM 持久磁碟 `/data` |
 | 知識庫 md | `/config/knowledge/` |
 | OAuth 首次授權 | **本機**（瀏覽器 callback） |
 | OBS / overlay | 不在本方案範圍（實況機可完全不裝 Bot） |
+
+**不部署**：`ingress-twitch-audio`、`ingress-local-audio`、`app.workers`（L2 語音摘要，Phase 2 可選）。
 
 ## 前置需求
 
@@ -53,8 +57,10 @@ flowchart TB
 |------|------|
 | GCP 專案 | 啟用 Compute Engine、Secret Manager API |
 | 本機 | 已完成 [getting-started.md §3](getting-started.md#第-3-層實際跑-llm-bota-問答方案) OAuth 與 `.env` 驗證 |
-| VM 規格（建議） | `e2-standard-4`（4 vCPU / 16 GB）、50 GB 持久磁碟 |
+| VM 規格（建議） | `e2-standard-2`（2 vCPU / 8 GB）或 `e2-small`；50 GB 持久磁碟 |
 | 區域 | 如 `asia-east1`（依延遲調整） |
+
+純文字路線無 Whisper 負載，無需 `e2-standard-4` 等 STT 規格。
 
 ## 1. 本機：OAuth 與 Secret
 
@@ -72,6 +78,7 @@ uv run python scripts/first_time_auth.py --role bot
 - `TWITCH_BOT_REFRESH_TOKEN` / `TWITCH_BOT_ID`
 - `GOOGLE_AI_API_KEY`
 - `LLM_BACKEND=gemini`
+- `RECORD_MODE=chat`（純文字；勿設 `both` 或 `stt`）
 
 將**機密內容**寫入 GCP Secret Manager（單一 secret，內容為完整 `.env` 或精簡版）：
 
@@ -129,6 +136,8 @@ bash deploy/up.sh
 1. `fetch_secrets.sh` → 從 Secret Manager 寫入 `/run/secrets/.env`
 2. `docker compose -f deploy/docker-compose.gcp.yml up -d --build`
 
+Compose 固定使用 `--stack ingress-chat` 與 `RECORD_MODE=chat`（見 [deploy/docker-compose.gcp.yml](../deploy/docker-compose.gcp.yml)）。
+
 檢查狀態：
 
 ```bash
@@ -143,6 +152,7 @@ docker compose -f deploy/docker-compose.gcp.yml logs -f ingress-stack llm-stack
 | 容器 | `rabbitmq`、`ingress-stack`、`llm-stack` 皆 `running` |
 | 聊天 | Twitch 輸入 `!ask 測試`，Bot 帳號回覆 |
 | 持久化 | `docker compose ... restart` 後 QA memory / Chroma 仍可用 |
+| 無 STT | `ingress-stack` log 不應出現 `ingress-twitch-audio` / Whisper 載入訊息 |
 
 ## 5. 環境變數對照
 
@@ -155,8 +165,9 @@ Compose 會覆寫下列路徑（見 [deploy/docker-compose.gcp.yml](../deploy/do
 | `LLM_CHROMA_DIR` | `/data/chroma` |
 | `STREAMER_CONFIG_DIR` | `/config` |
 | `LLM_KNOWLEDGE_PATH` | `/config/knowledge` |
+| `RECORD_MODE` | `chat`（僅記錄聊天，不訂閱 `stt.segment`） |
 
-其餘產品 C 設定見 [deploy/.env.gcp.example](../deploy/.env.gcp.example) 與 [.env.example](../.env.example)。
+其餘產品 C 設定見 [deploy/.env.gcp.example](../deploy/.env.gcp.example) 與 [.env.example](../.env.example)。**勿**在 GCP secret 內設定 `STT_*` 或 `TWITCH_STREAMLINK_AUTH_TOKEN`（僅 STT 拉流用）。
 
 可選環境變數（啟動腳本）：
 
@@ -187,13 +198,9 @@ bash deploy/up.sh
 
 OAuth token 過期：在本機重跑 `first_time_auth.py`，更新 Secret 後 `bash deploy/up.sh`。
 
-### STT 資源不足時
-
-可暫時在 secret 內設 `RECORD_MODE=chat`（停用 STT，僅用聊天上下文），或升級 VM 規格。
-
 ## 7. 成本與監控（建議）
 
-- **Compute**：單台 `e2-standard-4` 常駐；依直播時數評估是否排程開關機。
+- **Compute**：單台 `e2-standard-2` 常駐即可（純文字）；依直播時數評估是否排程開關機。
 - **磁碟**：監控 `/data` 用量（SQLite、Chroma、日誌）。
 - **日誌**：`docker compose logs` 或安裝 [Ops Agent](https://cloud.google.com/stackdriver/docs/solutions/agents/ops-agent) 轉送 Cloud Logging。
 - **Secret**：勿將 `.env` bake 進 Docker image；僅透過 Secret Manager 注入。
@@ -202,7 +209,8 @@ OAuth token 過期：在本機重跑 `first_time_auth.py`，更新 Secret 後 `b
 
 | 項目 | 說明 |
 |------|------|
-| `app.workers` | 新增第三個 compose service（L2 摘要） |
+| `app.workers` | 新增第三個 compose service（L2 **聊天**摘要） |
+| 雲端 STT | **不建議**；改採 T4 本機 `ingress-local-audio` → 遠端 MQ |
 | GKE | 每程序一 Deployment + PVC |
 | EventSub Webhook | 需 HTTPS Load Balancer + `ingress-webhook` |
 | 實況機 overlay | LocalPC 訂閱遠端 `RABBITMQ_URL`（GCP broker） |
@@ -212,3 +220,4 @@ OAuth token 過期：在本機重跑 `first_time_auth.py`，更新 Secret 後 `b
 - [getting-started.md](getting-started.md) — 本機安裝與 OAuth
 - [operator-modes.md](operator-modes.md) — AI 問答方案程序表
 - [deployment.md](deployment.md) — Pub/Sub 部署邊界與 MQ 規則
+- [architecture/control-plane.md § T4](architecture/control-plane.md#t4--hybrid-stt) — 本機 STT + 雲端邏輯

@@ -259,7 +259,7 @@ flowchart LR
 | 拓撲 ID | 名稱 | Backend | LocalPC | 適用 |
 |---------|------|---------|---------|------|
 | **T1** | All-local | 開發機／實況機全跑 | 同機 | 開發、除錯 |
-| **T2** | All-GCP | GCE VM（[deployment-gcp.md](../deployment-gcp.md)） | 可不裝 Python；Show 可選 | LLM Bot 常駐、實況機輕量 |
+| **T2** | All-GCP（純文字） | GCE VM（[deployment-gcp.md](../deployment-gcp.md)） | 可不裝 Python；Show 可選 | LLM Bot 常駐（聊天 + metadata，無雲端 STT） |
 | **T3** | All-VPS | 自架伺服器（Docker Compose 同 [deploy/docker-compose.gcp.yml](../../deploy/docker-compose.gcp.yml)） | 同 T2 | 與 T2 同構，主機自選 |
 | **T4** | Hybrid STT | MQ + logic + Shell | `ingress-local-audio`（可選 `ingress-ttv-read`） | 雲端免 STT 負載；本機 Whisper |
 
@@ -316,7 +316,8 @@ flowchart TB
 - Runbook：[deployment-gcp.md](../deployment-gcp.md)（`deploy/up.sh`、`fetch_secrets.sh`）
 - 實況機可不跑 Python；僅 OBS 時省略 LocalPC 程序
 - Shell 與 Backend 同 VM；營運者經 **SSH tunnel** 開啟 Shell（Phase 2 文件化）
-- **精簡規格**（如 `e2-micro`、`RECORD_MODE=chat`、不含雲端 STT）：仍為 T2，僅縮減 ingress 積木與 VM 規格
+- **預設為純文字**：`--stack ingress-chat`、`RECORD_MODE=chat`，不含雲端 STT；VM 建議 `e2-standard-2` 起
+- 若需語音上下文：改採 [T4 Hybrid STT](#t4--hybrid-stt)，不在 GCP VM 跑 Whisper
 
 ### T3 — All-VPS（自架伺服器）
 
@@ -371,7 +372,7 @@ flowchart LR
 | 本機開發、驗證 `!ask` | T1 |
 | 實況機不裝 Bot、後端常駐 | T2 或 T3 |
 | 已有 Linux VPS、不用 GCP | T3 |
-| 免費／小 VM、先不做雲端 STT | T2 + `RECORD_MODE=chat` |
+| 免費／小 VM、純文字 AI 問答 | T2（預設 `ingress-chat` + `RECORD_MODE=chat`） |
 | 要本機 STT 品質、雲端只跑邏輯 | T4 |
 
 ---

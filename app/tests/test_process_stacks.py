@@ -19,7 +19,15 @@ def test_resolve_stack_llm() -> None:
 
 
 def test_process_stacks_keys() -> None:
-    assert set(PROCESS_STACKS) == {"ingress", "status", "llm"}
+    assert set(PROCESS_STACKS) == {"ingress", "ingress-chat", "status", "llm"}
+
+
+def test_resolve_stack_ingress_chat_excludes_audio() -> None:
+    names = resolve_stack("ingress-chat")
+    assert "ingress-twitch-stream" in names
+    assert "ingress-ttv-read" in names
+    assert "sub-stream-record" in names
+    assert "ingress-twitch-audio" not in names
 
 
 def test_resolve_stack_status() -> None:

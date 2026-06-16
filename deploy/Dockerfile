@@ -1,11 +1,10 @@
-# streamer-toolbox Product C (AI Q&A) — GCP backend image
+# streamer-toolbox Product C 純文字 AI 問答 — GCP backend image（不含 STT / ffmpeg）
 FROM python:3.11-slim-bookworm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
-        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/

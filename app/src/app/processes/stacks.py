@@ -9,6 +9,13 @@ STACK_INGRESS = (
     "sub-stream-record",
 )
 
+# GCP / 純文字 AI 問答：不含 STT（見 deploy/docker-compose.gcp.yml）
+STACK_INGRESS_CHAT = (
+    "ingress-ttv-read",
+    "ingress-twitch-stream",
+    "sub-stream-record",
+)
+
 STACK_LLM = (
     "sub-llm",
     "sub-qa-memory-structured",
@@ -24,6 +31,7 @@ STACK_STATUS = (
 
 PROCESS_STACKS: dict[str, tuple[str, ...]] = {
     "ingress": STACK_INGRESS,
+    "ingress-chat": STACK_INGRESS_CHAT,
     "status": STACK_STATUS,
     "llm": STACK_LLM,
 }

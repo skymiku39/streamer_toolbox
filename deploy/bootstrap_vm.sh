@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time GCE VM bootstrap for streamer-toolbox Product C.
+# One-time GCE VM bootstrap for streamer-toolbox Product C（純文字 AI 問答）.
 # Run as root or with sudo on a fresh Debian/Ubuntu VM.
 set -euo pipefail
 
