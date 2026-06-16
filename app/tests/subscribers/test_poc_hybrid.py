@@ -39,6 +39,17 @@ def test_apply_hybrid_defaults_enables_zero_token_features(
     assert os.environ["LLM_KNOWLEDGE_PATH"] == "/data/knowledge"
 
 
+def test_apply_hybrid_defaults_enables_low_token_qa_memory_batch(
+    clean_hybrid_env: None,
+) -> None:
+    apply_hybrid_poc_env_defaults()
+
+    assert os.environ["QA_MEMORY_MODE"] == "batch"
+    flags = hybrid_poc_feature_flags()
+    assert flags["qa_memory_mode"] == "batch"
+    assert flags["qa_memory_read"] is True
+
+
 def test_apply_hybrid_defaults_disables_token_consumers(
     clean_hybrid_env: None,
 ) -> None:
@@ -46,7 +57,6 @@ def test_apply_hybrid_defaults_disables_token_consumers(
 
     assert os.environ["LLM_WEB_SEARCH"] == "false"
     assert os.environ["LLM_STARTUP_ANNOUNCEMENT"] == "false"
-    assert os.environ["QA_MEMORY_MODE"] == "none"
 
 
 def test_apply_hybrid_defaults_does_not_override_existing_env(
