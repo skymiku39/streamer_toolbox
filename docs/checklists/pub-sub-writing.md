@@ -49,6 +49,7 @@
 | `sub-tts` | Sub | ✅ | — | `chat.message` | B, C |
 | `sub-bot-logic` | Sub | ✅ | `chat.reply` | `chat.message`, `eventsub.*`, `config.changed` | B, C |
 | `sub-llm` | Sub | ✅ | `chat.reply`, `memory.qa.record` | `chat.message`, `stt.segment`, `stream.metadata`, `config.changed` | C |
+| `sub-live-status` | Sub | ✅ | `chat.reply` | `stream.metadata` | C |
 | `sub-qa-memory-structured` | Sub | ✅ | `memory.summary.ready` | `memory.qa.record` | C |
 | `sub-qa-memory-batch` | Sub | ✅ | — | `chat.reply` | C |
 | `twitch-connector` | Sub | ✅ | — | `chat.reply` | B～D |

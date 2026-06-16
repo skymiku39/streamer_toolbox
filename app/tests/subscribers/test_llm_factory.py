@@ -6,9 +6,9 @@ import pytest
 
 from sub_llm.chroma_store import ChromaKnowledgeStore, ChromaSummaryKnowledgeStore
 from sub_llm.factory import create_knowledge_store, create_llm_client
+from sub_llm.gemini_grounded import GeminiGroundedLlmClient
 from sub_llm.knowledge import CompositeKnowledgeStore, EmptyKnowledgeStore
 from sub_llm.llm import TemplateLlmClient
-from sub_llm.gemini_grounded import GeminiGroundedLlmClient
 from sub_llm.openai_client import OpenAiCompatibleLlmClient
 
 

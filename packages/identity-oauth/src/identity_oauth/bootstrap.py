@@ -98,7 +98,9 @@ async def fetch_token_info(access_token: str) -> dict[str, Any]:
         return response.json()
 
 
-def _build_callback_handler(state: _CallbackState, expected_path: str) -> type[BaseHTTPRequestHandler]:
+def _build_callback_handler(
+    state: _CallbackState, expected_path: str
+) -> type[BaseHTTPRequestHandler]:
     class OAuthCallbackHandler(BaseHTTPRequestHandler):
         def log_message(self, _format: str, *_args: object) -> None:
             return

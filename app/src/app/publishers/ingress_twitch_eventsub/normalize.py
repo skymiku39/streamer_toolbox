@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent, EventSubEvent, eventsub_topic
+
 from emotes import EmoteRegistry, twitch_emote_cdn_url
-from events import ChatMessageEvent, EventSubEvent, TOPIC_CHAT_MESSAGE, eventsub_topic
 
 SCHEMA_VERSION = 1
 
@@ -27,9 +28,9 @@ def _user_id(user: Any) -> str:
 def _login_name(user: Any) -> str:
     if user is None:
         return ""
-    return (
-        str(getattr(user, "name", "") or getattr(user, "login", "") or getattr(user, "id", "")).strip()
-    )
+    return str(
+        getattr(user, "name", "") or getattr(user, "login", "") or getattr(user, "id", "")
+    ).strip()
 
 
 def _display_name(user: Any) -> str:

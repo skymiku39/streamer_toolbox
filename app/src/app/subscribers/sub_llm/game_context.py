@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 
 from game_info import GameInfoProvider, IgdbGameInfoProvider, format_game_info_for_prompt
-
 from sub_llm.context_buffer import LiveContextBuffer
 
 _NON_GAME_CATEGORIES = frozenset(

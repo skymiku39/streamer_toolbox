@@ -12,13 +12,13 @@ from events import (
     ChatReplyEvent,
     StreamMetadataEvent,
 )
-from stream_store.idempotency import IdempotencyStore
-
 from sub_live_status.status_messages import (
     build_live_status_message,
     live_status_announcement_enabled,
     resolve_status_channel,
 )
+
+from stream_store.idempotency import IdempotencyStore
 
 NAMESPACE_STARTUP = "sub_live_status.startup"
 

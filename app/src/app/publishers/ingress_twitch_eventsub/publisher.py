@@ -5,9 +5,9 @@ from collections.abc import Awaitable, Callable
 from typing import Protocol
 
 from aio_pika import Exchange
+from events import ChatMessageEvent, EventSubEvent
 
 from bus.rabbitmq import publish_topic
-from events import ChatMessageEvent, EventSubEvent
 
 logger = logging.getLogger(__name__)
 

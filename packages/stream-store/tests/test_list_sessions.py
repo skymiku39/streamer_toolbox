@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import ACTIVE_SESSION_KEY, StreamTextStore
+from stream_store import StreamTextStore
 
 
 def test_list_sessions_returns_counts(tmp_path: Path) -> None:

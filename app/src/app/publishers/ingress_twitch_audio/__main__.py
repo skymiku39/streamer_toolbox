@@ -7,17 +7,16 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_STT_SEGMENT
 
 from app.processes.registry import register_publisher
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from bus.topology import DEFAULT_EXCHANGE
-
 from ingress_twitch_audio.config import SttConfig
 from ingress_twitch_audio.live_audio import LiveAudioCapture
 from ingress_twitch_audio.segment import build_stt_segment_event
 from ingress_twitch_audio.stt_worker import STTWorker
-from bus.config import rabbitmq_url, stream_exchange
-from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
-from events import TOPIC_STT_SEGMENT
 
 PROCESS_NAME = "ingress-twitch-audio"
 

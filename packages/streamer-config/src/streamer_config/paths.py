@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 ENV_STREAMER_CONFIG_DIR = "STREAMER_CONFIG_DIR"
 

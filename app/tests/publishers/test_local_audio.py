@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import struct
-import threading
 import time
 
 from ingress_local_audio.config import LocalAudioConfig
-from ingress_local_audio.local_audio import MicAudioCapture, SAMPLE_RATE
-from ingress_twitch_audio.config import SttConfig
+from ingress_local_audio.local_audio import SAMPLE_RATE, MicAudioCapture
 
 
 def _pcm_chunk(seconds: float, amplitude: float = 0.2) -> bytes:

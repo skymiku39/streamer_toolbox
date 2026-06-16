@@ -4,13 +4,13 @@ import threading
 import time
 
 import pytest
-
 from events import (
     TOPIC_CHARACTER_AUDIO_READY,
     TOPIC_CHARACTER_EXPRESSION_READY,
     CharacterAudioReadyEvent,
     CharacterExpressionReadyEvent,
 )
+
 from sub_character_stage.coordinator import TurnCoordinator
 from sub_character_stage.cue import StageCue
 

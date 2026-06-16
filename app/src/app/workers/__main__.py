@@ -1,24 +1,13 @@
 from __future__ import annotations
 
-
-
 import argparse
-
 import os
-
 import sys
-
-
 
 from dotenv import load_dotenv
 
-
-
 from app.console_encoding import configure_utf8_stdio
-
 from app.module_paths import ensure_legacy_module_paths
-
-
 
 ensure_legacy_module_paths()
 
@@ -26,29 +15,17 @@ configure_utf8_stdio()
 
 
 
-from app.workers.memory_config import DEFAULT_MEMORY_INTERVAL_MINUTES, MemoryWorkerConfig
-
-from app.workers.memory_scheduler import run_scheduled_worker
-
 from app.publishing.summary_publisher import create_summary_publisher
-
+from app.workers.memory_config import DEFAULT_MEMORY_INTERVAL_MINUTES, MemoryWorkerConfig
+from app.workers.memory_scheduler import run_scheduled_worker
 from app.workers.memory_summarizer import create_summarizer
-
 from app.workers.memory_trigger import (
-
     MemoryTriggerHandle,
-
     MemoryTriggerListener,
-
     publish_memory_summarize_trigger,
-
 )
-
 from app.workers.memory_worker import MemoryWorker
-
 from stream_store import StreamTextStore
-
-
 
 PROCESS_NAME = "sub-memory-worker"
 

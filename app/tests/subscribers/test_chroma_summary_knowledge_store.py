@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from stream_store import StreamTextStore, set_active_session_for_channel
-
 from sub_llm.chroma_store import ChromaSummaryKnowledgeStore
 
 

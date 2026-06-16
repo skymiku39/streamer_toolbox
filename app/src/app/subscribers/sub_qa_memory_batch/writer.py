@@ -4,9 +4,9 @@ import sys
 from typing import Any
 
 from events import SOURCE_LOGIC_LLM, TOPIC_CHAT_REPLY, ChatReplyEvent
-from stream_store import StreamTextStore, set_active_session_for_channel
 
 from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 
 class BatchQaMemoryWriter:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 import socket
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 from voice_clone.config import Settings, get_settings
 
@@ -49,7 +49,9 @@ def enforce_offline(settings: Settings | None = None, *, block_network: bool = T
 
 
 @contextmanager
-def offline_context(settings: Settings | None = None, *, block_network: bool = False) -> Iterator[None]:
+def offline_context(
+    settings: Settings | None = None, *, block_network: bool = False
+) -> Iterator[None]:
     """CLI 入口使用的離線上下文。"""
     settings = settings or get_settings()
     apply_offline_env(settings)

@@ -1,7 +1,7 @@
 from events import MemoryQaRecordEvent
-from stream_store import StreamTextStore
 
 from app.subscribers.stream_record_config import RecordConfig
+from stream_store import StreamTextStore
 from sub_qa_memory_structured.writer import StructuredQaMemoryWriter
 
 

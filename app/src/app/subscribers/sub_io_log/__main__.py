@@ -9,14 +9,12 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 from app.processes.registry import register_subscriber
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_IO_LOG_CHAT_MESSAGE
-
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
-from bus.topology import QUEUE_IO_LOG_CHAT_MESSAGE
-from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_IO_LOG_CHAT_MESSAGE
 
 PROCESS_NAME = "sub-io-log"
 STATS_INTERVAL_SECONDS = 30

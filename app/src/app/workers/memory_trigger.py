@@ -4,6 +4,8 @@ import sys
 import threading
 from dataclasses import dataclass, field
 
+from events import TOPIC_MEMORY_SUMMARIZE_REQUEST, MemorySummarizeRequestEvent
+
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import (
     connect_blocking,
@@ -11,8 +13,7 @@ from bus.rabbitmq import (
     publish_topic_blocking,
     setup_subscriber_queue_bindings,
 )
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_MEMORY_WORKER
-from events import TOPIC_MEMORY_SUMMARIZE_REQUEST, MemorySummarizeRequestEvent
+from bus.topology import QUEUE_MEMORY_WORKER
 
 
 @dataclass

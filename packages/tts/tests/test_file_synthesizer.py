@@ -1,4 +1,3 @@
-import pytest
 
 from tts.file_synthesizer import FileVoiceSynthesizer, estimate_duration_ms
 

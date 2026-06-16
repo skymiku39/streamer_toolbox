@@ -12,34 +12,6 @@ from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.prompt_assembly import build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
 
-_SIMPLIFIED_ONLY = frozenset(
-    "这时为发对还会来个个与关开问样让认识读写语请谢爱类组织报导联系网页测试产品应该总体学现将较称码视频导标题连接击览载规则删编辑复杂简单变区没说过说种动国点线号电话录储库帮门关键选择启动运行设置参数输入输出处理错误异常详细东马风龙鱼鸟汉边进远钟铁银钱买卖价质气阳阴书画药医师严欢乐"
-)
-
-
-def _detect_simplified_chars(text: str) -> list[str]:
-    return sorted({ch for ch in text if ch in _SIMPLIFIED_ONLY})
-
-
-def _agent_debug_log(*, hypothesis_id: str, location: str, message: str, data: dict[str, Any]) -> None:
-    # #region agent log
-    try:
-        import time
-
-        payload = {
-            "sessionId": "6897dd",
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data,
-            "timestamp": int(time.time() * 1000),
-        }
-        with open("debug-6897dd.log", "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    except OSError:
-        pass
-    # #endregion
-
 
 class GeminiGroundedLlmClient:
     """Gemini 原生 generateContent + Google Search grounding。"""
@@ -121,22 +93,6 @@ class GeminiGroundedLlmClient:
                 flush=True,
             )
             parsed = parse_ask_response(raw)
-            # #region agent log
-            _agent_debug_log(
-                hypothesis_id="A,B,C",
-                location="gemini_grounded.py:ask",
-                message="llm reply script audit",
-                data={
-                    "system_has_trad_rule": "繁體中文" in system_content,
-                    "user_has_trad_guidance": "繁體中文" in user_content,
-                    "knowledge_simplified": _detect_simplified_chars(knowledge),
-                    "reply_simplified": _detect_simplified_chars(parsed.reply),
-                    "reply_preview": parsed.reply[:120],
-                    "store_worthy": parsed.store_worthy,
-                    "memory_value": parsed.memory_value,
-                },
-            )
-            # #endregion
             return parsed
         except LlmApiError as exc:
             print(

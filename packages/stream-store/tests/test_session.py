@@ -13,7 +13,10 @@ from stream_store import (
 
 def test_checkpoint_key_per_channel() -> None:
     assert checkpoint_key_for_channel("Skymiku39") == "active_session_id:skymiku39"
-    assert checkpoint_key_for_channel("#test_channel_delta") == "active_session_id:test_channel_delta"
+    assert (
+        checkpoint_key_for_channel("#test_channel_delta")
+        == "active_session_id:test_channel_delta"
+    )
 
 
 def test_resolve_session_id_from_channel_and_day() -> None:

@@ -8,9 +8,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from emotes import EmoteRegistry
-from ttvchat_lens import ChatMessage, LiveChatReader, normalize_channel
-
 from ingress_ttv_read.mapper import map_chat_message
+from ttvchat_lens import ChatMessage, LiveChatReader, normalize_channel
 
 PublishPayload = Callable[[dict[str, Any]], Awaitable[None]]
 

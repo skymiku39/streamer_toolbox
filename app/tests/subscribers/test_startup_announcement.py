@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from events import TOPIC_CHAT_REPLY
-from safety import PassThroughSafetyFilter
 
+from safety import PassThroughSafetyFilter
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.llm import TemplateLlmClient
+from sub_llm.openai_client import LlmApiError
 from sub_llm.startup_announcement import (
     ensure_trigger_instruction,
     publish_startup_announcement,
     resolve_announcement_channel,
     startup_announcement_enabled,
 )
-from sub_llm.openai_client import LlmApiError
 
 
 def test_startup_announcement_enabled_defaults_true(monkeypatch) -> None:
@@ -71,7 +71,9 @@ def test_publish_startup_announcement_falls_back_on_llm_failure(monkeypatch) -> 
     published: list[tuple[str, dict]] = []
 
     class FailingLlm:
-        def generate_startup_greeting(self, *, channel: str, trigger_prefixes: tuple[str, ...]) -> str:
+        def generate_startup_greeting(
+            self, *, channel: str, trigger_prefixes: tuple[str, ...]
+        ) -> str:
             raise LlmApiError("LLM API network error: timed out")
 
     ok = publish_startup_announcement(

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from streamer_config.bootstrap import ensure_layout
-from streamer_config.paths import ConfigPaths, default_config_dir, repo_root
+from streamer_config.paths import ConfigPaths, default_config_dir
 from streamer_config.validate import ValidationError, validate_all
 
 
@@ -49,7 +49,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     bootstrap = subparsers.add_parser("bootstrap", help="建立設定目錄並複製範例（不覆寫）")
-    bootstrap.add_argument("--dir", help="設定目錄（預設 STREAMER_CONFIG_DIR 或 ~/streamer-config）")
+    bootstrap.add_argument(
+        "--dir", help="設定目錄（預設 STREAMER_CONFIG_DIR 或 ~/streamer-config）"
+    )
     bootstrap.add_argument("--channel", help="Twitch 頻道名（用於 knowledge/{channel}.md）")
     bootstrap.add_argument(
         "--examples-root",

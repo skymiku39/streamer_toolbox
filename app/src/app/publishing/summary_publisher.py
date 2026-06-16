@@ -4,9 +4,10 @@ import os
 import sys
 from typing import Protocol
 
+from events import TOPIC_MEMORY_SUMMARY_READY, MemorySummaryReadyEvent
+
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, publish_topic_blocking
-from events import TOPIC_MEMORY_SUMMARY_READY, MemorySummaryReadyEvent
 from stream_store.models import Summary
 
 

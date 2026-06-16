@@ -5,7 +5,6 @@ import re
 from dataclasses import dataclass
 
 from stream_store import StreamTextStore, resolve_session_for_channel
-
 from sub_llm.live_activity import is_current_activity_question
 
 _SESSION_RECAP = re.compile(
@@ -20,27 +19,6 @@ _RECAP_GUIDANCE = (
 )
 
 _RECAP_SUMMARY_SOURCES = frozenset({"chat", "stt"})
-
-
-def _debug_log(*, hypothesis_id: str, location: str, message: str, data: dict) -> None:
-    # #region agent log
-    try:
-        import json
-        import time
-
-        payload = {
-            "sessionId": "6eed9f",
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data,
-            "timestamp": int(time.time() * 1000),
-        }
-        with open("debug-6eed9f.log", "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    except OSError:
-        pass
-    # #endregion
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -101,12 +79,6 @@ def build_session_recap_reference(
         explicit_session_id=explicit,
     )
     if resolved_session is None:
-        _debug_log(
-            hypothesis_id="H1",
-            location="session_recap.py:build_session_recap_reference",
-            message="no session_id",
-            data={"channel": channel},
-        )
         return empty
 
     all_summaries = store.list_summaries(
@@ -124,24 +96,6 @@ def build_session_recap_reference(
         limit=_recap_raw_stt_limit(),
         recent=True,
     )
-    stt_range = ""
-    if stt_pending:
-        stt_range = f"{stt_pending[0].timestamp[:19]}..{stt_pending[-1].timestamp[:19]}"
-
-    _debug_log(
-        hypothesis_id="H2,H3",
-        location="session_recap.py:build_session_recap_reference",
-        message="recap sources",
-        data={
-            "session_id": resolved_session,
-            "all_summaries": len(all_summaries),
-            "qa_summaries": qa_summary_count,
-            "chat_stt_summaries": len(summaries),
-            "raw_stt": len(stt_pending),
-            "stt_range": stt_range,
-        },
-    )
-
     if not summaries and not stt_pending:
         return empty
 

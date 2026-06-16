@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.ask_response import structured_output_guidance
 from sub_llm.chat_format import reply_length_guidance
 from sub_llm.config import resolve_reply_max_length
-from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.prompts import resolve_system_prompt
 
 
@@ -101,7 +101,9 @@ def analyze_prompt_payload(
         game_body = game_body.strip()
     session_recap_body = ""
     if "本場回顧參考：" in user_content:
-        session_recap_body = user_content.split("本場回顧參考：", 1)[1].split("\n\n觀眾問題：", 1)[0]
+        session_recap_body = user_content.split("本場回顧參考：", 1)[1].split(
+            "\n\n觀眾問題：", 1
+        )[0]
         if "\n\n【回答方式】" in session_recap_body:
             session_recap_body = session_recap_body.split("\n\n【回答方式】", 1)[0]
         session_recap_body = session_recap_body.strip()

@@ -170,7 +170,10 @@ class STTWorker:
             )
             texts: list[str] = []
             for seg in segments:
-                if self._config.filter_hallucinations and not self._input_filter.accept_segment(seg):
+                if (
+                    self._config.filter_hallucinations
+                    and not self._input_filter.accept_segment(seg)
+                ):
                     continue
                 text = (seg.text or "").strip()
                 if text and self._input_filter.accept_text(text):
@@ -195,7 +198,9 @@ class STTWorker:
             self._emit_error(f"STT 失敗: {exc}")
             return None
 
-    def transcribe_chunk(self, pcm: bytes, *, stream_offset: float = 0.0) -> TranscriptSegment | None:
+    def transcribe_chunk(
+        self, pcm: bytes, *, stream_offset: float = 0.0
+    ) -> TranscriptSegment | None:
         if self._input_filter.is_silent_pcm(pcm):
             return None
         audio = _pcm_to_float32(pcm)

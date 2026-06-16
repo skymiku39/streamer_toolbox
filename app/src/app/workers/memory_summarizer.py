@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from stream_store.models import TextRecord
-
 from app.workers.memory_timeline import format_chat_timeline, format_stt_timeline
+from stream_store.models import TextRecord
 
 SUMMARY_SYSTEM = """你是 Twitch 直播摘要助手。輸入為依時間排序的聊天室訊息（每行含 timestamp）。
 
 請產生繁體中文摘要，**須依時間先後**描述本時段聊天動態（可條列 3-5 點，每點可標註約略時間）。
 若訊息很少或無實質內容，簡短說明即可。"""
 
-STT_SUMMARY_SYSTEM = """你是直播語音摘要助手。輸入為依時間排序的實況主 STT 轉錄（每行含 timestamp）。
+STT_SUMMARY_SYSTEM = """\
+你是直播語音摘要助手。輸入為依時間排序的實況主 STT 轉錄（每行含 timestamp）。
 
 請產生繁體中文摘要，**須依時間先後**描述實況主說了什麼（可條列 3-5 點，每點可標註約略時間）。
 聚焦討論主題與重要決策；若內容零碎或無實質，簡短說明即可。"""
@@ -91,7 +91,9 @@ class LlmSummarizer:
             ).strip()
         else:
             base_url = (os.environ.get("LLM_API_BASE") or "https://api.openai.com/v1").strip()
-            api_key = (os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or "").strip()
+            api_key = (
+                os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+            ).strip()
             model = (os.environ.get("LLM_MODEL") or "gpt-4o-mini").strip()
         if not api_key:
             raise ValueError(

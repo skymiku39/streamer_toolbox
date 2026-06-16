@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -18,17 +18,25 @@ sys.path[:0] = [
 
 load_dotenv(ROOT / ".env")
 
-from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent  # noqa: E402
+from events import (  # noqa: E402
+    TOPIC_CHAT_MESSAGE,
+    TOPIC_STT_SEGMENT,
+    ChatMessageEvent,
+    SttSegmentEvent,
+)
+
 from sub_llm.context_buffer import LiveContextBuffer  # noqa: E402
 from sub_llm.factory import create_knowledge_store, preload_knowledge_store  # noqa: E402
 from sub_llm.prompt_assembly import analyze_prompt_payload  # noqa: E402
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
-def _build_sample_context(channel: str) -> tuple[LiveContextBuffer, tuple[int, int, int, int, bool]]:
+def _build_sample_context(
+    channel: str,
+) -> tuple[LiveContextBuffer, tuple[int, int, int, int, bool]]:
     bot_id = (os.environ.get("TWITCH_BOT_ID") or "").strip()
     skip_ids = frozenset({bot_id}) if bot_id else frozenset()
     window = int(os.environ.get("LLM_CONTEXT_WINDOW_MINUTES", "5"))
@@ -96,7 +104,10 @@ def main() -> int:
 
     backend = (report["backend"] or "chroma").strip().lower()
     if backend != "chroma":
-        print(f"[verify] ERROR: LLM_KNOWLEDGE_BACKEND 必須為 chroma（RAG），目前為 {backend!r}", file=sys.stderr)
+        print(
+            f"[verify] ERROR: LLM_KNOWLEDGE_BACKEND 必須為 chroma（RAG），目前為 {backend!r}",
+            file=sys.stderr,
+        )
         return 1
 
     all_ok = True

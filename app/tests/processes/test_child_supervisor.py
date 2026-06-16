@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 
-from app.processes.child_supervisor import popen_preexec_fn, track_child, terminate_tracked_children
+from app.processes.child_supervisor import popen_preexec_fn, terminate_tracked_children, track_child
 
 
 def test_popen_preexec_fn_is_none_on_windows() -> None:

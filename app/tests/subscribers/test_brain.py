@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from events import TOPIC_CHARACTER_TURN, TOPIC_CHAT_REPLY
+
 from safety import BlocklistSafetyFilter, PassThroughSafetyFilter
 from sub_character_brain.brain import CharacterBrain
 from sub_character_brain.config import CharacterConfig

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from control.publisher import publish_config_changed_blocking, try_publish_config_changed
 from events import TOPIC_CONFIG_CHANGED
+
+from control.publisher import publish_config_changed_blocking, try_publish_config_changed
 
 
 def test_publish_config_changed_blocking() -> None:

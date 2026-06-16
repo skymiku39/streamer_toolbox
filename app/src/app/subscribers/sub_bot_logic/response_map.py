@@ -160,7 +160,10 @@ class BotResponseMap:
                 data = value if isinstance(value, dict) else {}
                 permissions[normalized_key] = {
                     "enabled": bool(
-                        data.get("enabled", permissions.get(normalized_key, {}).get("enabled", True))
+                        data.get(
+                            "enabled",
+                            permissions.get(normalized_key, {}).get("enabled", True),
+                        )
                     ),
                     "min_role": _normalize_role(
                         str(

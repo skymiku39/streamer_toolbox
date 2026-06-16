@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from stream_store import StreamTextStore, set_active_session_for_channel
-
 from sub_llm.knowledge import SummaryKnowledgeStore
 
 

@@ -4,10 +4,10 @@ import sys
 from typing import Any
 
 from events import TOPIC_MEMORY_QA_RECORD, MemoryQaRecordEvent
-from stream_store import StreamTextStore, set_active_session_for_channel
-from stream_store.models import Summary
 
 from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
+from stream_store import StreamTextStore, set_active_session_for_channel
+from stream_store.models import Summary
 
 
 class StructuredQaMemoryWriter:

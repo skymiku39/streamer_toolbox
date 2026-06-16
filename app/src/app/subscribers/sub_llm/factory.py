@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 
 from stream_store import StreamTextStore
-
 from sub_llm.chroma_store import ChromaKnowledgeStore, ChromaSummaryKnowledgeStore
 from sub_llm.knowledge import (
     CompositeKnowledgeStore,

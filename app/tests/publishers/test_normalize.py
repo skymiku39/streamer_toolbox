@@ -3,13 +3,13 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from events import TOPIC_CHAT_MESSAGE, eventsub_topic
 
 from ingress_twitch_eventsub.normalize import (
     chat_message_from_eventsub,
     eventsub_from_follow,
     eventsub_from_raid,
 )
-from events import TOPIC_CHAT_MESSAGE, eventsub_topic
 
 
 def _chat_message_fixture() -> SimpleNamespace:

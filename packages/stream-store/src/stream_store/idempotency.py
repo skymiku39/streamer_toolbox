@@ -5,7 +5,6 @@ import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS idempotency_keys (
     namespace TEXT NOT NULL,

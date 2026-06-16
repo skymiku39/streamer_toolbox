@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from stream_store import StreamTextStore, set_active_session_for_channel
 
+from stream_store import StreamTextStore, set_active_session_for_channel
 from sub_llm.live_activity import is_current_activity_question
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.session_recap import (

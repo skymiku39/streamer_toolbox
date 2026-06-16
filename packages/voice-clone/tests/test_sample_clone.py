@@ -6,7 +6,7 @@ import pytest
 
 from voice_clone.config import Settings
 from voice_clone.inference.checkpoints import resolve_model_bundle
-from voice_clone.inference.sample_ref import find_paired_sample_text, resolve_sample_reference
+from voice_clone.inference.sample_ref import resolve_sample_reference
 from voice_clone.stt.segment import TranscriptSegment
 
 

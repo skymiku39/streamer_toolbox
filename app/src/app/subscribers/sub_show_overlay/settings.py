@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 
-class LayoutMode(str, Enum):
+class LayoutMode(StrEnum):
     CHAT = "chat"
     FREE = "free"
     BOTH = "both"
@@ -60,7 +60,9 @@ def _parse_layout(raw: str) -> LayoutMode:
     try:
         return LayoutMode(value)
     except ValueError as exc:
-        raise ValueError(f"unsupported layout mode: {raw!r} (expected chat, free, or both)") from exc
+        raise ValueError(
+            f"unsupported layout mode: {raw!r} (expected chat, free, or both)"
+        ) from exc
 
 
 def overlay_settings_from_env() -> OverlaySettings:

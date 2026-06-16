@@ -18,7 +18,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import unquote, urlparse
 
@@ -171,7 +171,7 @@ class ChatMessage:
         }
 
     @classmethod
-    def from_pytchat(cls, chat_obj: Any) -> "ChatMessage":
+    def from_pytchat(cls, chat_obj: Any) -> ChatMessage:
         author = getattr(chat_obj, "author", None)
         raw_getter = getattr(chat_obj, "json", None)
         raw = raw_getter() if callable(raw_getter) else {}
@@ -181,11 +181,11 @@ class ChatMessage:
         ts_ms = getattr(chat_obj, "timestamp", 0) or 0
         if ts_ms:
             try:
-                timestamp = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
+                timestamp = datetime.fromtimestamp(ts_ms / 1000, tz=UTC)
             except (OverflowError, OSError, ValueError):
-                timestamp = datetime.now(tz=timezone.utc)
+                timestamp = datetime.now(tz=UTC)
         else:
-            timestamp = datetime.now(tz=timezone.utc)
+            timestamp = datetime.now(tz=UTC)
 
         amount_string = getattr(chat_obj, "amountString", "") or ""
         currency = getattr(chat_obj, "currency", "") or ""
@@ -256,50 +256,10 @@ class LiveChatReader:
         self._stopped = False
         with _suppress_signal_in_thread():
             self._chat = pytchat.create(video_id=self.video_id)
-        # #region agent log
-        import json
-        import time
-        from pathlib import Path
-
-        def _agent_log(hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
-            Path("debug-5542a6.log").open("a", encoding="utf-8").write(
-                json.dumps(
-                    {
-                        "sessionId": "5542a6",
-                        "hypothesisId": hypothesis_id,
-                        "location": location,
-                        "message": message,
-                        "data": data or {},
-                        "timestamp": int(time.time() * 1000),
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
-
-        _agent_log(
-            "C",
-            "reader.py:iter_messages",
-            "pytchat created",
-            {"video_id": self.video_id, "is_alive": bool(self._chat.is_alive())},
-        )
-        # #endregion
-        poll_rounds = 0
         try:
             while self._chat.is_alive() and not self._stopped:
-                poll_rounds += 1
                 items = list(self._chat.get().sync_items())
                 if not items:
-                    if poll_rounds in {1, 5, 30}:
-                        _agent_log(
-                            "C",
-                            "reader.py:iter_messages",
-                            "poll empty",
-                            {
-                                "poll_rounds": poll_rounds,
-                                "is_alive": bool(self._chat.is_alive()),
-                            },
-                        )
                     if self._stopped:
                         break
                     time.sleep(self.poll_interval)
@@ -309,18 +269,6 @@ class LiveChatReader:
                         break
                     yield ChatMessage.from_pytchat(item)
         finally:
-            # #region agent log
-            _agent_log(
-                "C",
-                "reader.py:iter_messages",
-                "iter_messages exit",
-                {
-                    "poll_rounds": poll_rounds,
-                    "is_alive": bool(self._chat.is_alive()) if self._chat else False,
-                    "stopped": self._stopped,
-                },
-            )
-            # #endregion
             self.close()
 
     def start(self) -> None:

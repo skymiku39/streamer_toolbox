@@ -34,7 +34,9 @@ def parse_discord_message(message: discord.Message) -> DiscordChatMessage | None
         return None
 
     if not content and message.attachments:
-        content = " ".join(f"[attachment:{attachment.filename}]" for attachment in message.attachments)
+        content = " ".join(
+            f"[attachment:{attachment.filename}]" for attachment in message.attachments
+        )
 
     reply: dict[str, Any] | None = None
     if message.reference and message.reference.resolved:

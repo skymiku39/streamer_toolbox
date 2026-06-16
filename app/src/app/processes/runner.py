@@ -17,7 +17,7 @@ from app.processes.chat_ingress import (
     IRC_FALLBACK_PROCESS,
     parse_chat_ingress_status,
 )
-from app.processes.child_supervisor import popen_preexec_fn, track_child, terminate_tracked_children
+from app.processes.child_supervisor import popen_preexec_fn, terminate_tracked_children, track_child
 from app.processes.process_lock import locked_names, release, stop_all_command_hint
 from app.processes.python_exec import subprocess_python_env, subprocess_python_executable
 from app.processes.registry import registry

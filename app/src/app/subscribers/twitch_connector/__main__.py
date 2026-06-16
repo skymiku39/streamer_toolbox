@@ -5,6 +5,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_REPLY, TOPIC_SYSTEM_ERROR
 
 from app.processes.registry import register_subscriber
 from bus.config import rabbitmq_url, stream_exchange
@@ -15,13 +16,11 @@ from bus.rabbitmq import (
     setup_subscriber_queue,
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_TWITCH_CONNECTOR_CHAT_REPLY
-from events import TOPIC_CHAT_REPLY, TOPIC_SYSTEM_ERROR
+from identity_oauth import SyncEnvTokenProvider
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
-
 from twitch_connector.dispatcher import ChatReplyDispatcher
 from twitch_connector.subscriber import ReplySubscriber
 from twitch_connector.throttle import MessageThrottle
-from identity_oauth import SyncEnvTokenProvider
 from twitch_connector.twitch_sender import TwitchChatSender
 
 PROCESS_NAME = "twitch-connector"
@@ -98,7 +97,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     print(
-        f"Listening for {TOPIC_CHAT_REPLY} → Twitch Helix (queue={QUEUE_TWITCH_CONNECTOR_CHAT_REPLY})",
+        f"Listening for {TOPIC_CHAT_REPLY} → Twitch Helix "
+        f"(queue={QUEUE_TWITCH_CONNECTOR_CHAT_REPLY})",
         file=sys.stderr,
         flush=True,
     )

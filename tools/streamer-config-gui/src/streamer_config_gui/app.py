@@ -13,12 +13,15 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from streamer_config.bootstrap import ensure_layout
-from streamer_config.paths import ConfigPaths, default_config_dir
-from streamer_config.validate import ValidationError, validate_json_content, validate_knowledge_filename
-
 from control import CONFIG_FILE_MODULE_ID
 from control.publisher import try_publish_config_changed
+from streamer_config.bootstrap import ensure_layout
+from streamer_config.paths import ConfigPaths, default_config_dir
+from streamer_config.validate import (
+    ValidationError,
+    validate_json_content,
+    validate_knowledge_filename,
+)
 
 RESTART_HINTS = [
     {"file": "knowledge/*.md", "process": "sub-llm"},

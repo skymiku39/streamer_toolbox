@@ -78,7 +78,9 @@ class Spout2SubtitleSender:
             self._impl.ReleaseSender()
 
 
-def build_sender(*, backend: str, sender_name: str, output_file: str) -> tuple[SubtitleSender, str | None]:
+def build_sender(
+    *, backend: str, sender_name: str, output_file: str
+) -> tuple[SubtitleSender, str | None]:
     """建立輸出後端；若 spout2 不可用則回傳 file 與降級原因。"""
     if backend == "spout2":
         spout_sender = Spout2SubtitleSender(sender_name=sender_name)

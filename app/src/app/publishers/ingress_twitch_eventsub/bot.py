@@ -33,7 +33,6 @@ from twitchio.models.eventsub_ import (
 )
 
 from emotes import EmoteRegistry
-
 from ingress_twitch_eventsub.chat_status import (
     CHAT_FALLBACK_EXIT_CODE,
     CHAT_INGRESS_EVENTSUB,

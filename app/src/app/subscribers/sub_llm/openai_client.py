@@ -7,8 +7,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from sub_llm.ask_response import AskResponse, parse_ask_response, parse_plain_llm_text
 from app.subscribers.qa_memory_mode import structured_ask_enabled
+from sub_llm.ask_response import AskResponse, parse_ask_response, parse_plain_llm_text
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
 from sub_llm.startup_announcement import (
@@ -63,7 +63,9 @@ class OpenAiCompatibleLlmClient:
             ).strip()
         else:
             base_url = (os.environ.get("LLM_API_BASE") or "https://api.openai.com/v1").strip()
-            api_key = (os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or "").strip()
+            api_key = (
+                os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+            ).strip()
             model = (os.environ.get("LLM_MODEL") or "gpt-4o-mini").strip()
         system_prompt = resolve_system_prompt()
         if not api_key:

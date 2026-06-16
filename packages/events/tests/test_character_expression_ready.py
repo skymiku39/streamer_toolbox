@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from events import TOPIC_CHARACTER_EXPRESSION_READY, CharacterExpressionReadyEvent
 
 

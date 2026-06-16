@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from stream_store.models import TextRecord
-
 from app.workers.memory_timeline import format_chat_timeline, format_stt_timeline
+from stream_store.models import TextRecord
 
 
 def _chat(record_id: int, ts: str, author: str, text: str) -> TextRecord:

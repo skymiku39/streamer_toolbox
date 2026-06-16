@@ -13,8 +13,8 @@ from events import (
     ChatReplyEvent,
     SystemErrorEvent,
 )
-from stream_store.idempotency import IdempotencyStore
 
+from stream_store.idempotency import IdempotencyStore
 from twitch_connector.dispatcher import ChatReplyDispatcher, UnsupportedPlatformError
 from twitch_connector.twitch_sender import TwitchSendError
 

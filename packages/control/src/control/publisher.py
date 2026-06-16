@@ -5,10 +5,10 @@ import os
 from typing import Any
 
 import pika
+from events import ConfigChangedEvent
 
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, publish_topic_blocking
-from events import ConfigChangedEvent
 
 logger = logging.getLogger(__name__)
 

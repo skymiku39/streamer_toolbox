@@ -6,6 +6,7 @@ import sys
 import threading
 
 from dotenv import load_dotenv
+from events import TOPIC_MEMORY_SUMMARY_READY, MemorySummaryReadyEvent
 
 from app.console_encoding import configure_utf8_stdio
 from app.memory_view.channel import default_channel
@@ -15,7 +16,6 @@ from app.processes.registry import register_subscriber
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_bindings
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_MEMORY_BOARD
-from events import TOPIC_MEMORY_SUMMARY_READY, MemorySummaryReadyEvent
 from stream_store import StreamTextStore
 
 configure_utf8_stdio()

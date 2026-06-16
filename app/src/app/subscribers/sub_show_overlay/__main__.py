@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SHOW_OVERLAY_CHAT_MESSAGE
-
 from sub_show_overlay.settings import LayoutMode, overlay_settings_from_env
 from sub_show_overlay.subscriber import ShowOverlaySubscriber
 

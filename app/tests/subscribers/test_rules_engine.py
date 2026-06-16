@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from events import (
     SOURCE_LOGIC_COMMANDS,
     SOURCE_LOGIC_EVENTS,
@@ -14,6 +13,7 @@ from events import (
     EventSubEvent,
     eventsub_topic,
 )
+
 from sub_bot_logic.redemption_map import RedemptionResponseMap
 from sub_bot_logic.response_map import BotResponseMap
 from sub_bot_logic.rules_engine import BotRulesEngine

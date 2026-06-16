@@ -4,7 +4,8 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime
 
-from events import ChatMessageEvent, SttSegmentEvent, StreamMetadataEvent
+from events import ChatMessageEvent, StreamMetadataEvent, SttSegmentEvent
+
 from stream_store.session import normalize_channel
 
 

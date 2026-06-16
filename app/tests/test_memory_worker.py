@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import StreamTextStore, set_active_session_for_channel
-
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import TemplateSummarizer
 from app.workers.memory_worker import MemoryWorker
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 
 def test_memory_worker_summarizes_and_marks_records(tmp_path: Path) -> None:

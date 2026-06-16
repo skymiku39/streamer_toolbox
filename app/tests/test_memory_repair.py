@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import StreamTextStore
-
 from app.memory_view.repair import repair_session_channel_isolation
+from stream_store import StreamTextStore
 
 
 def test_repair_session_channel_isolation(tmp_path: Path) -> None:

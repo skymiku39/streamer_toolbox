@@ -4,8 +4,9 @@ import hashlib
 from datetime import datetime
 from typing import Any
 
-from emotes import EmoteRegistry, parse_irc_emotes_tag
 from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+
+from emotes import EmoteRegistry, parse_irc_emotes_tag
 from ttvchat_lens import ChatMessage
 
 _SKIP_MESSAGE_TYPES = frozenset(

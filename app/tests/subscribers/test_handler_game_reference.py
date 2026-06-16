@@ -1,12 +1,12 @@
 from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
-from safety import PassThroughSafetyFilter
 
-from sub_llm.config import LlmSubscriberConfig
+from game_info.models import GameReviewInfo
+from safety import PassThroughSafetyFilter
 from sub_llm.ask_response import AskResponse
+from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.handler import LlmSubscriber
 from sub_llm.knowledge import EmptyKnowledgeStore
-from game_info.models import GameReviewInfo
 
 
 def _chat_payload(content: str) -> dict:

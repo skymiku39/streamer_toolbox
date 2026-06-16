@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from tts.noop import NoOpTtsEngine
-
 from sub_tts.queue_worker import TtsPlaybackQueue
+from tts.noop import NoOpTtsEngine
 
 
 def test_playback_preserves_order() -> None:

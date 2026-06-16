@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from tubechat_lens.reader import ChatMessage
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 from ingress_yt_read.mapper import map_chat_message
-from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from tubechat_lens.reader import ChatMessage
 
 
 def _sample_message(**overrides: object) -> ChatMessage:

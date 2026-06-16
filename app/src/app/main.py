@@ -123,7 +123,12 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 1
 
     if args.stack:
-        from app.processes.process_lock import acquire, release, stack_lock_name, stop_all_command_hint
+        from app.processes.process_lock import (
+            acquire,
+            release,
+            stack_lock_name,
+            stop_all_command_hint,
+        )
 
         lock_name = stack_lock_name(args.stack)
         if not acquire(lock_name, os.getpid()):

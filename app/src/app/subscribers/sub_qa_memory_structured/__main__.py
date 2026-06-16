@@ -5,19 +5,18 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_MEMORY_QA_RECORD
 
 from app.processes.registry import register_subscriber
-from app.subscribers.stream_record_config import RecordConfig
 from app.publishing.summary_publisher import create_summary_publisher
+from app.subscribers.qa_memory_mode import resolve_qa_memory_mode
+from app.subscribers.stream_record_config import RecordConfig
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_bindings
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_QA_MEMORY_STRUCTURED
-from events import TOPIC_MEMORY_QA_RECORD
 from stream_store import StreamTextStore
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
-
 from sub_qa_memory_structured.writer import StructuredQaMemoryWriter
-from app.subscribers.qa_memory_mode import resolve_qa_memory_mode
 
 PROCESS_NAME = "sub-qa-memory-structured"
 NAMESPACE = "sub_qa_memory_structured.record"

@@ -62,7 +62,9 @@ def test_chroma_skips_upsert_when_fingerprint_unchanged(
     mock_collection.upsert.assert_called_once()
 
 
-def test_chroma_query_returns_formatted_snippet(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chroma_query_returns_formatted_snippet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     knowledge_dir = tmp_path / "knowledge"
     knowledge_dir.mkdir()
     (knowledge_dir / "faq.md").write_text("內容", encoding="utf-8")
@@ -83,7 +85,9 @@ def test_chroma_query_returns_formatted_snippet(tmp_path: Path, monkeypatch: pyt
     assert "週五晚上八點" in snippet
 
 
-def test_create_knowledge_store_chroma_backend(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_create_knowledge_store_chroma_backend(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     knowledge_file = tmp_path / "notes.md"
     knowledge_file.write_text("chroma note", encoding="utf-8")
     monkeypatch.setenv("LLM_MEMORY_FROM_DB", "false")

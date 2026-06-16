@@ -44,6 +44,9 @@ testpaths = [
     "packages/game-info/tests",
     "packages/control/tests",
     "packages/emotes/tests",
+    "packages/streamer-config/tests",
+    "packages/ttvchat-lens/tests",
+    "packages/tubechat-lens/tests",
     "packages/voice-clone/tests",
     "tools/streamer-config-gui/tests",
     "app/tests",
@@ -65,6 +68,13 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# 這些檔案需在 import 前先設定 module path / 編碼 / 環境變數，故允許 E402。
+"app/src/app/main.py" = ["E402"]
+"app/src/app/workers/__main__.py" = ["E402"]
+"app/tests/conftest.py" = ["E402"]
+"scripts/probe_eventsub.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = [

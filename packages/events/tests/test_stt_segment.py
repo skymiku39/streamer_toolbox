@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
 

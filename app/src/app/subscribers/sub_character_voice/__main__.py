@@ -1,51 +1,25 @@
 from __future__ import annotations
 
-
-
 import argparse
-
 import os
-
 import sys
-
 import threading
-
 from pathlib import Path
 
-
-
 from dotenv import load_dotenv
-
-from app.processes.registry import register_subscriber
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_VOICE_TURN
-
-
-
-from bus.config import rabbitmq_url, stream_exchange
-
-from bus.rabbitmq import (
-
-    connect_blocking,
-
-    consume_messages,
-
-    publish_topic_blocking,
-
-    setup_subscriber_queue,
-
-)
-
-from bus.topology import QUEUE_CHARACTER_VOICE_TURN
-
 from events import TOPIC_CHARACTER_TURN
 
-from tts import create_voice_synthesizer
-
-
-
+from app.processes.registry import register_subscriber
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import (
+    connect_blocking,
+    consume_messages,
+    publish_topic_blocking,
+    setup_subscriber_queue,
+)
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_VOICE_TURN
 from sub_character_voice.voice import CharacterVoiceSubscriber
-
-
+from tts import create_voice_synthesizer
 
 PROCESS_NAME = "sub-character-voice"
 

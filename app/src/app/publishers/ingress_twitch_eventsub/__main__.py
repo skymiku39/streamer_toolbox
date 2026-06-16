@@ -7,18 +7,16 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_MESSAGE
 
 from app.processes.registry import register_publisher
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from bus.topology import DEFAULT_EXCHANGE
-
 from emotes import EmoteRegistry
-
 from identity_oauth import MultiAccountTokenProvider
 from ingress_twitch_eventsub.bot import EventSubIngressBot
 from ingress_twitch_eventsub.publisher import MqEventPublisher
-from bus.config import rabbitmq_url, stream_exchange
-from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
-from events import TOPIC_CHAT_MESSAGE
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
 
 PROCESS_NAME = "ingress-twitch-eventsub"

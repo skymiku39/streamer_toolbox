@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from tubechat_lens.reader import ChatMessage
-
 from ingress_yt_read.mapper import map_chat_message
+from tubechat_lens.reader import ChatMessage
 
 
 def test_map_youtube_emotes_from_raw() -> None:

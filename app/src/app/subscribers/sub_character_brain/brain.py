@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from events import (
@@ -13,8 +13,8 @@ from events import (
     ChatMessageEvent,
     ChatReplyEvent,
 )
-from safety import SafetyFilter
 
+from safety import SafetyFilter
 from sub_character_brain.config import CharacterConfig
 from sub_character_brain.llm import CharacterLlm, MemoryTurn
 
@@ -54,7 +54,7 @@ class CharacterBrain:
             return
 
         turn_id = str(uuid.uuid4())
-        timestamp = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        timestamp = datetime.now(UTC).astimezone().isoformat(timespec="seconds")
 
         turn = CharacterTurnEvent(
             schema_version=1,

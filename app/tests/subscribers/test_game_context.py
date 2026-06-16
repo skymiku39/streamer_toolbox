@@ -1,9 +1,9 @@
+from game_info.models import GameReviewInfo
 from sub_llm.game_context import (
     build_game_reference,
     is_playable_game_category,
     should_enrich_game_context,
 )
-from game_info.models import GameReviewInfo
 
 
 class StubGameProvider:

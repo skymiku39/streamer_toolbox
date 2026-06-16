@@ -3,12 +3,10 @@ from __future__ import annotations
 import json
 import mimetypes
 import threading
+from collections.abc import Callable
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
-from typing import Callable
-
-from sub_show_overlay.ipc import read_overlay_snapshot
 
 
 class OverlayHttpServer:

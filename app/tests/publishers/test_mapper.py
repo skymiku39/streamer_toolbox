@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 
-import pytest
 from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
-from ttvchat_lens import ChatMessage
 
 from ingress_ttv_read.mapper import map_chat_message, should_publish
+from ttvchat_lens import ChatMessage
 
 
 def _text_message(**overrides) -> ChatMessage:

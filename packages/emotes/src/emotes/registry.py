@@ -4,7 +4,6 @@ import asyncio
 import logging
 import os
 import re
-from typing import Any
 
 import httpx
 
@@ -118,7 +117,11 @@ class EmoteRegistry:
             collected.extend(items)
 
         token_map = _merge_third_party_emotes(collected)
-        _log.info("loaded %d third-party emote tokens for channel user %s", len(token_map), channel_user_id)
+        _log.info(
+            "loaded %d third-party emote tokens for channel user %s",
+            len(token_map),
+            channel_user_id,
+        )
         return cls(token_map)
 
     @classmethod
@@ -141,7 +144,9 @@ class EmoteRegistry:
             )
 
         if not cid or not secret:
-            _log.info("skip third-party emotes: missing TWITCH_CLIENT_ID/SECRET or TWITCH_BROADCASTER_ID")
+            _log.info(
+                "skip third-party emotes: missing TWITCH_CLIENT_ID/SECRET or TWITCH_BROADCASTER_ID"
+            )
             return cls()
 
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -153,7 +158,9 @@ class EmoteRegistry:
                 client=client,
             )
         if not user_id:
-            _log.warning("skip third-party emotes: cannot resolve Twitch user id for %s", channel_login)
+            _log.warning(
+                "skip third-party emotes: cannot resolve Twitch user id for %s", channel_login
+            )
             return cls()
         return await cls.load_for_user_id(user_id, enabled_providers=enabled_providers)
 

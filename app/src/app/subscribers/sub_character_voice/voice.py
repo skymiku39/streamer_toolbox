@@ -1,19 +1,4 @@
-from __future__ import annotations
-
-import sys
-import threading
-from collections.abc import Callable
-from typing import Any
-
-from events import (
-    TOPIC_CHARACTER_AUDIO_READY,
-    CharacterAudioReadyEvent,
-    CharacterTurnEvent,
-)
-from tts import VoiceSynthesizer
-
-
-class CharacterVoiceSubscriber:
+from __future__ import annotationsimport sysimport threadingfrom collections.abc import Callablefrom typing import Anyfrom events import (    TOPIC_CHARACTER_AUDIO_READY,    CharacterAudioReadyEvent,    CharacterTurnEvent,)from tts import VoiceSynthesizerclass CharacterVoiceSubscriber:
     """訂閱 character.turn → TTS 合成 → 發布 character.audio.ready。"""
 
     def __init__(

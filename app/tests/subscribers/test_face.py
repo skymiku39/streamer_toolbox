@@ -1,5 +1,4 @@
 import pytest
-
 from events import TOPIC_CHARACTER_EXPRESSION_READY, TOPIC_CHARACTER_TURN
 
 from sub_character_face.driver import VtsExpressionDriver

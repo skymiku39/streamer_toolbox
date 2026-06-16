@@ -7,12 +7,12 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_STT_SEGMENT
 
 from app.processes.registry import register_publisher
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from bus.topology import DEFAULT_EXCHANGE
-from events import TOPIC_STT_SEGMENT
 from ingress_local_audio.config import LocalAudioConfig
 from ingress_local_audio.local_audio import MicAudioCapture
 from ingress_twitch_audio.segment import build_stt_segment_event

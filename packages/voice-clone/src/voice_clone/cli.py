@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
@@ -10,7 +10,7 @@ from voice_clone.bus.local import LocalEventBus
 from voice_clone.config import get_settings
 from voice_clone.inference.checkpoints import resolve_model_bundle
 from voice_clone.inference.engine import InferenceEngine
-from voice_clone.inference.sample_ref import SampleReference, resolve_sample_reference
+from voice_clone.inference.sample_ref import resolve_sample_reference
 from voice_clone.offline.guard import offline_context
 
 app = typer.Typer(
@@ -41,9 +41,9 @@ def _require_stt_extra() -> None:
 def clone(
     sample: Annotated[Path, typer.Argument(help="參考樣本音檔（建議 3–10 秒）")],
     text: Annotated[str, typer.Option("--text", "-t", help="要合成的目標文字")],
-    output: Annotated[Optional[Path], typer.Option("--out", "-o", help="輸出 wav 路徑")] = None,
+    output: Annotated[Path | None, typer.Option("--out", "-o", help="輸出 wav 路徑")] = None,
     sample_text: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--sample-text", help="樣本音檔對應文字（可省略，由 OmniVoice 自動轉寫）"),
     ] = None,
     stt: Annotated[
@@ -51,16 +51,16 @@ def clone(
         typer.Option("--stt", help="以本機 STT 轉寫樣本（未提供 sample-text 時）"),
     ] = False,
     model: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--model", help="HuggingFace 模型 ID（預設 k2-fsa/OmniVoice）"),
     ] = None,
     language: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--language", help="合成語言（預設 Chinese）"),
     ] = None,
-    device: Annotated[Optional[str], typer.Option("--device", help="推理裝置，如 cuda:0")] = None,
+    device: Annotated[str | None, typer.Option("--device", help="推理裝置，如 cuda:0")] = None,
     num_step: Annotated[
-        Optional[int],
+        int | None,
         typer.Option("--num-step", help="擴散步數（16 較快，32 品質較好）"),
     ] = None,
     denoise: Annotated[

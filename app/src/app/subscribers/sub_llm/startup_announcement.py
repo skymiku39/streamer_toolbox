@@ -6,8 +6,8 @@ import uuid
 from collections.abc import Callable
 
 from events import SOURCE_LOGIC_LLM, TOPIC_CHAT_REPLY, ChatReplyEvent
-from safety import SafetyFilter
 
+from safety import SafetyFilter
 from sub_llm.ask_response import parse_plain_llm_text
 from sub_llm.chat_format import cap_reply_for_chat, plain_text_for_chat
 from sub_llm.config import LlmSubscriberConfig
@@ -98,7 +98,11 @@ def publish_startup_announcement(
         )
     )
     if not filtered_reply:
-        print("[sub-llm] startup announcement blocked by safety filter", file=sys.stderr, flush=True)
+        print(
+            "[sub-llm] startup announcement blocked by safety filter",
+            file=sys.stderr,
+            flush=True,
+        )
         return False
 
     filtered_reply = cap_reply_for_chat(filtered_reply, config.reply_max_length)

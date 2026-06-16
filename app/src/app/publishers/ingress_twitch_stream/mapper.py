@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import UTC, datetime
+from datetime import UTC
 
 from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
 
@@ -47,6 +47,6 @@ def _snapshot_id(
     duration_bucket = (duration // 60) if duration is not None else -1
     digest = hashlib.sha256(
         f"{snapshot.channel}|{snapshot.is_live}|{snapshot.title}|"
-        f"{snapshot.game_name}|{duration_bucket}|{bucket_minute}".encode("utf-8")
+        f"{snapshot.game_name}|{duration_bucket}|{bucket_minute}".encode()
     ).hexdigest()
     return digest[:16]

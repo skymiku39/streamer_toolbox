@@ -1,7 +1,5 @@
-import json
 
 import pytest
-
 from events import TOPIC_MEMORY_SUMMARY_READY, MemorySummaryReadyEvent
 
 

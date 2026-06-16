@@ -68,7 +68,9 @@ def test_bootstrap_creates_files_without_overwrite(tmp_path):
 
     (target / "bot_responses.json").write_text('{"custom": true}', encoding="utf-8")
     second = ensure_layout(target, channel="demo", examples_root=root)
-    assert json.loads((target / "bot_responses.json").read_text(encoding="utf-8")) == {"custom": True}
+    assert json.loads(
+        (target / "bot_responses.json").read_text(encoding="utf-8")
+    ) == {"custom": True}
     assert str(target / "bot_responses.json") in second.skipped
 
 

@@ -10,6 +10,7 @@ from events import (
     SOURCE_LOGIC_EVENTS,
     SOURCE_LOGIC_KEYWORDS,
     TOPIC_CHAT_MESSAGE,
+    TOPIC_CHAT_REPLY,
     TOPIC_EVENTSUB_PREFIX,
     ChatMessageEvent,
     ChatReplyEvent,
@@ -106,7 +107,7 @@ class BotRulesEngine:
 
         return ChatReplyEvent(
             schema_version=1,
-            topic="chat.reply",
+            topic=TOPIC_CHAT_REPLY,
             platform=event.platform,
             channel=channel.lstrip("#"),
             content=content,
@@ -126,7 +127,7 @@ class BotRulesEngine:
             return None
         return ChatReplyEvent(
             schema_version=1,
-            topic="chat.reply",
+            topic=TOPIC_CHAT_REPLY,
             platform=event.platform,
             channel=channel,
             content=content,
@@ -160,7 +161,9 @@ class BotRulesEngine:
         if invoked == "commands":
             visible = self._visible_commands(role)
             if not visible:
-                return self._make_reply(message, "📋 目前沒有你可使用的指令。", SOURCE_LOGIC_COMMANDS)
+                return self._make_reply(
+                    message, "📋 目前沒有你可使用的指令。", SOURCE_LOGIC_COMMANDS
+                )
             preview = " | ".join(visible[:25])
             suffix = " | …" if len(visible) > 25 else ""
             return self._make_reply(
@@ -253,7 +256,7 @@ class BotRulesEngine:
     ) -> ChatReplyEvent:
         return ChatReplyEvent(
             schema_version=1,
-            topic="chat.reply",
+            topic=TOPIC_CHAT_REPLY,
             platform=message.platform,
             channel=(message.channel or "").lstrip("#"),
             content=content,

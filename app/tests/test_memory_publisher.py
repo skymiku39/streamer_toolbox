@@ -3,11 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from stream_store.models import Summary
-
 from app.workers.memory_config import MemoryWorkerConfig
 from app.workers.memory_summarizer import TemplateSummarizer
 from app.workers.memory_worker import MemoryWorker
+from stream_store.models import Summary
 
 
 def test_memory_worker_publishes_summary_ready(tmp_path: Path) -> None:

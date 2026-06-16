@@ -1,9 +1,8 @@
 import pytest
-
-from events import TOPIC_CHARACTER_AUDIO_READY, TOPIC_CHARACTER_TURN, CharacterTurnEvent
-from tts import SynthesizedAudio
+from events import TOPIC_CHARACTER_AUDIO_READY, TOPIC_CHARACTER_TURN
 
 from sub_character_voice.voice import CharacterVoiceSubscriber
+from tts import SynthesizedAudio
 
 
 class StubSynthesizer:

@@ -10,7 +10,6 @@ import sys
 import threading
 from typing import Any
 
-import websockets
 from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
 from websockets.server import WebSocketServerProtocol

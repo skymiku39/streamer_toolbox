@@ -282,7 +282,8 @@ class StreamTextStore:
         order = "ASC" if ascending else "DESC"
         rows = self._conn.execute(
             f"""
-            SELECT id, session_id, period_start, period_end, source, content, created_at, record_count
+            SELECT id, session_id, period_start, period_end,
+                   source, content, created_at, record_count
             FROM summaries
             WHERE session_id = ?
             ORDER BY created_at {order}

@@ -1,12 +1,19 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
+from events import (
+    TOPIC_CHAT_MESSAGE,
+    TOPIC_STREAM_METADATA,
+    TOPIC_STT_SEGMENT,
+    ChatMessageEvent,
+    StreamMetadataEvent,
+    SttSegmentEvent,
+)
 
 from sub_llm.context_buffer import ChatContextBuffer, LiveContextBuffer, SttContextBuffer
 
 
 def _segment(text: str, *, channel: str, offset_minutes: int = 0) -> SttSegmentEvent:
-    timestamp = (datetime.now(timezone.utc) - timedelta(minutes=offset_minutes)).isoformat()
+    timestamp = (datetime.now(UTC) - timedelta(minutes=offset_minutes)).isoformat()
     return SttSegmentEvent(
         schema_version=1,
         topic=TOPIC_STT_SEGMENT,
@@ -34,7 +41,7 @@ def _chat(
         author_name=author_name,
         author_id=author_id,
         content=content,
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         channel=channel,
     )
 
@@ -173,9 +180,7 @@ def _stream_metadata_event(
     game_name: str = "Dark Souls",
     duration_seconds: int = 3600,
     is_live: bool = True,
-) -> "StreamMetadataEvent":
-    from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
-
+) -> StreamMetadataEvent:
     return StreamMetadataEvent(
         schema_version=1,
         topic=TOPIC_STREAM_METADATA,

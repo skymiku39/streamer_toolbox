@@ -6,15 +6,14 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_MESSAGE
 
 from app.processes.registry import register_publisher
-from bus.topology import DEFAULT_EXCHANGE
-
-from ingress_discord.gateway import listen_with_reconnect
-from ingress_discord.mapping import DiscordChatMessage, build_chat_event
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
-from events import TOPIC_CHAT_MESSAGE
+from bus.topology import DEFAULT_EXCHANGE
+from ingress_discord.gateway import listen_with_reconnect
+from ingress_discord.mapping import DiscordChatMessage, build_chat_event
 
 PROCESS_NAME = "ingress-discord"
 
@@ -47,7 +46,9 @@ async def run(token: str, channel_id: int) -> None:
 )
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
-    parser = argparse.ArgumentParser(description="Discord Gateway → RabbitMQ chat.message publisher")
+    parser = argparse.ArgumentParser(
+        description="Discord Gateway → RabbitMQ chat.message publisher"
+    )
     parser.add_argument("--token", default=os.environ.get("DISCORD_BOT_TOKEN", ""))
     parser.add_argument("--channel-id", default=os.environ.get("DISCORD_CHANNEL_ID", ""))
     args = parser.parse_args(argv)

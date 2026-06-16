@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from events import ChatMessageEvent
-from tts.noop import NoOpTtsEngine
 
 from sub_tts.filter import MessageFilter, MessageFilterConfig
 from sub_tts.queue_worker import TtsPlaybackQueue
 from sub_tts.subscriber import ChatTtsSubscriber
+from tts.noop import NoOpTtsEngine
 
 
 def _payload(content: str) -> dict:

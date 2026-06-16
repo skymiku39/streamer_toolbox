@@ -32,7 +32,9 @@ def configure_utf8_stdio() -> None:
         if buffer is not None and (
             getattr(stream, "encoding", "").lower().replace("-", "") != "utf8"
         ):
-            wrapper = io.TextIOWrapper(buffer, encoding="utf-8", errors="replace", line_buffering=True)
+            wrapper = io.TextIOWrapper(
+                buffer, encoding="utf-8", errors="replace", line_buffering=True
+            )
             if stream is sys.stdout:
                 sys.stdout = wrapper
             elif stream is sys.stderr:

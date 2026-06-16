@@ -5,18 +5,17 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_REPLY
 
 from app.processes.registry import register_subscriber
+from app.subscribers.qa_memory_mode import resolve_qa_memory_mode
 from app.subscribers.stream_record_config import RecordConfig
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_bindings
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_QA_MEMORY_BATCH
-from events import TOPIC_CHAT_REPLY
 from stream_store import StreamTextStore
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
-
 from sub_qa_memory_batch.writer import BatchQaMemoryWriter
-from app.subscribers.qa_memory_mode import resolve_qa_memory_mode
 
 PROCESS_NAME = "sub-qa-memory-batch"
 NAMESPACE = "sub_qa_memory_batch.reply"

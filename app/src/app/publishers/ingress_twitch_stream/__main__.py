@@ -6,12 +6,12 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_STREAM_METADATA
 
 from app.processes.registry import register_publisher
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from bus.topology import DEFAULT_EXCHANGE
-from events import TOPIC_STREAM_METADATA
 from ingress_twitch_stream.fetcher import TwitchStreamFetcher
 from ingress_twitch_stream.mapper import build_stream_metadata_event
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
@@ -84,7 +84,10 @@ def main(argv: list[str] | None = None) -> int:
         "--poll-seconds",
         type=int,
         default=int(os.environ.get("TWITCH_STREAM_POLL_SECONDS", str(DEFAULT_POLL_SECONDS))),
-        help=f"Polling interval in seconds (min {MIN_POLL_SECONDS}, default {DEFAULT_POLL_SECONDS})",
+        help=(
+            f"Polling interval in seconds "
+            f"(min {MIN_POLL_SECONDS}, default {DEFAULT_POLL_SECONDS})"
+        ),
     )
     args = parser.parse_args(argv)
 

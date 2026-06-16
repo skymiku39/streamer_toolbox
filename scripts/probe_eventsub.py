@@ -14,12 +14,12 @@ logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s",
 )
 
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_async, declare_topic_exchange
 from identity_oauth import MultiAccountTokenProvider
 from ingress_twitch_eventsub.bot import EventSubIngressBot
 from ingress_twitch_eventsub.chat_status import CHAT_INGRESS_EVENTSUB, CHAT_INGRESS_STATUS_PREFIX
 from ingress_twitch_eventsub.publisher import MqEventPublisher
-from bus.config import rabbitmq_url, stream_exchange
-from bus.rabbitmq import connect_async, declare_topic_exchange
 
 
 class _NoOpPublisher:

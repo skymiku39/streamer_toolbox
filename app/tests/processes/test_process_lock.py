@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from app.processes.process_lock import (
+    _lock_path,
     acquire,
     acquire_process_lock,
     is_locked,
@@ -14,7 +15,6 @@ from app.processes.process_lock import (
     release,
     stack_lock_name,
     stop_all_command_hint,
-    _lock_path,
 )
 
 

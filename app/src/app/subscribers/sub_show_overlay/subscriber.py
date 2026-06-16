@@ -5,12 +5,12 @@ import sys
 import threading
 from typing import Any
 
-from emotes import BadgeCatalog
+from events import TOPIC_CHAT_MESSAGE
+
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
 from bus.topology import QUEUE_SHOW_OVERLAY_CHAT_MESSAGE
-from events import TOPIC_CHAT_MESSAGE
-
+from emotes import BadgeCatalog
 from sub_show_overlay.http_server import OverlayHttpServer
 from sub_show_overlay.queue import OverlayMessageQueue
 from sub_show_overlay.settings import OverlaySettings

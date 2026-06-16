@@ -17,11 +17,10 @@ import re
 import threading
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from queue import Empty, Queue
 from typing import Any
 
-import websockets
 from websockets.asyncio.client import connect as ws_connect
 from websockets.exceptions import ConnectionClosed
 
@@ -175,7 +174,7 @@ class ChatMessage:
         }
 
     @classmethod
-    def from_irc(cls, channel: str, irc: IRCLine) -> "ChatMessage":
+    def from_irc(cls, channel: str, irc: IRCLine) -> ChatMessage:
         tags = irc.tags
         nick = irc.nick
         display_name = tags.get("display-name") or nick or "anonymous"
@@ -183,11 +182,11 @@ class ChatMessage:
         ts_ms_str = tags.get("tmi-sent-ts")
         if ts_ms_str and ts_ms_str.isdigit():
             try:
-                timestamp = datetime.fromtimestamp(int(ts_ms_str) / 1000, tz=timezone.utc)
+                timestamp = datetime.fromtimestamp(int(ts_ms_str) / 1000, tz=UTC)
             except (OverflowError, OSError, ValueError):
-                timestamp = datetime.now(tz=timezone.utc)
+                timestamp = datetime.now(tz=UTC)
         else:
-            timestamp = datetime.now(tz=timezone.utc)
+            timestamp = datetime.now(tz=UTC)
 
         badges_raw = tags.get("badges", "") or ""
         badges = {b.split("/", 1)[0] for b in badges_raw.split(",") if b}
@@ -226,13 +225,13 @@ class ChatMessage:
         message: str,
         message_type: str = "system",
         channel: str = "",
-    ) -> "ChatMessage":
+    ) -> ChatMessage:
         return cls(
             message_id="",
             author_name="*",
             author_id="",
             message=message,
-            timestamp=datetime.now(tz=timezone.utc),
+            timestamp=datetime.now(tz=UTC),
             message_type=message_type,
         )
 

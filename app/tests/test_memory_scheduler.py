@@ -3,8 +3,8 @@ from __future__ import annotations
 import threading
 import time
 
-from app.workers.memory_trigger import MemoryTriggerHandle
 from app.workers.memory_scheduler import wait_for_interval_or_trigger
+from app.workers.memory_trigger import MemoryTriggerHandle
 
 
 def test_wait_returns_true_when_trigger_fires() -> None:

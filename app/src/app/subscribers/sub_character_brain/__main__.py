@@ -6,10 +6,9 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_MESSAGE
 
 from app.processes.registry import register_subscriber
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
-
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import (
     connect_blocking,
@@ -17,10 +16,8 @@ from bus.rabbitmq import (
     publish_topic_blocking,
     setup_subscriber_queue,
 )
-from bus.topology import QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
-from events import TOPIC_CHAT_MESSAGE
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
 from safety import BlocklistSafetyFilter
-
 from sub_character_brain.brain import CharacterBrain
 from sub_character_brain.config import CharacterConfig
 from sub_character_brain.llm import RuleBasedCharacterLlm

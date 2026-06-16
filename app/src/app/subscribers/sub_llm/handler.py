@@ -12,22 +12,22 @@ from events import (
     TOPIC_CHAT_REPLY,
     TOPIC_CONFIG_CHANGED,
     TOPIC_MEMORY_QA_RECORD,
-    TOPIC_STT_SEGMENT,
     TOPIC_STREAM_METADATA,
+    TOPIC_STT_SEGMENT,
     ChatMessageEvent,
     ChatReplyEvent,
     ConfigChangedEvent,
     MemoryQaRecordEvent,
-    SttSegmentEvent,
     StreamMetadataEvent,
+    SttSegmentEvent,
 )
+
+from control import MODULE_LLM_BOT, active_profile_id
+from game_info import GameInfoProvider
 from safety import SafetyFilter
 from safety.stt_input import is_hallucination_text
 from stream_store import StreamTextStore
 from stream_store.idempotency import IdempotencyStore
-
-from game_info import GameInfoProvider
-
 from sub_llm.chat_format import cap_reply_for_chat, cap_reply_for_twitch, plain_text_for_chat
 from sub_llm.config import TWITCH_CHAT_MAX_CHARS, LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
@@ -38,8 +38,6 @@ from sub_llm.llm import LlmClient
 from sub_llm.qa_memory_gate import should_persist_qa_memory
 from sub_llm.session_recap import build_session_recap_reference
 from sub_llm.triggers import TriggerMatcher
-
-from control import MODULE_LLM_BOT, active_profile_id
 
 BUSY_REPLY = "⏳ 上一個問題還在處理中，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
@@ -141,31 +139,6 @@ class LlmSubscriber:
         question = self._triggers.extract_question(event.content)
         if question is None:
             return
-
-        if event.platform == "youtube":
-            # #region agent log
-            import json
-            import time
-            from pathlib import Path
-
-            Path("debug-5542a6.log").open("a", encoding="utf-8").write(
-                json.dumps(
-                    {
-                        "sessionId": "5542a6",
-                        "hypothesisId": "E",
-                        "location": "handler.py:_handle_chat_message",
-                        "message": "youtube !ask trigger seen",
-                        "data": {
-                            "channel": event.channel,
-                            "message_id": (event.message_id or "")[:12],
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
-            # #endregion
 
         if _is_skipped_trigger_author(
             event,

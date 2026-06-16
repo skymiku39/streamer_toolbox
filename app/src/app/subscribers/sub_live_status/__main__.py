@@ -3,6 +3,9 @@ from __future__ import annotations
 import sys
 
 from dotenv import load_dotenv
+from events import TOPIC_CHAT_REPLY, TOPIC_STREAM_METADATA
+from sub_live_status.handler import NAMESPACE_STARTUP, LiveStatusSubscriber
+from sub_live_status.status_messages import resolve_status_channel
 
 from app.processes.registry import register_subscriber
 from bus.config import rabbitmq_url, stream_exchange
@@ -13,11 +16,7 @@ from bus.rabbitmq import (
     setup_subscriber_queue_bindings,
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LIVE_STATUS
-from events import TOPIC_CHAT_REPLY, TOPIC_STREAM_METADATA
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
-
-from sub_live_status.handler import LiveStatusSubscriber, NAMESPACE_STARTUP
-from sub_live_status.status_messages import resolve_status_channel
 
 PROCESS_NAME = "sub-live-status"
 

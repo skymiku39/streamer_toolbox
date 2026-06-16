@@ -6,20 +6,16 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-
-from app.processes.registry import register_subscriber
-from bus.topology import DEFAULT_EXCHANGE, QUEUE_VISUAL_CHAT_MESSAGE
-
-from bus.config import rabbitmq_url, stream_exchange
-from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_multi
-from bus.topology import QUEUE_VISUAL_CHAT_MESSAGE
 from events import TOPIC_CHAT_MESSAGE, TOPIC_CONFIG_CHANGED, ChatMessageEvent, ConfigChangedEvent
 
+from app.processes.registry import register_subscriber
+from bus.config import rabbitmq_url, stream_exchange
+from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_multi
+from bus.topology import DEFAULT_EXCHANGE, QUEUE_VISUAL_CHAT_MESSAGE
 from control import MODULE_VISUAL_EGRESS, active_profile_id
-
+from streamer_config.paths import repo_root, resolve_path
 from sub_visual.config import SubtitleConfig
 from sub_visual.service import SubtitleService
-from streamer_config.paths import repo_root, resolve_path
 
 PROCESS_NAME = "sub-visual"
 _DEFAULT_VISUAL_CONFIG = repo_root() / "config" / "sub_visual.json"

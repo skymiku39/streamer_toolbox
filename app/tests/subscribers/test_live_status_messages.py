@@ -1,5 +1,4 @@
 from events import StreamMetadataEvent
-
 from sub_live_status.status_messages import build_live_status_message
 
 

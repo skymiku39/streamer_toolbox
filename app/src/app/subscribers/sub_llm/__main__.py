@@ -6,6 +6,13 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+from events import (
+    TOPIC_CHAT_MESSAGE,
+    TOPIC_CHAT_REPLY,
+    TOPIC_CONFIG_CHANGED,
+    TOPIC_STREAM_METADATA,
+    TOPIC_STT_SEGMENT,
+)
 
 from app.processes.registry import register_subscriber
 from bus.config import rabbitmq_url, stream_exchange
@@ -16,13 +23,11 @@ from bus.rabbitmq import (
     setup_subscriber_queue_bindings,
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_SUB_LLM
-from events import TOPIC_CHAT_MESSAGE, TOPIC_CHAT_REPLY, TOPIC_CONFIG_CHANGED, TOPIC_STT_SEGMENT, TOPIC_STREAM_METADATA
 from safety import BlocklistSafetyFilter
 from stream_store.idempotency import IdempotencyStore, default_idempotency_db_path
-
+from streamer_config.paths import repo_root, resolve_path
 from sub_llm.config import LlmSubscriberConfig
 from sub_llm.context_buffer import LiveContextBuffer
-from sub_llm.handler import LlmSubscriber
 from sub_llm.factory import (
     create_knowledge_store,
     create_llm_client,
@@ -30,8 +35,8 @@ from sub_llm.factory import (
     preload_knowledge_store,
 )
 from sub_llm.game_context import create_game_info_provider
+from sub_llm.handler import LlmSubscriber
 from sub_llm.startup_announcement import publish_startup_announcement, resolve_announcement_channel
-from streamer_config.paths import repo_root, resolve_path
 
 PROCESS_NAME = "sub-llm"
 _REPO_ROOT = repo_root()

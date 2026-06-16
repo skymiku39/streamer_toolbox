@@ -7,10 +7,9 @@ import sys
 from dotenv import load_dotenv
 
 from app.console_encoding import configure_utf8_stdio
-from stream_store import StreamTextStore
-
 from app.memory_view.channel import default_channel
 from app.memory_view.service import MemoryViewService
+from stream_store import StreamTextStore
 
 configure_utf8_stdio()
 

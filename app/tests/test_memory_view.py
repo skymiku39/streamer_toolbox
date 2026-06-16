@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from stream_store import StreamTextStore, set_active_session_for_channel
-
 from app.memory_view.http_server import MemoryBoardHttpServer, MemoryBoardState
 from app.memory_view.service import MemoryViewService
+from stream_store import StreamTextStore, set_active_session_for_channel
 
 
 def test_memory_view_service_lists_summaries_chronologically(tmp_path: Path) -> None:

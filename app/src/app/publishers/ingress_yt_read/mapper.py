@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from tubechat_lens.reader import ChatMessage
+from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
 
 from emotes.youtube import build_youtube_emote_url_map
-from events import TOPIC_CHAT_MESSAGE, ChatMessageEvent
+from tubechat_lens.reader import ChatMessage
 
 SCHEMA_VERSION = 1
 

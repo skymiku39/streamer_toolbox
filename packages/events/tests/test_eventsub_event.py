@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from events import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
 
 

@@ -1,5 +1,4 @@
 import pytest
-
 from events import TOPIC_CONFIG_CHANGED, ConfigChangedEvent
 
 

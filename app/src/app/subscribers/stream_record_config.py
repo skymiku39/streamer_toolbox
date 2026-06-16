@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from stream_store.session import resolve_session_id as build_session_id
+
 
 @dataclass(frozen=True)
 class RecordConfig:
@@ -43,9 +45,6 @@ def routing_keys_for_mode(record_mode: str) -> list[str]:
     if config.include_stt:
         keys.append(TOPIC_STT_SEGMENT)
     return keys
-
-
-from stream_store.session import resolve_session_id as build_session_id
 
 
 def resolve_session_id(config: RecordConfig, *, channel: str) -> str:

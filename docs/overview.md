@@ -39,6 +39,7 @@ flowchart LR
 | [architecture/control-plane.md](architecture/control-plane.md) | **控制面**（Dashboard Shell、profile、L0～L2）；Phase 0～1 已交付 `config.changed` L1 熱重載 |
 | [plans/control-plane-phase-01.md](plans/control-plane-phase-01.md) | 控制面分階段實作計畫（Phase 0～4） |
 | [checklists/pub-sub-writing.md](checklists/pub-sub-writing.md) | Pub/Sub 各 package 撰寫清單 |
+| [checklists/project-audit.md](checklists/project-audit.md) | **全專案系統性檢查**（Layer 1～3、一鍵稽核腳本） |
 
 ## 三種圖表
 
