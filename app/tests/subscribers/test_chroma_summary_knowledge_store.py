@@ -55,8 +55,7 @@ def test_chroma_summary_store_queries_by_session(
     knowledge = ChromaSummaryKnowledgeStore(store, session_id=None, chroma_dir=chroma_dir)
     snippet = knowledge.query("777 是什麼", channel="room_a")
 
-    assert "【近期直播摘要】" in snippet
-    assert "依時間由新到舊" in snippet
+    assert "記憶:" in snippet
     assert snippet.index("777") < snippet.index("舊梗")
     mock_collection.upsert.assert_called_once()
     upsert_metas = mock_collection.upsert.call_args.kwargs["metadatas"]

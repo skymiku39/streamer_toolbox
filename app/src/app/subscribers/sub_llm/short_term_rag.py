@@ -9,10 +9,12 @@ from typing import Any
 
 from stream_store.session import normalize_channel
 
+from sub_llm.prompt_format import INTRA_SEP
+
 logger = logging.getLogger(__name__)
 
 SHORT_TERM_COLLECTION = "kb_shortterm"
-SHORT_TERM_MARKER = "【近期相似問答（短期記憶）】"
+SHORT_TERM_MARKER = "Bot記憶:"
 
 
 class ShortTermRagStore:
@@ -119,11 +121,10 @@ class ShortTermRagStore:
         if not pairs:
             return ""
 
-        lines = [SHORT_TERM_MARKER]
-        for index, (stored_question, stored_reply) in enumerate(pairs, start=1):
-            lines.append(f"{index}. 問：{stored_question}")
-            lines.append(f"   答：{stored_reply}")
-        return "\n".join(lines)
+        pairs_text = INTRA_SEP.join(
+            f"{stored_question}→{stored_reply}" for stored_question, stored_reply in pairs
+        )
+        return f"{SHORT_TERM_MARKER}{pairs_text}"
 
     def _prune_locked(self, channel: str) -> None:
         if self._collection is None:

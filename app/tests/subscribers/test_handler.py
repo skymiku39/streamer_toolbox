@@ -138,7 +138,7 @@ def test_stt_segment_accumulates_context_for_reply() -> None:
     subscriber.handle(_chat_payload("!ask 剛剛說什麼？"))
 
     assert len(published) == 1
-    assert "近期直播上下文" in published[0][1]["content"]
+    assert "已參考近期直播上下文" in published[0][1]["content"]
 
 
 def test_chat_messages_accumulate_context_for_reply() -> None:
@@ -157,7 +157,7 @@ def test_chat_messages_accumulate_context_for_reply() -> None:
     subscriber.handle(_chat_payload("!ask 誰是 LNG"))
 
     assert len(published) == 1
-    assert "近期直播上下文" in published[0][1]["content"]
+    assert "已參考近期直播上下文" in published[0][1]["content"]
 
 
 def test_stream_metadata_updates_context_for_reply() -> None:
@@ -206,7 +206,7 @@ def test_stream_metadata_updates_context_for_reply() -> None:
 
     assert len(published) == 1
     assert "Just Chatting 測試" in captured["context"]
-    assert "【直播狀態" in captured["context"]
+    assert "狀態:" in captured["context"]
 
 
 def test_stream_metadata_duration_tick_does_not_spam_stderr(capsys) -> None:
@@ -568,7 +568,7 @@ def test_bot_reply_appears_in_follow_up_ask_context() -> None:
     subscriber.handle(_chat_payload("!ask 剛剛那個遊戲規則版本？", message_id="msg-2"))
 
     assert len(published) == 2
-    assert "【Bot 近期問答" in captured[1]
+    assert "Bot問答:" in captured[1]
     assert "我們在玩什麼？" in captured[1]
     assert "DND" in captured[1]
     assert "alice" in captured[1]

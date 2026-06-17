@@ -42,12 +42,12 @@ def test_build_game_reference_returns_formatted_text() -> None:
         game_name="Bad North",
         provider=provider,
     )
-    assert "【遊戲資料參考：Bad North】" in text
+    assert "遊戲:Bad North" in text
     assert provider.queries == ["Bad North"]
 
 
 def test_build_game_reference_includes_for_unrelated_question() -> None:
     provider = StubGameProvider(GameReviewInfo(name="Bad North", summary="即時戰略遊戲。"))
     text = build_game_reference("LNG 是什麼", game_name="Bad North", provider=provider)
-    assert "【遊戲資料參考：Bad North】" in text
+    assert "遊戲:Bad North" in text
     assert provider.queries == ["Bad North"]

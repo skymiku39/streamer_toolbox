@@ -81,5 +81,5 @@ def test_handler_injects_game_reference_for_game_question() -> None:
     )
     subscriber.handle(_chat_payload("!ask 這遊戲好玩嗎"))
 
-    assert "【遊戲資料參考：Bad North】" in llm.last_game_reference
-    assert "媒體評分" in llm.last_game_reference
+    assert "遊戲:Bad North" in llm.last_game_reference
+    assert "媒體81" in llm.last_game_reference

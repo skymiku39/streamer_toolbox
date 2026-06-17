@@ -12,10 +12,10 @@ def test_is_current_activity_question() -> None:
 
 def test_current_activity_hint_with_stt() -> None:
     hint = current_activity_context_hint(has_stt=True)
-    assert "直播逐字稿" in hint
-    assert "勿引用" in hint
+    assert "逐字稿" in hint
+    assert "勿用記憶" in hint
 
 
 def test_current_activity_hint_without_stt() -> None:
     hint = current_activity_context_hint(has_stt=False)
-    assert "無近期直播逐字稿" in hint
+    assert "無近期逐字稿" in hint

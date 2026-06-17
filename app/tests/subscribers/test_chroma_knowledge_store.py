@@ -81,7 +81,7 @@ def test_chroma_query_returns_formatted_snippet(
     store = ChromaKnowledgeStore(knowledge_dir, chroma_dir=chroma_dir)
     snippet = store.query("直播時間")
 
-    assert "【實況主知識庫】" in snippet
+    assert "知識:" in snippet
     assert "週五晚上八點" in snippet
 
 

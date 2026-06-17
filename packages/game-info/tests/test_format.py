@@ -16,9 +16,9 @@ def test_format_includes_scores_and_summary() -> None:
             release_year=2018,
         )
     )
-    assert "【遊戲資料參考：Bad North】" in text
-    assert "媒體評分 80/100" in text
-    assert "玩家評分 72/100" in text
+    assert "遊戲:Bad North" in text
+    assert "媒體80" in text
+    assert "玩家72" in text
     assert "即時戰略遊戲" in text
     assert "Strategy" in text
 

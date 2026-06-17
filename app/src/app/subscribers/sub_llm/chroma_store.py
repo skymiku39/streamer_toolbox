@@ -10,6 +10,11 @@ from typing import Any, Protocol
 
 from sub_llm.knowledge import iter_text_documents
 from sub_llm.live_activity import is_current_activity_question
+from sub_llm.prompt_format import (
+    INTRA_SEP,
+    compact_markdown,
+    format_memory_snippet_for_prompt,
+)
 from sub_llm.memory_ranking import rank_memory_snippets
 from sub_llm.session_recap import should_enrich_session_recap
 
@@ -160,7 +165,7 @@ class ChromaKnowledgeStore:
         unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
         if not unique:
             return ""
-        text = "【實況主知識庫】\n" + "\n".join(unique)
+        text = "知識:" + INTRA_SEP.join(compact_markdown(doc) for doc in unique)
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."
@@ -346,11 +351,8 @@ class ChromaSummaryKnowledgeStore:
         unique = rank_memory_snippets(documents, metadatas)
         if not unique:
             return ""
-        text = (
-            "【近期直播摘要】（依時間由新到舊；僅描述過去發生什麼，"
-            "勿把摘要裡 bot 曾回「沒提到」當成回答模板）\n"
-            + "\n".join(unique)
-        )
+        snippets = [format_memory_snippet_for_prompt(doc) for doc in unique]
+        text = "記憶:" + INTRA_SEP.join(snippets)
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."

@@ -35,6 +35,7 @@ from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.live_activity import current_activity_context_hint, is_current_activity_question
+from sub_llm.prompt_format import join_sections
 from sub_llm.llm import LlmClient
 from sub_llm.observability import log_event
 from sub_llm.qa_memory_gate import should_persist_qa_memory
@@ -205,13 +206,15 @@ class LlmSubscriber:
             )
             context = self._context_buffer.context_text(channel)
             if is_current_activity_question(filtered_question):
-                context = (
-                    f"{context}\n\n" if context else ""
-                ) + current_activity_context_hint(has_stt=stt_count > 0)
+                context = join_sections(
+                    context,
+                    current_activity_context_hint(has_stt=stt_count > 0),
+                )
             elif stt_count == 0:
-                context = (
-                    f"{context}\n\n" if context else ""
-                ) + current_activity_context_hint(has_stt=False)
+                context = join_sections(
+                    context,
+                    current_activity_context_hint(has_stt=False),
+                )
             print(
                 f"[sub-llm] context stream={has_stream} stt={stt_count} "
                 f"chat={chat_count} bot_replies={bot_reply_count} chars={context_len}",

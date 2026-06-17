@@ -8,6 +8,8 @@ from events import ChatMessageEvent, StreamMetadataEvent, SttSegmentEvent
 
 from stream_store.session import normalize_channel
 
+from sub_llm.prompt_format import INTRA_SEP, join_sections
+
 
 @dataclass(frozen=True)
 class BufferedSegment:
@@ -75,15 +77,14 @@ class BotReplyContextBuffer:
             replies = list(self._replies_by_channel.get(key, []))
         if not replies:
             return ""
-        lines = [f"【Bot 近期問答（{key}，最近 {len(replies)} 則）】"]
-        for index, reply in enumerate(replies, start=1):
+        pairs: list[str] = []
+        for reply in replies:
             author = reply.reply_to_author or "觀眾"
             if reply.question:
-                lines.append(f"{index}. {author} 問：{reply.question}")
+                pairs.append(f"{author}問{reply.question}→{reply.text}")
             else:
-                lines.append(f"{index}. {author}：（無對應問題）")
-            lines.append(f"   bot 答：{reply.text}")
-        return "\n".join(lines)
+                pairs.append(f"{author}→{reply.text}")
+        return f"Bot問答:{INTRA_SEP.join(pairs)}"
 
     def count(self, channel: str) -> int:
         key = normalize_channel(channel)
@@ -130,11 +131,8 @@ class SttContextBuffer:
             segments = list(self._segments_by_channel.get(key, []))
         if not segments:
             return ""
-        lines: list[str] = [f"【直播逐字稿（{key}，最近片段）】"]
-        for segment in segments:
-            label = f"{segment.start_sec:.0f}s" if segment.start_sec is not None else "?"
-            lines.append(f"[{label}] {segment.text}")
-        return "\n".join(lines)
+        transcript = " ".join(segment.text for segment in segments)
+        return f"逐字稿:{transcript}"
 
     def count(self, channel: str) -> int:
         key = normalize_channel(channel)
@@ -192,10 +190,8 @@ class ChatContextBuffer:
             lines = list(self._lines_by_channel.get(key, []))
         if not lines:
             return ""
-        rendered = [f"【近期聊天室（{key}）】"]
-        for line in lines:
-            rendered.append(f"{line.author}: {line.text}")
-        return "\n".join(rendered)
+        rendered = [f"{line.author}:{line.text}" for line in lines]
+        return f"聊天:{INTRA_SEP.join(rendered)}"
 
     def count(self, channel: str) -> int:
         key = normalize_channel(channel)
@@ -255,20 +251,18 @@ class StreamMetadataBuffer:
             event = self._latest_by_channel.get(key)
         if event is None:
             return ""
-        lines = [f"【直播狀態（{key}）】"]
-        status = "直播中" if event.is_live else "離線"
-        lines.append(f"狀態：{status}")
+        parts: list[str] = ["直播中" if event.is_live else "離線"]
         if event.display_name:
-            lines.append(f"顯示名稱：{event.display_name}")
-        if event.title:
-            lines.append(f"標題：{event.title}")
+            parts.append(event.display_name)
         if event.game_name:
-            lines.append(f"分類／遊戲：{event.game_name}")
+            parts.append(event.game_name)
         if event.is_live and event.duration_seconds is not None:
-            lines.append(f"已直播：{format_duration_seconds(event.duration_seconds)}")
+            parts.append(f"已播{format_duration_seconds(event.duration_seconds)}")
         if event.viewer_count is not None and event.is_live:
-            lines.append(f"觀眾：{event.viewer_count}")
-        return "\n".join(lines)
+            parts.append(f"觀眾{event.viewer_count}")
+        if event.title:
+            parts.append(f"「{event.title}」")
+        return f"狀態:{INTRA_SEP.join(parts)}"
 
     def live_game_name(self, channel: str) -> str | None:
         key = normalize_channel(channel)
@@ -337,7 +331,7 @@ class LiveContextBuffer:
             )
             if part
         ]
-        return "\n\n".join(parts)
+        return join_sections(*parts)
 
     def stats(self, channel: str) -> tuple[int, int, int, int, bool]:
         stt_count = self._stt.count(channel)

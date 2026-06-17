@@ -43,7 +43,7 @@ def test_log_llm_messages_multiline_format(capsys: pytest.CaptureFixture[str]) -
     log_llm_messages(
         [
             {"role": "system", "content": "你是助手"},
-            {"role": "user", "content": "觀眾問題：你好"},
+            {"role": "user", "content": "問題:你好"},
         ],
         purpose="ask",
     )
@@ -52,7 +52,7 @@ def test_log_llm_messages_multiline_format(capsys: pytest.CaptureFixture[str]) -
     assert "[system]" in err
     assert "你是助手" in err
     assert "[user]" in err
-    assert "觀眾問題：你好" in err
+    assert "問題:你好" in err
     assert "[sub-llm] llm_prompt end purpose=ask" in err
 
 

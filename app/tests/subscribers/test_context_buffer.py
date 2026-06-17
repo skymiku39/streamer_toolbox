@@ -81,8 +81,8 @@ def test_chat_context_buffer_includes_recent_messages() -> None:
     buffer.add_message(_chat("你好", channel="room_a"))
     buffer.add_message(_chat("再見", channel="room_a"))
     context = buffer.context_text("room_a")
-    assert "viewer: 你好" in context
-    assert "viewer: 再見" in context
+    assert "viewer:你好" in context
+    assert "viewer:再見" in context
 
 
 def test_chat_context_buffer_skips_bot_author_id() -> None:
@@ -119,9 +119,8 @@ def test_live_context_buffer_includes_bot_replies() -> None:
     )
     context = buffer.context_text("room_a")
     _, _, bot_reply_count, _, _ = buffer.stats("room_a")
-    assert "【Bot 近期問答" in context
-    assert "alice 問：我們在玩什麼？" in context
-    assert "bot 答：我們在玩 DND" in context
+    assert "Bot問答:" in context
+    assert "alice問我們在玩什麼？→我們在玩 DND" in context
     assert bot_reply_count == 1
 
 
@@ -140,7 +139,6 @@ def test_bot_reply_buffer_keeps_only_recent_pairs() -> None:
     assert "問題 2" in context
     assert "問題 4" in context
     assert "問題 0" not in context
-    assert "最近 3 則" in context
 
 def test_live_context_buffer_includes_stream_metadata() -> None:
     from events import TOPIC_STREAM_METADATA, StreamMetadataEvent
@@ -167,7 +165,7 @@ def test_live_context_buffer_includes_stream_metadata() -> None:
     context = buffer.context_text("room_a")
     _, _, _, _, has_stream = buffer.stats("room_a")
     assert has_stream is True
-    assert "【直播狀態" in context
+    assert "狀態:" in context
     assert "打 Boss" in context
     assert "Dark Souls" in context
     assert "1h 0m" in context

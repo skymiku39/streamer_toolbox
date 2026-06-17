@@ -105,7 +105,7 @@ def test_build_session_recap_reference_includes_summaries_and_pending_stt(
     )
     assert recap.summary_count == 1
     assert recap.raw_stt_count == 1
-    assert "【本場回顧參考】" in recap.text
+    assert "回顧:" in recap.text
     assert "本場回顧 enrichment" in recap.text
     assert "接著要跑 pytest" in recap.text
     store.close()
@@ -168,21 +168,21 @@ def test_build_session_recap_reference_respects_max_chars(
 def test_build_ask_messages_includes_session_recap_section() -> None:
     messages = build_ask_messages(
         "今天做了什麼",
-        context="【直播狀態】",
-        knowledge="知識片段",
-        session_recap_reference="【本場回顧參考】\n- 實作 enrichment",
+        context="狀態:直播中",
+        knowledge="知識:知識片段",
+        session_recap_reference="回顧:實作 enrichment",
     )
     user = next(m["content"] for m in messages if m["role"] == "user")
-    assert "本場回顧參考：" in user
+    assert "回顧:" in user
     assert "實作 enrichment" in user
-    assert user.index("知識庫參考：") < user.index("本場回顧參考：") < user.index("【回答方式】")
+    assert user.index("知識:") < user.index("回顧:") < user.index("【回答】")
 
 
 def test_analyze_prompt_payload_detects_session_recap_marker() -> None:
     analysis = analyze_prompt_payload(
         "今天進度",
         context="",
-        session_recap_reference="【本場回顧參考】\n摘要",
+        session_recap_reference="回顧:摘要",
     )
     assert analysis["has_session_recap_marker"]
     assert analysis["session_recap_len"] > 0

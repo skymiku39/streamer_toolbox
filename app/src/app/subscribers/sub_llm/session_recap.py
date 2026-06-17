@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from stream_store import StreamTextStore, resolve_session_for_channel
 from sub_llm.live_activity import is_current_activity_question
+from sub_llm.prompt_format import INTRA_SEP, compact_markdown, join_sections
 
 _SESSION_RECAP = re.compile(
     r"今天|本場|這場|開台以來|整場|做了哪些|做了什麼|實現了|完成哪些|進度如何|實作了|開發了",
@@ -99,24 +100,19 @@ def build_session_recap_reference(
     if not summaries and not stt_pending:
         return empty
 
-    sections: list[str] = ["【本場回顧參考】", _RECAP_GUIDANCE, ""]
+    sections: list[str] = [f"回顧:{_RECAP_GUIDANCE}"]
     if summaries:
-        sections.append(
-            f"【本場時間軸摘要（共 {len(summaries)} 段 chat/stt，依時間由舊到新）】"
-        )
-        for summary in summaries:
-            sections.append(
-                f"[{summary.source}] {summary.period_start} .. {summary.period_end}\n"
-                f"{summary.content.strip()}"
-            )
-        sections.append("")
+        summary_parts = [
+            f"{summary.source}:{compact_markdown(summary.content)}"
+            for summary in summaries
+        ]
+        sections.append("摘要:" + INTRA_SEP.join(summary_parts))
 
     if stt_pending:
-        sections.append(f"【最新語音原文（尚未摘要，{len(stt_pending)} 段）】")
-        for record in stt_pending:
-            sections.append(f"[{record.timestamp}] {record.text.strip()}")
+        transcript = " ".join(record.text.strip() for record in stt_pending)
+        sections.append(f"語音:{transcript}")
 
-    text = "\n".join(sections).strip()
+    text = join_sections(*sections)
     max_chars = _recap_max_chars()
     if len(text) > max_chars:
         text = text[: max_chars - 3] + "..."

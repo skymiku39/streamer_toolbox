@@ -2,25 +2,14 @@ from __future__ import annotations
 
 from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.ask_response import structured_output_guidance
-from sub_llm.chat_format import reply_length_guidance
 from sub_llm.config import resolve_reply_max_length
+from sub_llm.prompt_format import SECTION_SEP, join_sections
 from sub_llm.prompts import resolve_system_prompt
 
 
 def _answer_guidance(reply_max_length: int | None = None) -> str:
-    limit = (
-        reply_max_length
-        if reply_max_length is not None
-        else resolve_reply_max_length()
-    )
-    return (
-        "【回答方式】直接回答觀眾問題，語氣自然，全文繁體中文（台灣），禁止簡體字。"
-        + reply_length_guidance(limit)
-        +         "上下文沒提到的，最多一句帶過，仍須用知識庫、遊戲資料、網路搜尋或通識補足；"
-        "勿反覆「直播中…」，勿只說沒提到就結束。"
-        "知識庫與記憶摘要為歷史紀錄，不代表此刻畫面；直播標題僅供參考，不可當成當下實況描述。"
-        "知識庫摘要若記載你過去曾回「沒提到」，那是歷史紀錄，不代表這次也要這樣答。"
-    )
+    del reply_max_length
+    return "【回答】直接答觀眾問題；記憶與既往 Bot 答覆僅供參考，與逐字稿／聊天衝突時以後者為準。"
 
 
 def build_ask_messages(
@@ -49,18 +38,18 @@ def build_ask_messages(
         messages.append({"role": "system", "content": resolved_system})
     user_sections: list[str] = []
     if context.strip():
-        user_sections.append(f"近期直播上下文：\n{context.strip()}")
+        user_sections.append(f"直播:{context.strip()}")
     if knowledge.strip():
-        user_sections.append(f"知識庫參考：\n{knowledge.strip()}")
+        user_sections.append(knowledge.strip())
     if game_reference.strip():
-        user_sections.append(f"遊戲資料參考：\n{game_reference.strip()}")
+        user_sections.append(game_reference.strip())
     if session_recap_reference.strip():
-        user_sections.append(f"本場回顧參考：\n{session_recap_reference.strip()}")
+        user_sections.append(session_recap_reference.strip())
     user_sections.append(_answer_guidance(limit))
     if structured_ask_enabled():
         user_sections.append(structured_output_guidance(limit))
-    user_sections.append(f"觀眾問題：{question.strip()}")
-    messages.append({"role": "user", "content": "\n\n".join(user_sections)})
+    user_sections.append(f"問題:{question.strip()}")
+    messages.append({"role": "user", "content": join_sections(*user_sections)})
     return messages
 
 
@@ -88,32 +77,32 @@ def analyze_prompt_payload(
         "",
     )
     knowledge_body = ""
-    if "知識庫參考：" in user_content:
-        knowledge_body = user_content.split("知識庫參考：", 1)[1].split("\n\n遊戲資料參考：", 1)[0]
-        if "\n\n觀眾問題：" in knowledge_body:
-            knowledge_body = knowledge_body.split("\n\n觀眾問題：", 1)[0]
+    if "知識:" in user_content:
+        knowledge_body = user_content.split("知識:", 1)[1].split(SECTION_SEP, 1)[0]
+        if "問題:" in knowledge_body:
+            knowledge_body = knowledge_body.split("問題:", 1)[0]
         knowledge_body = knowledge_body.strip()
     game_body = ""
-    if "遊戲資料參考：" in user_content:
-        game_body = user_content.split("遊戲資料參考：", 1)[1].split("\n\n本場回顧參考：", 1)[0]
-        if "\n\n觀眾問題：" in game_body:
-            game_body = game_body.split("\n\n觀眾問題：", 1)[0]
+    if "遊戲:" in user_content:
+        game_body = user_content.split("遊戲:", 1)[1].split(SECTION_SEP, 1)[0]
+        if "問題:" in game_body:
+            game_body = game_body.split("問題:", 1)[0]
         game_body = game_body.strip()
     session_recap_body = ""
-    if "本場回顧參考：" in user_content:
-        session_recap_body = user_content.split("本場回顧參考：", 1)[1].split(
-            "\n\n觀眾問題：", 1
-        )[0]
-        if "\n\n【回答方式】" in session_recap_body:
-            session_recap_body = session_recap_body.split("\n\n【回答方式】", 1)[0]
+    if "回顧:" in user_content:
+        session_recap_body = user_content.split("回顧:", 1)[1].split(SECTION_SEP, 1)[0]
+        if "問題:" in session_recap_body:
+            session_recap_body = session_recap_body.split("問題:", 1)[0]
+        if "【回答】" in session_recap_body:
+            session_recap_body = session_recap_body.split("【回答】", 1)[0]
         session_recap_body = session_recap_body.strip()
     context_body = ""
-    if "近期直播上下文：" in user_content:
-        context_body = user_content.split("近期直播上下文：", 1)[1].split("\n\n知識庫參考：", 1)[0]
-        if "\n\n遊戲資料參考：" in context_body:
-            context_body = context_body.split("\n\n遊戲資料參考：", 1)[0]
-        if "\n\n觀眾問題：" in context_body:
-            context_body = context_body.split("\n\n觀眾問題：", 1)[0]
+    if "直播:" in user_content:
+        context_body = user_content.split("直播:", 1)[1].split(SECTION_SEP, 1)[0]
+        if "知識:" in context_body:
+            context_body = context_body.split("知識:", 1)[0]
+        if "問題:" in context_body:
+            context_body = context_body.split("問題:", 1)[0]
         context_body = context_body.strip()
 
     return {
@@ -123,13 +112,13 @@ def analyze_prompt_payload(
         "game_reference_len": len(game_body),
         "session_recap_len": len(session_recap_body),
         "user_len": len(user_content),
-        "has_stt_marker": "【直播逐字稿" in context_body,
-        "has_chat_marker": "【近期聊天室" in context_body,
-        "has_stream_metadata_marker": "【直播狀態" in context_body,
-        "has_static_kb_marker": "【實況主知識庫】" in knowledge_body,
-        "has_memory_marker": "【近期直播摘要】" in knowledge_body,
-        "has_game_reference_marker": "【遊戲資料參考：" in game_body,
-        "has_session_recap_marker": "【本場回顧參考】" in session_recap_body,
+        "has_stt_marker": "逐字稿:" in context_body,
+        "has_chat_marker": "聊天:" in context_body,
+        "has_stream_metadata_marker": "狀態:" in context_body,
+        "has_static_kb_marker": "知識:" in user_content,
+        "has_memory_marker": "記憶:" in user_content,
+        "has_game_reference_marker": "遊戲:" in user_content,
+        "has_session_recap_marker": "回顧:" in user_content,
         "has_general_knowledge_hint": "通識" in system_content,
         "messages": messages,
     }
