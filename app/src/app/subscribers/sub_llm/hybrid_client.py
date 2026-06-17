@@ -139,7 +139,12 @@ class HybridGeminiLlmClient:
             },
         ]
         try:
-            raw = self._agent.complete(messages, temperature=0.0, json_mode=True)
+            raw = self._agent.complete(
+                messages,
+                temperature=0.0,
+                json_mode=True,
+                purpose="agent_route",
+            )
         except LlmApiError as exc:
             tag = format_backend_log_tag(BACKEND_HYBRID)
             print(

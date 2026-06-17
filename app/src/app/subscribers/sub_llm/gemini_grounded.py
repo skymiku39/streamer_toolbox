@@ -8,6 +8,7 @@ import urllib.request
 from typing import Any
 
 from sub_llm.ask_response import AskResponse, parse_ask_response
+from sub_llm.observability import log_llm_messages
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.prompt_assembly import build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
@@ -77,6 +78,7 @@ class GeminiGroundedLlmClient:
             session_recap_reference=session_recap_reference,
             system_prompt=self._system_prompt,
         )
+        log_llm_messages(messages, purpose="ask")
         user_content = next(m["content"] for m in messages if m["role"] == "user")
         system_content = next(
             (m["content"] for m in messages if m["role"] == "system"),

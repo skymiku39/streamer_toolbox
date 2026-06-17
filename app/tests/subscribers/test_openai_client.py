@@ -8,6 +8,28 @@ import pytest
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 
 
+def test_ask_logs_prompt_messages(capsys: pytest.CaptureFixture[str]) -> None:
+    client = OpenAiCompatibleLlmClient(
+        base_url="https://example.com/v1",
+        api_key="test-key",
+        model="test-model",
+        system_prompt="你是直播助手",
+    )
+    payload = {"choices": [{"message": {"content": "這是回覆"}}]}
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps(payload).encode("utf-8")
+    mock_response.__enter__.return_value = mock_response
+    mock_response.__exit__.return_value = None
+
+    with patch("sub_llm.openai_client.urllib.request.urlopen", return_value=mock_response):
+        client.ask("問題", context="逐字稿", knowledge="知識")
+
+    err = capsys.readouterr().err
+    assert "[sub-llm] llm_prompt purpose=ask" in err
+    assert "你是直播助手" in err
+    assert "觀眾問題：問題" in err
+
+
 def test_ask_returns_assistant_content() -> None:
     client = OpenAiCompatibleLlmClient(
         base_url="https://example.com/v1",

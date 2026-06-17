@@ -9,6 +9,7 @@ from typing import Any
 
 from app.subscribers.qa_memory_mode import structured_ask_enabled
 from sub_llm.ask_response import AskResponse, parse_ask_response, parse_plain_llm_text
+from sub_llm.observability import log_llm_messages
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
 from sub_llm.resilience import LlmApiError, RetryPolicy, call_with_retry
@@ -124,7 +125,7 @@ class OpenAiCompatibleLlmClient:
                 flush=True,
             )
 
-        raw = self._complete(messages, temperature=0.7)
+        raw = self._complete(messages, temperature=0.7, purpose="ask")
         return parse_ask_response(raw)
 
     def generate_startup_greeting(
@@ -143,7 +144,7 @@ class OpenAiCompatibleLlmClient:
                 ),
             },
         ]
-        raw = self._complete(messages, temperature=0.9, json_mode=False)
+        raw = self._complete(messages, temperature=0.9, json_mode=False, purpose="startup_greeting")
         return parse_plain_llm_text(raw)
 
     def complete(
@@ -152,9 +153,15 @@ class OpenAiCompatibleLlmClient:
         *,
         temperature: float = 0.7,
         json_mode: bool | None = None,
+        purpose: str = "completion",
     ) -> str:
         """以原始 messages 直接呼叫 chat completion（供路由等輕量用途）。"""
-        return self._complete(messages, temperature=temperature, json_mode=json_mode)
+        return self._complete(
+            messages,
+            temperature=temperature,
+            json_mode=json_mode,
+            purpose=purpose,
+        )
 
     def _complete(
         self,
@@ -162,7 +169,9 @@ class OpenAiCompatibleLlmClient:
         *,
         temperature: float,
         json_mode: bool | None = None,
+        purpose: str = "completion",
     ) -> str:
+        log_llm_messages(messages, purpose=purpose)
         payload: dict[str, Any] = {
             "model": self._model,
             "messages": messages,
