@@ -5,7 +5,7 @@ from typing import Protocol
 
 from stream_store import StreamTextStore, resolve_session_for_channel
 
-from sub_llm.prompt_format import SECTION_SEP
+from sub_llm.prompt_format import GROUP_SEP
 
 _TEXT_SUFFIXES = frozenset({".md", ".txt", ".json"})
 
@@ -45,7 +45,7 @@ class CompositeKnowledgeStore:
 
     def query(self, question: str, *, channel: str = "") -> str:
         parts = [store.query(question, channel=channel).strip() for store in self._stores]
-        return SECTION_SEP.join(part for part in parts if part)
+        return GROUP_SEP.join(part for part in parts if part)
 
 
 class SummaryKnowledgeStore:

@@ -27,7 +27,7 @@ def test_ask_logs_prompt_messages(capsys: pytest.CaptureFixture[str]) -> None:
     err = capsys.readouterr().err
     assert "[sub-llm] llm_prompt purpose=ask" in err
     assert "你是直播助手" in err
-    assert "問題:問題" in err
+    assert "[問題]" in err
 
 
 def test_ask_returns_assistant_content() -> None:

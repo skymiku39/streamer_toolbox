@@ -35,7 +35,7 @@ from sub_llm.context_buffer import LiveContextBuffer
 from sub_llm.game_context import build_game_reference, resolve_live_game_name
 from sub_llm.knowledge import KnowledgeStore
 from sub_llm.live_activity import current_activity_context_hint, is_current_activity_question
-from sub_llm.prompt_format import join_sections
+from sub_llm.prompt_format import INTRA_SEP, join_lines
 from sub_llm.llm import LlmClient
 from sub_llm.observability import log_event
 from sub_llm.qa_memory_gate import should_persist_qa_memory
@@ -206,12 +206,12 @@ class LlmSubscriber:
             )
             context = self._context_buffer.context_text(channel)
             if is_current_activity_question(filtered_question):
-                context = join_sections(
+                context = join_lines(
                     context,
                     current_activity_context_hint(has_stt=stt_count > 0),
                 )
             elif stt_count == 0:
-                context = join_sections(
+                context = join_lines(
                     context,
                     current_activity_context_hint(has_stt=False),
                 )
@@ -231,11 +231,11 @@ class LlmSubscriber:
                 )
             knowledge = self._knowledge.query(filtered_question, channel=channel)
             short_term_hit = False
-            if self._short_term_rag is not None:
+            if self._short_term_rag is not None and bot_reply_count == 0:
                 short_term = self._short_term_rag.query(channel, filtered_question)
                 if short_term:
                     short_term_hit = True
-                    knowledge = f"{short_term}\n\n{knowledge}" if knowledge else short_term
+                    knowledge = f"{short_term}\n{knowledge}" if knowledge else short_term
                     print(
                         f"[sub-llm] short-term RAG hit chars={len(short_term)}",
                         file=sys.stderr,
@@ -363,6 +363,7 @@ class LlmSubscriber:
                     reply=filtered_reply,
                     memory_note=ask_result.memory_note,
                     memory_value=ask_result.memory_value,
+                    category=ask_result.category,
                 )
         finally:
             if busy_acquired:
@@ -412,6 +413,7 @@ class LlmSubscriber:
         reply: str,
         memory_note: str,
         memory_value: int,
+        category: str = "",
     ) -> None:
         ask_author = (trigger.author_name or trigger.login or "").strip()
         record = MemoryQaRecordEvent.build(
@@ -424,11 +426,13 @@ class LlmSubscriber:
             memory_value=memory_value,
             store_worthy=True,
             ask_author=ask_author,
+            category=category,
         )
         self._publish(TOPIC_MEMORY_QA_RECORD, record.to_dict())
         print(
             f"[sub-llm] published {TOPIC_MEMORY_QA_RECORD} "
-            f"correlation={trigger.message_id[:8]} memory_value={memory_value}",
+            f"correlation={trigger.message_id[:8]} memory_value={memory_value} "
+            f"category={category or 'discussion'}",
             file=sys.stderr,
             flush=True,
         )

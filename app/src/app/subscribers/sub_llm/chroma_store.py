@@ -8,13 +8,16 @@ import threading
 from pathlib import Path
 from typing import Any, Protocol
 
+from sub_llm.embedding import resolve_embedding_function
 from sub_llm.knowledge import iter_text_documents
 from sub_llm.live_activity import is_current_activity_question
 from sub_llm.prompt_format import (
     INTRA_SEP,
     compact_markdown,
     format_memory_snippet_for_prompt,
+    is_placeholder_knowledge,
 )
+from sub_llm.memory_category import CATEGORY_FACT, CATEGORY_LORE, category_label
 from sub_llm.memory_ranking import rank_memory_snippets
 from sub_llm.session_recap import should_enrich_session_recap
 
@@ -24,6 +27,20 @@ COLLECTION_NAME = "kb_global"
 MEMORY_COLLECTION_NAME = "kb_memory"
 SYNC_STATE_FILE = ".sync_fingerprint.json"
 MEMORY_SYNC_STATE_FILE = ".memory_sync_fingerprint.json"
+
+# 記憶索引結構版本：metadata 欄位或索引策略變更時遞增，
+# 併入 fingerprint 以強制既有 session 重新索引一次。
+_MEMORY_INDEX_SCHEMA = "2"
+
+# 跨 session 檢索時放寬 session 限制的高可信度類別（頻道穩定事實／固定梗）。
+_CROSS_SESSION_CATEGORIES = (CATEGORY_FACT, CATEGORY_LORE)
+
+
+def _collection_embedding_kwargs() -> dict[str, Any]:
+    embedding_function = resolve_embedding_function()
+    if embedding_function is None:
+        return {}
+    return {"embedding_function": embedding_function}
 
 
 class PreloadableKnowledgeStore(Protocol):
@@ -91,6 +108,7 @@ class ChromaKnowledgeStore:
             self._collection = self._client.get_or_create_collection(
                 name=COLLECTION_NAME,
                 metadata={"hnsw:space": "cosine"},
+                **_collection_embedding_kwargs(),
             )
         except Exception as exc:
             logger.warning("ChromaDB 初始化失敗，知識庫查詢將回傳空結果: %s", exc)
@@ -163,9 +181,14 @@ class ChromaKnowledgeStore:
             return ""
 
         unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
-        if not unique:
+        usable = [
+            compact_markdown(doc)
+            for doc in unique
+            if not is_placeholder_knowledge(doc)
+        ]
+        if not usable:
             return ""
-        text = "知識:" + INTRA_SEP.join(compact_markdown(doc) for doc in unique)
+        text = "知識:" + INTRA_SEP.join(usable)
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."
@@ -173,10 +196,14 @@ class ChromaKnowledgeStore:
 
 def _fingerprint_summaries(summaries: list[Any]) -> str:
     digest = hashlib.sha256()
+    digest.update(_MEMORY_INDEX_SCHEMA.encode("utf-8"))
+    digest.update(b"\0")
     for summary in summaries:
         digest.update(str(summary.id).encode("utf-8"))
         digest.update(b"\0")
         digest.update(summary.content.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update((getattr(summary, "category", "") or "").encode("utf-8"))
         digest.update(b"\0")
     return digest.hexdigest()
 
@@ -231,6 +258,7 @@ class ChromaSummaryKnowledgeStore:
             self._collection = self._client.get_or_create_collection(
                 name=MEMORY_COLLECTION_NAME,
                 metadata={"hnsw:space": "cosine"},
+                **_collection_embedding_kwargs(),
             )
         except Exception as exc:
             logger.warning("Chroma 記憶庫初始化失敗: %s", exc)
@@ -282,15 +310,23 @@ class ChromaSummaryKnowledgeStore:
         metadatas: list[dict[str, str]] = []
         for summary in chronological:
             ids.append(f"summary_{summary.id}")
+            category = getattr(summary, "category", "") or ""
+            # qa 記憶帶分類標籤（位於時間 header 之後，header 被剝除後仍保留），
+            # 讓低可信度（八卦／討論）在 prompt 內可見。
+            body = summary.content.strip()
+            if summary.source == "qa":
+                label = category_label(category)
+                body = f"[{label}]{body}"
             documents.append(
                 f"[{summary.source}] {summary.period_start} .. {summary.period_end}\n"
-                f"{summary.content.strip()}"
+                f"{body}"
             )
             metadatas.append(
                 {
                     "session_id": session_id,
                     "source": summary.source,
                     "period_end": summary.period_end,
+                    "category": category,
                 }
             )
 

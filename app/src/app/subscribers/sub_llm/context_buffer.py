@@ -8,7 +8,7 @@ from events import ChatMessageEvent, StreamMetadataEvent, SttSegmentEvent
 
 from stream_store.session import normalize_channel
 
-from sub_llm.prompt_format import INTRA_SEP, join_sections
+from sub_llm.prompt_format import INTRA_SEP, join_lines
 
 
 @dataclass(frozen=True)
@@ -331,7 +331,7 @@ class LiveContextBuffer:
             )
             if part
         ]
-        return join_sections(*parts)
+        return join_lines(*parts)
 
     def stats(self, channel: str) -> tuple[int, int, int, int, bool]:
         stt_count = self._stt.count(channel)

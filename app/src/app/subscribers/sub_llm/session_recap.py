@@ -6,17 +6,16 @@ from dataclasses import dataclass
 
 from stream_store import StreamTextStore, resolve_session_for_channel
 from sub_llm.live_activity import is_current_activity_question
-from sub_llm.prompt_format import INTRA_SEP, compact_markdown, join_sections
+from sub_llm.prompt_format import INTRA_SEP, compact_markdown, join_lines
 
 _SESSION_RECAP = re.compile(
     r"今天|本場|這場|開台以來|整場|做了哪些|做了什麼|實現了|完成哪些|進度如何|實作了|開發了",
 )
 
-_RECAP_GUIDANCE = (
-    "請依下方摘要與語音原文逐條列舉具體工作項目（工具名、功能名、開啟的軟體等）；"
-    "勿以「有提到但沒詳細說／目前還不清楚」當主體回覆。"
-    "若摘要與原文皆無細節，才允許一句交代。"
-    "勿把觀眾暱稱當成主播名字；「今天 XXX 做了…」應指實況主本人。"
+SESSION_RECAP_SYSTEM_GUIDANCE = (
+    "【本場回顧】觀眾問今天／本場進度時，依 user 訊息 [參考] 區的摘要與語音列舉具體項目；"
+    "勿以「有提到但沒詳細說」當主體回覆。"
+    "勿把觀眾暱稱當成主播名字。"
 )
 
 _RECAP_SUMMARY_SOURCES = frozenset({"chat", "stt"})
@@ -34,7 +33,7 @@ def _recap_summary_limit() -> int:
 
 
 def _recap_raw_stt_limit() -> int:
-    return max(1, int(os.environ.get("LLM_SESSION_RECAP_RAW_STT_LIMIT", "80")))
+    return max(1, int(os.environ.get("LLM_SESSION_RECAP_RAW_STT_LIMIT", "30")))
 
 
 def _recap_max_chars() -> int:
@@ -100,19 +99,22 @@ def build_session_recap_reference(
     if not summaries and not stt_pending:
         return empty
 
-    sections: list[str] = [f"回顧:{_RECAP_GUIDANCE}"]
+    sections: list[str] = []
     if summaries:
         summary_parts = [
             f"{summary.source}:{compact_markdown(summary.content)}"
             for summary in summaries
         ]
-        sections.append("摘要:" + INTRA_SEP.join(summary_parts))
+        sections.append("回顧摘要:" + INTRA_SEP.join(summary_parts))
 
     if stt_pending:
         transcript = " ".join(record.text.strip() for record in stt_pending)
-        sections.append(f"語音:{transcript}")
+        max_transcript = max(500, _recap_max_chars() // 2)
+        if len(transcript) > max_transcript:
+            transcript = transcript[-max_transcript:]
+        sections.append(f"回顧語音:{transcript}")
 
-    text = join_sections(*sections)
+    text = join_lines(*sections)
     max_chars = _recap_max_chars()
     if len(text) > max_chars:
         text = text[: max_chars - 3] + "..."
