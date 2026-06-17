@@ -7,6 +7,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from app.llm_tiers import LlmTier, require_api_key, resolve_tier
 from sub_llm.ask_response import AskResponse, parse_ask_response
 from sub_llm.observability import log_llm_messages
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
@@ -39,25 +40,11 @@ class GeminiGroundedLlmClient:
 
     @classmethod
     def from_env(cls) -> GeminiGroundedLlmClient:
-        api_key = (
-            os.environ.get("LLM_API_KEY")
-            or os.environ.get("GOOGLE_AI_API_KEY")
-            or os.environ.get("GEMINI_API_KEY")
-            or os.environ.get("GOOGLE_API_KEY")
-            or ""
-        ).strip()
-        model = (
-            os.environ.get("LLM_MODEL")
-            or os.environ.get("GOOGLE_AI_MODEL")
-            or "gemini-2.5-flash"
-        ).strip()
-        if not api_key:
-            raise ValueError(
-                "GOOGLE_AI_API_KEY (或 LLM_API_KEY / GEMINI_API_KEY) is required"
-            )
+        tier = resolve_tier(LlmTier.ASK, ask_backend="gemini")
+        require_api_key(tier)
         return cls(
-            api_key=api_key,
-            model=model,
+            api_key=tier.api_key,
+            model=tier.model,
             system_prompt=resolve_system_prompt(),
         )
 

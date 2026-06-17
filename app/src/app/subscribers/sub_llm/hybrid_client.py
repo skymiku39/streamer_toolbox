@@ -5,15 +5,14 @@ import os
 import re
 import sys
 
+from app.llm_tiers import LlmTier, require_api_key, resolve_tier
 from sub_llm.ask_response import AskResponse
-from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.llm_backends import BACKEND_HYBRID, format_backend_log_tag
+from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.prompts import resolve_system_prompt
 from sub_llm.short_term_rag import SHORT_TERM_MARKER
 
 _GEMINI_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai"
-DEFAULT_AGENT_MODEL = "gemini-2.0-flash-lite"
-DEFAULT_MAIN_MODEL = "gemini-2.5-flash"
 
 _JSON_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
 
@@ -56,34 +55,19 @@ class HybridGeminiLlmClient:
 
     @classmethod
     def from_env(cls) -> HybridGeminiLlmClient:
-        api_key = (
-            os.environ.get("LLM_API_KEY")
-            or os.environ.get("GOOGLE_AI_API_KEY")
-            or os.environ.get("GEMINI_API_KEY")
-            or os.environ.get("GOOGLE_API_KEY")
-            or ""
-        ).strip()
-        if not api_key:
-            raise ValueError(
-                "GOOGLE_AI_API_KEY (或 LLM_API_KEY / GEMINI_API_KEY) is required"
-            )
-        base_url = (os.environ.get("LLM_API_BASE") or _GEMINI_OPENAI_BASE).strip()
-        agent_model = (os.environ.get("LLM_AGENT_MODEL") or DEFAULT_AGENT_MODEL).strip()
-        main_model = (
-            os.environ.get("LLM_MODEL")
-            or os.environ.get("GOOGLE_AI_MODEL")
-            or DEFAULT_MAIN_MODEL
-        ).strip()
+        agent_tier = resolve_tier(LlmTier.AGENT)
+        ask_tier = resolve_tier(LlmTier.ASK, ask_backend="hybrid")
+        require_api_key(agent_tier)
         agent = OpenAiCompatibleLlmClient(
-            base_url=base_url,
-            api_key=api_key,
-            model=agent_model,
+            base_url=agent_tier.base_url,
+            api_key=agent_tier.api_key,
+            model=agent_tier.model,
             system_prompt=_AGENT_SYSTEM_PROMPT,
         )
         main = OpenAiCompatibleLlmClient(
-            base_url=base_url,
-            api_key=api_key,
-            model=main_model,
+            base_url=ask_tier.base_url,
+            api_key=ask_tier.api_key,
+            model=ask_tier.model,
             system_prompt=resolve_system_prompt(),
         )
         return cls(agent_client=agent, main_client=main)

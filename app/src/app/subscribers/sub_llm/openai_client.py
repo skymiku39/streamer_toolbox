@@ -8,6 +8,7 @@ import urllib.request
 from typing import Any
 
 from app.subscribers.qa_memory_mode import structured_ask_enabled
+from app.llm_tiers import LlmTier, require_api_key, resolve_tier
 from sub_llm.ask_response import AskResponse, parse_ask_response, parse_plain_llm_text
 from sub_llm.observability import log_llm_messages
 from sub_llm.prompt_assembly import analyze_prompt_payload, build_ask_messages
@@ -46,41 +47,13 @@ class OpenAiCompatibleLlmClient:
         selected = (
             backend or os.environ.get("LLM_BACKEND", "openai") or "openai"
         ).lower()
-        if selected == "gemini":
-            base_url = os.environ.get(
-                "LLM_API_BASE",
-                "https://generativelanguage.googleapis.com/v1beta/openai",
-            )
-            api_key = (
-                os.environ.get("LLM_API_KEY")
-                or os.environ.get("GOOGLE_AI_API_KEY")
-                or os.environ.get("GEMINI_API_KEY")
-                or os.environ.get("GOOGLE_API_KEY")
-                or ""
-            ).strip()
-            model = (
-                os.environ.get("LLM_MODEL")
-                or os.environ.get("GOOGLE_AI_MODEL")
-                or "gemini-2.5-flash"
-            ).strip()
-        else:
-            base_url = (os.environ.get("LLM_API_BASE") or "https://api.openai.com/v1").strip()
-            api_key = (
-                os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
-            ).strip()
-            model = (os.environ.get("LLM_MODEL") or "gpt-4o-mini").strip()
-        system_prompt = resolve_system_prompt()
-        if not api_key:
-            if selected == "gemini":
-                raise ValueError(
-                    "GOOGLE_AI_API_KEY (或 LLM_API_KEY / GEMINI_API_KEY) is required"
-                )
-            raise ValueError("LLM_API_KEY (或 OPENAI_API_KEY) is required")
+        tier = resolve_tier(LlmTier.ASK, ask_backend=selected)
+        require_api_key(tier)
         return cls(
-            base_url=base_url,
-            api_key=api_key,
-            model=model,
-            system_prompt=system_prompt,
+            base_url=tier.base_url,
+            api_key=tier.api_key,
+            model=tier.model,
+            system_prompt=resolve_system_prompt(),
         )
 
     def ask(

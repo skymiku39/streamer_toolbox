@@ -10,6 +10,7 @@ from events import (
     TOPIC_CHAT_MESSAGE,
     TOPIC_CHAT_REPLY,
     TOPIC_CONFIG_CHANGED,
+    TOPIC_MEMORY_SUMMARY_READY,
     TOPIC_STREAM_METADATA,
     TOPIC_STT_SEGMENT,
 )
@@ -47,6 +48,7 @@ from sub_llm.llm_backends import (
     format_backend_log_tag,
     resolve_backend_info,
 )
+from app.llm_tiers import format_sub_llm_tier_log
 from sub_llm.poc_hybrid import (
     apply_hybrid_poc_env_defaults,
     hybrid_poc_feature_flags,
@@ -147,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
             TOPIC_STT_SEGMENT,
             TOPIC_STREAM_METADATA,
             TOPIC_CONFIG_CHANGED,
+            TOPIC_MEMORY_SUMMARY_READY,
         ],
     )
 
@@ -181,7 +184,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"[sub-llm] mode={format_backend_log_tag(args.llm_backend)} "
         f"llm_client={type(llm).__name__} "
-        f"backend_id={backend_info.backend_id!r} web_search={web_search!r}",
+        f"backend_id={backend_info.backend_id!r} web_search={web_search!r} "
+        f"{format_sub_llm_tier_log(ask_backend=args.llm_backend)}",
         file=sys.stderr,
         flush=True,
     )
@@ -253,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         f"{PROCESS_NAME} listening on {TOPIC_CHAT_MESSAGE}, {TOPIC_STT_SEGMENT}, "
-        f"{TOPIC_STREAM_METADATA}, {TOPIC_CONFIG_CHANGED} "
+        f"{TOPIC_STREAM_METADATA}, {TOPIC_CONFIG_CHANGED}, {TOPIC_MEMORY_SUMMARY_READY} "
         f"(backend={args.llm_backend!r}, qa_memory_mode={config.qa_memory_mode!r}, "
         f"knowledge=RAG/chroma, "
         f"game_info={game_info_mode!r}, triggers={config.trigger_prefixes!r})",

@@ -15,6 +15,7 @@ configure_utf8_stdio()
 
 
 
+from app.llm_tiers import LlmTier, resolve_tier
 from app.publishing.summary_publisher import create_summary_publisher
 from app.workers.memory_config import DEFAULT_MEMORY_INTERVAL_MINUTES, MemoryWorkerConfig
 from app.workers.memory_scheduler import run_scheduled_worker
@@ -194,6 +195,11 @@ def main(argv: list[str] | None = None) -> int:
             print(str(exc), file=sys.stderr)
             return 1
 
+        tier_log = ""
+        if config.llm_backend in {"openai", "gemini"}:
+            tier = resolve_tier(LlmTier.MEMORY, memory_backend=config.llm_backend)
+            tier_log = f" {tier.log_label()}"
+
         store = StreamTextStore(config.db_path)
         worker = MemoryWorker(
             store,
@@ -206,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"{PROCESS_NAME} db={config.db_path} session={config.session_id or '(auto)'} "
             f"mode={config.record_mode} interval={config.interval_minutes}m "
-            f"backend={config.llm_backend} trigger_listen={trigger_listen}",
+            f"backend={config.llm_backend} trigger_listen={trigger_listen}{tier_log}",
             file=sys.stderr,
             flush=True,
         )
