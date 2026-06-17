@@ -42,6 +42,11 @@ from sub_llm.factory import (
 )
 from sub_llm.game_context import create_game_info_provider
 from sub_llm.handler import LlmSubscriber
+from sub_llm.llm_backends import (
+    argparse_backend_help,
+    format_backend_log_tag,
+    resolve_backend_info,
+)
 from sub_llm.poc_hybrid import (
     apply_hybrid_poc_env_defaults,
     hybrid_poc_feature_flags,
@@ -92,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         "--llm-backend",
         default=os.environ.get("LLM_BACKEND", "template"),
         choices=["template", "openai", "gemini", "hybrid"],
-        help="LLM 後端：template（佔位）、openai、gemini、hybrid（本地小 Agent + 雲端 Gemini）",
+        help=argparse_backend_help(),
     )
     parser.add_argument(
         "--knowledge-path",
@@ -171,10 +176,12 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
+    backend_info = resolve_backend_info(args.llm_backend)
     web_search = (os.environ.get("LLM_WEB_SEARCH", "true") or "true").strip().lower()
     print(
-        f"[sub-llm] llm_client={type(llm).__name__} "
-        f"backend={args.llm_backend!r} web_search={web_search!r}",
+        f"[sub-llm] mode={format_backend_log_tag(args.llm_backend)} "
+        f"llm_client={type(llm).__name__} "
+        f"backend_id={backend_info.backend_id!r} web_search={web_search!r}",
         file=sys.stderr,
         flush=True,
     )

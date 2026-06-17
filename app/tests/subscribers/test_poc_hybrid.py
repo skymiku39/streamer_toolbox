@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 
+import os
+
 import pytest
 
 from sub_llm.poc_hybrid import (
@@ -9,27 +11,34 @@ from sub_llm.poc_hybrid import (
     hybrid_poc_feature_flags,
 )
 
-
-@pytest.fixture
-def clean_hybrid_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for key in (
-        "LLM_GAME_INFO_ENABLED",
-        "LLM_SESSION_RECAP_ENABLED",
-        "LLM_MEMORY_FROM_DB",
-        "LLM_SHORT_TERM_RAG_ENABLED",
-        "LLM_INJECTION_GUARD",
-        "LLM_KNOWLEDGE_BACKEND",
-        "LLM_WEB_SEARCH",
-        "LLM_STARTUP_ANNOUNCEMENT",
-        "QA_MEMORY_MODE",
-        "LLM_KNOWLEDGE_PATH",
-    ):
-        monkeypatch.delenv(key, raising=False)
+_HYBRID_ENV_KEYS = (
+    "LLM_GAME_INFO_ENABLED",
+    "LLM_SESSION_RECAP_ENABLED",
+    "LLM_MEMORY_FROM_DB",
+    "LLM_SHORT_TERM_RAG_ENABLED",
+    "LLM_INJECTION_GUARD",
+    "LLM_KNOWLEDGE_BACKEND",
+    "LLM_WEB_SEARCH",
+    "LLM_STARTUP_ANNOUNCEMENT",
+    "QA_MEMORY_MODE",
+    "LLM_KNOWLEDGE_PATH",
+)
 
 
-def test_apply_hybrid_defaults_enables_zero_token_features(
-    clean_hybrid_env: None,
-) -> None:
+@pytest.fixture(autouse=True)
+def clean_hybrid_env() -> None:
+    saved = {key: os.environ.get(key) for key in _HYBRID_ENV_KEYS}
+    for key in _HYBRID_ENV_KEYS:
+        os.environ.pop(key, None)
+    yield
+    for key, value in saved.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+
+
+def test_apply_hybrid_defaults_enables_zero_token_features() -> None:
     applied = apply_hybrid_poc_env_defaults(knowledge_path="/data/knowledge")
 
     assert "LLM_GAME_INFO_ENABLED" in applied
@@ -39,9 +48,7 @@ def test_apply_hybrid_defaults_enables_zero_token_features(
     assert os.environ["LLM_KNOWLEDGE_PATH"] == "/data/knowledge"
 
 
-def test_apply_hybrid_defaults_enables_low_token_qa_memory_batch(
-    clean_hybrid_env: None,
-) -> None:
+def test_apply_hybrid_defaults_enables_low_token_qa_memory_batch() -> None:
     apply_hybrid_poc_env_defaults()
 
     assert os.environ["QA_MEMORY_MODE"] == "batch"
@@ -50,9 +57,7 @@ def test_apply_hybrid_defaults_enables_low_token_qa_memory_batch(
     assert flags["qa_memory_read"] is True
 
 
-def test_apply_hybrid_defaults_disables_token_consumers(
-    clean_hybrid_env: None,
-) -> None:
+def test_apply_hybrid_defaults_disables_token_consumers() -> None:
     apply_hybrid_poc_env_defaults()
 
     assert os.environ["LLM_WEB_SEARCH"] == "false"

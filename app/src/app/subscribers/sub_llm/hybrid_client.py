@@ -7,6 +7,7 @@ import sys
 
 from sub_llm.ask_response import AskResponse
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
+from sub_llm.llm_backends import BACKEND_HYBRID, format_backend_log_tag
 from sub_llm.prompts import resolve_system_prompt
 from sub_llm.short_term_rag import SHORT_TERM_MARKER
 
@@ -42,7 +43,7 @@ def _parse_agent_decision(raw: str) -> tuple[str, str]:
 
 
 class HybridGeminiLlmClient:
-    """本地小 Agent（lite 模型路由）＋ 雲端 Gemini（flash 主回答）。"""
+    """Hybrid Agent 版：lite 小 Agent 路由 + flash 主 Gemini 回答。"""
 
     def __init__(
         self,
@@ -97,11 +98,12 @@ class HybridGeminiLlmClient:
         session_recap_reference: str = "",
     ) -> AskResponse:
         agent_reply = self._route_from_memory(question, knowledge=knowledge)
+        tag = format_backend_log_tag(BACKEND_HYBRID)
         if agent_reply is not None:
-            print("[sub-llm] hybrid action=answer (local agent)", file=sys.stderr, flush=True)
+            print(f"[sub-llm] {tag} action=answer", file=sys.stderr, flush=True)
             return AskResponse(reply=agent_reply)
 
-        print("[sub-llm] hybrid action=escalate (cloud gemini)", file=sys.stderr, flush=True)
+        print(f"[sub-llm] {tag} action=escalate", file=sys.stderr, flush=True)
         return self._main.ask(
             question,
             context=context,
@@ -139,8 +141,9 @@ class HybridGeminiLlmClient:
         try:
             raw = self._agent.complete(messages, temperature=0.0, json_mode=True)
         except LlmApiError as exc:
+            tag = format_backend_log_tag(BACKEND_HYBRID)
             print(
-                f"[sub-llm] hybrid agent failed, escalate: {exc}",
+                f"[sub-llm] {tag} agent failed, escalate: {exc}",
                 file=sys.stderr,
                 flush=True,
             )

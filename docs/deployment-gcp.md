@@ -91,7 +91,7 @@ uv run python scripts/first_time_auth.py --role bot
 - `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`
 - `TWITCH_BOT_REFRESH_TOKEN` / `TWITCH_BOT_ID`
 - `GOOGLE_AI_API_KEY`
-- `LLM_BACKEND=gemini`
+- `LLM_BACKEND=gemini`（**Gemini 直連**；生產環境建議。POC 可用 `hybrid`＝**Hybrid Agent**）
 - `RECORD_MODE=chat`（純文字；勿設 `both` 或 `stt`）
 
 將**機密內容**寫入 GCP Secret Manager（單一 secret，內容為完整 `.env` 或精簡版）：

@@ -124,7 +124,7 @@ uv run python -m app.main run ingress-ttv-read
 | `TWITCH_BOT_REFRESH_TOKEN` | Bot 帳號 refresh token |
 | `TWITCH_BROADCASTER_ID` | 主帳號使用者 ID |
 | `TWITCH_BOT_ID` | Bot 帳號使用者 ID |
-| `LLM_BACKEND` | 設為 `gemini` |
+| `LLM_BACKEND` | `gemini`＝**Gemini 直連**（單段式問答）；`hybrid`＝**Hybrid Agent**（小 Agent + 主 Gemini，POC） |
 | `GOOGLE_AI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) API key |
 | `LLM_KNOWLEDGE_BACKEND` | 保持 `chroma` |
 | `LLM_KNOWLEDGE_PATH` | 預設 `data/knowledge` |

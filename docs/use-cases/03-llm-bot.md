@@ -58,6 +58,15 @@ sequenceDiagram
 
 啟動時若 Gemini 推理端點失敗，仍發布降級宣告（Degraded Mode）。
 
+## LLM 問答模式
+
+| `LLM_BACKEND` | 產品名稱 | 代號 | 說明 |
+|---------------|----------|------|------|
+| `gemini` | Gemini 直連 | `gemini-direct` | 單段式 Gemini；預設可啟用 Google Search grounding |
+| `hybrid` | Hybrid Agent | `hybrid-agent` | lite 小 Agent 路由 + flash 主回答；短期 RAG、流程管控（POC） |
+
+命名定義見 `app/src/app/subscribers/sub_llm/llm_backends.py`。勿與 control-plane **T4 Hybrid STT**（本機 Whisper）混淆。
+
 ## 雙閘門
 
 | 閘門 | 檢查 |

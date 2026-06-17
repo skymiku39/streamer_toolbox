@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import os
-
-_BACKEND_LABELS = {
-    "gemini": "Gemini",
-    "openai": "OpenAI",
-    "template": "Template",
-}
-
-
-def resolve_backend_label(backend: str | None = None) -> str:
-    key = (backend or os.environ.get("LLM_BACKEND", "template") or "template").strip().lower()
-    return _BACKEND_LABELS.get(key, key.upper())
+from sub_llm.llm_backends import resolve_backend_label
 
 
 def _classify_llm_error(exc: Exception) -> str:

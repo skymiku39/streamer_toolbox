@@ -4,8 +4,7 @@ import os
 import sys
 
 from app.subscribers.qa_memory_mode import qa_memory_read_enabled, resolve_qa_memory_mode
-
-# hybrid POC：僅在未於 .env 明確設定時套用（setdefault，不覆寫使用者意圖）
+from sub_llm.llm_backends import BACKEND_HYBRID, format_backend_log_tag
 
 # 不消耗 LLM token，僅檢索／規則／外部 REST（IGDB）
 _HYBRID_ZERO_TOKEN_DEFAULTS: dict[str, str] = {
@@ -30,7 +29,7 @@ _HYBRID_TOKEN_CONSUMING_DEFAULTS: dict[str, str] = {
 
 
 def apply_hybrid_poc_env_defaults(*, knowledge_path: str | None = None) -> list[str]:
-    """`LLM_BACKEND=hybrid` 時套用 POC 環境預設；回傳本次 setdefault 的鍵名。"""
+    """`LLM_BACKEND=hybrid`（Hybrid Agent 版）時套用環境預設；回傳本次 setdefault 的鍵名。"""
     applied: list[str] = []
     for key, value in (
         *_HYBRID_ZERO_TOKEN_DEFAULTS.items(),
@@ -47,7 +46,7 @@ def apply_hybrid_poc_env_defaults(*, knowledge_path: str | None = None) -> list[
 
 
 def hybrid_poc_feature_flags() -> dict[str, bool | str]:
-    """回傳 hybrid POC 相關功能開關（供啟動 log）。"""
+    """回傳 Hybrid Agent 版相關功能開關（供啟動 log）。"""
 
     def _on(name: str, default: bool = True) -> bool:
         raw = os.environ.get(name, "").strip().lower()
@@ -75,9 +74,10 @@ def log_hybrid_poc_startup(
     applied_defaults: list[str],
     flags: dict[str, bool | str],
 ) -> None:
+    tag = format_backend_log_tag(BACKEND_HYBRID)
     if applied_defaults:
         print(
-            f"[sub-llm] hybrid POC setdefault: {', '.join(applied_defaults)}",
+            f"[sub-llm] {tag} setdefault: {', '.join(applied_defaults)}",
             file=sys.stderr,
             flush=True,
         )
@@ -90,14 +90,14 @@ def log_hybrid_poc_startup(
     ]
     qa_mode = flags.get("qa_memory_mode", "none")
     print(
-        f"[sub-llm] hybrid POC enrichments={enabled!r} "
+        f"[sub-llm] {tag} enrichments={enabled!r} "
         f"qa_memory_mode={qa_mode!r} token_savers_off={disabled!r}",
         file=sys.stderr,
         flush=True,
     )
     if qa_mode == "batch":
         print(
-            "[sub-llm] hybrid POC: QA 長期記憶 batch 已啟用；"
+            f"[sub-llm] {tag}: QA 長期記憶 batch 已啟用；"
             "L2 摘要需另跑 app.workers（定時、低頻 token）",
             file=sys.stderr,
             flush=True,
