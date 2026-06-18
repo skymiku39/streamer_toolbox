@@ -252,9 +252,9 @@ streamer_toolbox/
 
 - **`sub_` 前綴**：消費事件並產生業務結果的 subscriber 才加 `sub_`。`twitch_connector` 是
   egress 連接器（將 `chat.reply` 送回 Twitch），非業務 sub，因此**不加** `sub_` 前綴。
-- **Legacy 扁平模組**：多數 subscriber 已收斂為 `sub_<name>/` 子目錄；`sub-stream-record`
-  仍為扁平三檔（`stream_record.py`、`stream_record_config.py`、`stream_record_writer.py`），
-  屬已知歷史例外，待後續再目錄化，process 名 `sub-stream-record` 不變。
+- **Subscriber 一律目錄化**：每個 subscriber 入口都是 `sub_<name>/` 套件（`__main__.py` 內
+  以 `@register_subscriber` 註冊）。跨 subscriber 共用的純函式 helper（如 `qa_memory_mode.py`）
+  才以扁平模組存在於 `app/subscribers/` 下。
 
 ## 設計約束
 

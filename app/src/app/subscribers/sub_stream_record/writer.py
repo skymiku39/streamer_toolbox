@@ -6,7 +6,7 @@ from typing import Any
 
 from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
 
-from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
+from app.subscribers.sub_stream_record.config import RecordConfig, resolve_record_session_id
 from stream_store import StreamTextStore, set_active_session_for_channel
 
 
@@ -41,7 +41,7 @@ class StreamRecordWriter:
 
         channel = event.channel or "unknown"
         with self._lock:
-            session_id = resolve_session_id(self._config, channel=channel)
+            session_id = resolve_record_session_id(self._config, channel=channel)
             self._session_id = session_id
             self._store.append_chat(
                 session_id=session_id,
@@ -66,7 +66,7 @@ class StreamRecordWriter:
 
         channel = event.channel or "unknown"
         with self._lock:
-            session_id = resolve_session_id(self._config, channel=channel)
+            session_id = resolve_record_session_id(self._config, channel=channel)
             self._session_id = session_id
             self._store.append_stt(
                 session_id=session_id,

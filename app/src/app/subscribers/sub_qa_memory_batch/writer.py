@@ -5,7 +5,7 @@ from typing import Any
 
 from events import SOURCE_LOGIC_LLM, TOPIC_CHAT_REPLY, ChatReplyEvent
 
-from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
+from app.subscribers.sub_stream_record.config import RecordConfig, resolve_record_session_id
 from stream_store import StreamTextStore, set_active_session_for_channel
 
 
@@ -21,7 +21,7 @@ class BatchQaMemoryWriter:
             return False
 
         channel = event.channel or "unknown"
-        session_id = resolve_session_id(self._config, channel=channel)
+        session_id = resolve_record_session_id(self._config, channel=channel)
         message_id = event.correlation_id or event.reply_to_message_id or "qa-unknown"
         text = f"[Bot Q&A] {event.content.strip()}"
         self._store.append_chat(

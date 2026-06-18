@@ -1,7 +1,7 @@
 import importlib
 import pkgutil
 
-_SKIP_MODULES = frozenset({"stream_record_config", "stream_record_writer"})
+_SKIP_MODULES: frozenset[str] = frozenset()
 
 
 def discover_subscribers() -> None:

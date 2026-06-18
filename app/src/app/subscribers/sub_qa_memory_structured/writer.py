@@ -5,7 +5,7 @@ from typing import Any
 
 from events import TOPIC_MEMORY_QA_RECORD, MemoryQaRecordEvent
 
-from app.subscribers.stream_record_config import RecordConfig, resolve_session_id
+from app.subscribers.sub_stream_record.config import RecordConfig, resolve_record_session_id
 from stream_store import StreamTextStore, set_active_session_for_channel
 from stream_store.models import Summary
 
@@ -23,7 +23,7 @@ class StructuredQaMemoryWriter:
 
         event = MemoryQaRecordEvent.from_dict(payload)
         channel = event.channel or "unknown"
-        session_id = event.session_id or resolve_session_id(self._config, channel=channel)
+        session_id = event.session_id or resolve_record_session_id(self._config, channel=channel)
         set_active_session_for_channel(self._store, channel=channel, session_id=session_id)
 
         content = event.memory_note.strip()

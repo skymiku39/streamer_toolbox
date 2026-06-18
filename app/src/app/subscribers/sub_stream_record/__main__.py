@@ -8,8 +8,8 @@ import threading
 from dotenv import load_dotenv
 
 from app.processes.registry import register_subscriber
-from app.subscribers.stream_record_config import RecordConfig, routing_keys_for_mode
-from app.subscribers.stream_record_writer import StreamRecordWriter
+from app.subscribers.sub_stream_record.config import RecordConfig, routing_keys_for_mode
+from app.subscribers.sub_stream_record.writer import StreamRecordWriter
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue_bindings
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_STREAM_RECORD

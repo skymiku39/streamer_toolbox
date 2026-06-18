@@ -47,7 +47,7 @@ def routing_keys_for_mode(record_mode: str) -> list[str]:
     return keys
 
 
-def resolve_session_id(config: RecordConfig, *, channel: str) -> str:
+def resolve_record_session_id(config: RecordConfig, *, channel: str) -> str:
     return build_session_id(
         channel=channel,
         explicit_session_id=config.session_id,
