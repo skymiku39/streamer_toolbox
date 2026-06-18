@@ -1,6 +1,6 @@
 from events import MemoryQaRecordEvent
 
-from app.subscribers.stream_record_config import RecordConfig
+from app.subscribers.sub_stream_record.config import RecordConfig
 from stream_store import StreamTextStore
 from sub_qa_memory_structured.writer import StructuredQaMemoryWriter
 

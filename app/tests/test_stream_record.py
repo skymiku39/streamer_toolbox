@@ -5,8 +5,8 @@ from pathlib import Path
 
 from events import TOPIC_CHAT_MESSAGE, TOPIC_STT_SEGMENT, ChatMessageEvent, SttSegmentEvent
 
-from app.subscribers.stream_record_config import RecordConfig
-from app.subscribers.stream_record_writer import StreamRecordWriter
+from app.subscribers.sub_stream_record.config import RecordConfig
+from app.subscribers.sub_stream_record.writer import StreamRecordWriter
 from stream_store import StreamTextStore
 
 
