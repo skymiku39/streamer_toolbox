@@ -7,7 +7,7 @@
 | 層 | 路徑 | 職責 | 狀態 |
 |----|------|------|------|
 | L0 Ingress | `app/publishers/` | 讀平台 → publish MQ | 已有 |
-| L1 記錄 | `app/subscribers/stream_record.py` | `chat.message` / `stt.segment` → SQLite | **已實作** |
+| L1 記錄 | `app/subscribers/sub_stream_record/` | `chat.message` / `stt.segment` → SQLite | **已實作** |
 | L2 記憶 | `app/workers/` | 定期摘要 → `summaries` 表 → Chroma `kb_memory` | **已實作** |
 | L3 指令 | `app/subscribers/sub_llm/` | `!ask` → RAG/IGDB 上下文 → LLM → `chat.reply` | **已實作** |
 | L4 LLM | `sub_llm/llm.py` | 無狀態推理（template / openai / gemini） | **已實作** |
@@ -82,7 +82,7 @@ L2 記憶層的作法：
 
 ## 替代方案：主播本機擷取音訊
 
-> **狀態：僅技術規劃，目前不實作。** 現行 STT 仍使用 `ingress-twitch-audio`（Twitch HLS 拉流）。
+> **狀態：部分實作。** `ingress-local-audio` 已支援**本機麥克風** STT（`--stack ingress`）；遠端 HLS 拉流仍由 `ingress-twitch-audio` 負責。loopback／混音擷取仍為規劃項。
 
 若 STT 改在**主播開台電腦**擷取本機音訊，而非從 Twitch HLS 拉流，則 chat 與語音可共用**同一台機器的 wall-clock**，配對準確度會高很多。
 
@@ -105,8 +105,8 @@ L2 記憶層的作法：
 
 ### 與現行架構的關係
 
-- 仍 publish 同一 topic：`stt.segment`（payload 可加 `capture_origin=local_mic` 等欄位區分來源）
-- 新 Publisher 候選名：`ingress-local-audio`（或 `ingress-host-audio`）
+- 仍 publish 同一 topic：`stt.segment`
+- Publisher：`ingress-local-audio`（麥克風；已實作）；`ingress-twitch-audio`（HLS 拉流；生產預設）
 - **部署約束**：必須在主播本機跑 `ingress-ttv-read` + `ingress-local-audio` + `sub-stream-record`；純雲端／旁路監看無法取代
 - **L2 記憶層**：即使本機 STT，仍建議 **分開摘要 + period 對齊**；配對若要做，可選在 L2 加「本機模式」啟發式，或留 L4 LLM 處理
 

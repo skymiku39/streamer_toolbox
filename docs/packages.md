@@ -121,6 +121,8 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `tts` | `packages/tts/` | `TtsEngine` Protocol；SAPI5 實作 | 無平台依賴 | `sub-tts`, `sub-character-voice` |
 | `safety` | `packages/safety/` | `SafetyFilter`、`SttInputFilter`；輸入/輸出實作 | `events`, numpy | `sub-llm`, `sub-character-brain`, `stt-core`, `ingress-twitch-audio`（STT 幻覺過濾） |
 | `stt-core` | `packages/stt-core/` | STT 共用核心：`SttConfig`、`TranscriptSegment`、`BaseSTTWorker` 模型生命週期 | `safety`, numpy；可選 faster-whisper | `ingress-twitch-audio`, `ingress-local-audio`, `voice-clone` |
+
+**Canonical import（2026-06-18 起）：** `SttConfig`、`TranscriptSegment`、`StreamingSTTWorker`、`build_stt_segment_event` 等一律 `from stt_core import ...`。舊路徑 re-export shim 已於同日移除，詳見 [`packages/stt-core/README.md`](../packages/stt-core/README.md)。
 | `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `app.workers`, `sub-llm` RAG |
 | `game-info` | `packages/game-info/` | IGDB 遊戲評分／簡介查詢 | 無 | `sub-llm`（直播中注入 prompt） |
 | `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
@@ -163,7 +165,7 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 |------|------|------|--------|
 | `qa_memory_mode` | `app/subscribers/qa_memory_mode.py` | `QA_MEMORY_MODE` 解析與旗標 | `sub-llm`, `sub-qa-memory-*` |
 | `summary_publisher` | `app/publishing/summary_publisher.py` | 摘要寫入 DB 後 publish `memory.summary.ready` | `app.workers`, `sub-qa-memory-structured` |
-| `stream_record_config` | `app/subscribers/stream_record_config.py` | L1 記錄設定 | `sub-stream-record`, `sub-qa-memory-*` |
+| `stream_record_config` | `app/subscribers/sub_stream_record/config.py` | L1 記錄設定 | `sub-stream-record`, `sub-qa-memory-*` |
 | `memory_view` | `app/memory_view/` | Memory Board HTTP 服務實作 | `sub-memory-board` |
 
 ## Publisher / Ingress 模組（`app/src/app/publishers/`）
