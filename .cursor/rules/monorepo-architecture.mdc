@@ -28,7 +28,7 @@ alwaysApply: true
 ```python
 # ✅ app/subscribers/sub_tts/__main__.py
 from bus import EventBus
-from events import ChatMessage
+from events import ChatMessageEvent
 
 # ❌ packages/bus/src/bus/foo.py
 from app.subscribers.sub_tts import something  # 絕對禁止
@@ -97,5 +97,5 @@ tts = { workspace = true }
 
 刻意的平行套件設計（如 `ttvchat-lens` ↔ `tubechat-lens` 的 `ChatMessage`、`LiveChatReader`）
 屬例外，須登記於 [`scripts/naming_audit.py`](../../scripts/naming_audit.py) 的白名單常數。
-`audit_project.py` 執行三項命名檢查（`naming_cross_package_class`、`naming_app_package_class`、
-`naming_cross_package_function`），CI 會阻擋未預期的同名符號。
+`audit_project.py` 執行四項命名檢查（`naming_cross_package_class`、`naming_app_package_class`、
+`naming_cross_package_function`、`naming_app_package_function`），CI 會阻擋未預期的同名符號。

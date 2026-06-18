@@ -268,9 +268,11 @@ streamer_toolbox/
 | `naming_cross_package_class` | `packages/` 內跨 package 同名 public class |
 | `naming_app_package_class` | `app/` 與 `packages/` 同名 public class |
 | `naming_cross_package_function` | `packages/` 內跨 package 同名 public 函式（排除樣板函式） |
+| `naming_app_package_function` | `app/` 與 `packages/` 同名 public 函式（排除樣板函式） |
 
 新增刻意的平行設計時，須在 `naming_audit.py` 的 `INTENTIONAL_PARALLEL_CLASSES` 或
-`INTENTIONAL_PARALLEL_FUNCTIONS` 登記；app↔package 極少數例外用 `INTENTIONAL_APP_PACKAGE_CLASSES`。
+`INTENTIONAL_PARALLEL_FUNCTIONS` 登記；app↔package 極少數例外用 `INTENTIONAL_APP_PACKAGE_CLASSES`
+或 `INTENTIONAL_APP_PACKAGE_FUNCTIONS`。
 
 ## 設計約束
 

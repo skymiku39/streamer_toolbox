@@ -115,6 +115,14 @@ def check_cross_package_duplicate_function(root: Path = ROOT) -> CheckResult:
     )
 
 
+def check_app_package_duplicate_function(root: Path = ROOT) -> CheckResult:
+    return _naming_check(
+        "naming_app_package_function",
+        _NAMING_AUDIT.check_app_package_duplicate_function,
+        root,
+    )
+
+
 def collect_package_class_defs(root: Path = ROOT) -> dict[str, set[str]]:
     """向後相容測試用；委派 naming_audit.collect_package_class_defs。"""
     return _NAMING_AUDIT.collect_package_class_defs(root)
@@ -409,6 +417,7 @@ def run_checks(
         check_cross_package_duplicate_class(root),
         check_app_package_duplicate_class(root),
         check_cross_package_duplicate_function(root),
+        check_app_package_duplicate_function(root),
         check_testpaths_complete(root),
         check_topic_magic_strings(root),
         check_events_exports(),

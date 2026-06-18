@@ -85,6 +85,18 @@ def test_cross_package_duplicate_function_detects_collision(tmp_path: Path) -> N
     assert "unique_helper" in result.detail
 
 
+def test_app_package_duplicate_function_detects_collision(tmp_path: Path) -> None:
+    pkg = tmp_path / "packages" / "alpha" / "src" / "alpha"
+    pkg.mkdir(parents=True)
+    (pkg / "fn.py").write_text("def shared_fn():\n    return 1\n", encoding="utf-8")
+    app_mod = tmp_path / "app" / "src" / "app" / "demo"
+    app_mod.mkdir(parents=True)
+    (app_mod / "mod.py").write_text("def shared_fn():\n    return 2\n", encoding="utf-8")
+    result = _mod.check_app_package_duplicate_function(tmp_path)
+    assert result.ok is False
+    assert "shared_fn" in result.detail
+
+
 def test_cross_package_duplicate_class_allows_whitelisted_twins(tmp_path: Path) -> None:
     name = next(iter(_mod.INTENTIONAL_PARALLEL_CLASSES))
     for package in _mod.INTENTIONAL_PARALLEL_CLASSES[name]:
@@ -217,6 +229,7 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "check_cross_package_duplicate_class", _ok("naming_pkg"))
     monkeypatch.setattr(_mod, "check_app_package_duplicate_class", _ok("naming_app"))
     monkeypatch.setattr(_mod, "check_cross_package_duplicate_function", _ok("naming_fn"))
+    monkeypatch.setattr(_mod, "check_app_package_duplicate_function", _ok("naming_app_fn"))
     monkeypatch.setattr(_mod, "check_testpaths_complete", _ok("b"))
     monkeypatch.setattr(_mod, "check_topic_magic_strings", _ok("c"))
     monkeypatch.setattr(_mod, "check_events_exports", _ok("d"))
@@ -239,6 +252,7 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
         "naming_pkg",
         "naming_app",
         "naming_fn",
+        "naming_app_fn",
         "b",
         "c",
         "d",

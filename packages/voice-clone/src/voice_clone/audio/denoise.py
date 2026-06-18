@@ -1,7 +1,18 @@
+"""樣本音檔前處理降噪（scipy 高通）；STT 共用函式以 stt_core 為準。"""
+
 from __future__ import annotations
 
 import numpy as np
 from scipy.signal import butter, sosfiltfilt
+
+from stt_core.denoise import spectral_gate
+
+__all__ = [
+    "highpass_filter",
+    "spectral_gate",
+    "suppress_noise",
+    "suppress_noise_for_sample",
+]
 
 
 def highpass_filter(audio: np.ndarray, sample_rate: int, cutoff_hz: float) -> np.ndarray:
@@ -13,32 +24,6 @@ def highpass_filter(audio: np.ndarray, sample_rate: int, cutoff_hz: float) -> np
     return sosfiltfilt(sos, audio.astype(np.float64)).astype(np.float32)
 
 
-def spectral_gate(
-    audio: np.ndarray,
-    sample_rate: int,
-    *,
-    frame_ms: float = 20.0,
-    gate_ratio: float = 0.08,
-    attenuation: float = 0.15,
-) -> np.ndarray:
-    """簡易頻譜門檻：抑制低能量帧的雜訊。"""
-    if audio.size == 0:
-        return audio
-    frame = max(1, int(sample_rate * frame_ms / 1000.0))
-    out = audio.astype(np.float32).copy()
-    peak = float(np.max(np.abs(out)))
-    if peak <= 1e-8:
-        return out
-    threshold = peak * gate_ratio
-    for start in range(0, len(out), frame):
-        chunk = out[start : start + frame]
-        if chunk.size == 0:
-            break
-        if float(np.sqrt(np.mean(np.square(chunk)))) < threshold:
-            out[start : start + chunk.size] *= attenuation
-    return out
-
-
 def suppress_noise(
     audio: np.ndarray,
     sample_rate: int,
@@ -47,7 +32,7 @@ def suppress_noise(
     gate_ratio: float = 0.08,
     attenuation: float = 0.15,
 ) -> np.ndarray:
-    """高通 + 能量門檻衰減，抑制底噪。"""
+    """高通 + 能量門檻衰減，抑制底噪（樣本前處理路徑）。"""
     if audio.size == 0:
         return audio
     mono = audio.astype(np.float32)
@@ -80,21 +65,4 @@ def suppress_noise_for_sample(
         hp_cutoff_hz=hp_cutoff_hz,
         gate_ratio=gate_ratio,
         attenuation=0.1,
-    )
-
-
-def suppress_noise_for_stt(
-    audio: np.ndarray,
-    sample_rate: int,
-    *,
-    hp_cutoff_hz: float = 80.0,
-    gate_ratio: float = 0.08,
-) -> np.ndarray:
-    """STT 前雜訊抑制（相容舊介面）。"""
-    return suppress_noise(
-        audio,
-        sample_rate,
-        hp_cutoff_hz=hp_cutoff_hz,
-        gate_ratio=gate_ratio,
-        attenuation=0.15,
     )
