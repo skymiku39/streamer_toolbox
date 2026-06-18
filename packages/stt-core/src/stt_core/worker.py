@@ -11,9 +11,7 @@ import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
-
-from safety import SttInputFilter
+from safety import SttInputFilter, pcm_to_float32
 from stt_core.config import SttConfig
 from stt_core.segment import TranscriptSegment
 
@@ -22,9 +20,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
-def pcm_to_float32(pcm: bytes) -> np.ndarray:
-    return np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+__all__ = ["BaseSTTWorker", "pcm_to_float32"]
 
 
 class BaseSTTWorker:

@@ -1,11 +1,11 @@
 import struct
-
-import numpy as np
 from types import SimpleNamespace
 
-from ingress_twitch_audio.config import SttConfig
-from ingress_twitch_audio.stt_worker import STTWorker
+import numpy as np
+
+from ingress_twitch_audio.stt_worker import StreamingSTTWorker
 from safety import SttInputFilter
+from stt_core import SttConfig
 
 
 def _pcm_from_amplitude(amplitude: float, sample_count: int = 16000) -> bytes:
@@ -56,7 +56,7 @@ def test_transcribe_chunk_skips_silent_audio() -> None:
         log_prob_threshold=-1.0,
         compression_ratio_threshold=2.4,
     )
-    worker = STTWorker(
+    worker = StreamingSTTWorker(
         config,
         input_filter=SttInputFilter(rms_gate=0.05),
         model_loader=lambda: _mock_model("不該出現"),
@@ -86,7 +86,7 @@ def test_transcribe_chunk_publishes_segment() -> None:
     )
     segments: list[str] = []
 
-    worker = STTWorker(
+    worker = StreamingSTTWorker(
         config,
         model_loader=lambda: _mock_model("今天天氣真好"),
         on_segment=lambda seg: segments.append(seg.text),
@@ -98,6 +98,7 @@ def test_transcribe_chunk_publishes_segment() -> None:
     assert result.text == "今天天氣真好"
     assert result.start_sec == 0.0
     assert result.end_sec == 1.0
+    assert result.confidence > 0.8
     assert segments == ["今天天氣真好"]
 
 
@@ -120,7 +121,7 @@ def test_transcribe_chunk_filters_hallucination_on_quiet_audio() -> None:
         log_prob_threshold=-1.0,
         compression_ratio_threshold=2.4,
     )
-    worker = STTWorker(
+    worker = StreamingSTTWorker(
         config,
         model_loader=lambda: _mock_model("thanks for watching"),
     )
@@ -147,7 +148,7 @@ def test_transcribe_chunk_keeps_speech_on_loud_audio_without_hallucination_filte
         log_prob_threshold=-1.0,
         compression_ratio_threshold=2.4,
     )
-    worker = STTWorker(
+    worker = StreamingSTTWorker(
         config,
         model_loader=lambda: _mock_model("thanks for watching"),
     )

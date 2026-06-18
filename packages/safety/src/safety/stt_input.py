@@ -48,6 +48,10 @@ _DEFAULT_BLOCKLIST = (
     "subscribe",
 )
 
+_GAMING_LATIN_ALLOW = frozenset(
+    {"gg", "ok", "hp", "mp", "dps", "afk", "brb", "lol", "rip", "fps", "pvp", "pve"},
+)
+
 
 def pcm_rms(pcm: bytes) -> float:
     """int16 PCM 的 RMS，範圍約 0～1。"""
@@ -72,6 +76,8 @@ def _contains_cjk(text: str) -> bool:
 def _is_short_latin_noise(text: str) -> bool:
     """短 ASCII 雜訊（如 'ok'）；含中文時不套用。"""
     raw = _normalize_for_match(text)
+    if raw.lower() in _GAMING_LATIN_ALLOW:
+        return False
     if len(raw) > 6 or _contains_cjk(raw):
         return False
     letters = sum(1 for char in raw if char.isalnum())
@@ -106,7 +112,31 @@ def _matches_blocklist(text: str, phrases: Sequence[str]) -> bool:
     return False
 
 
-def is_hallucination_text(text: str, *, blocklist: Sequence[str] | None = None) -> bool:
+def _is_zh_stream_latin_hallucination(text: str) -> bool:
+    """中文直播 STT 常見的純英文幻覺（如 Now time）。"""
+    raw = _normalize_for_match(text)
+    if not raw or _contains_cjk(raw):
+        return False
+    if not any(char.isalpha() for char in raw):
+        return False
+    words = [word.lower() for word in re.findall(r"[a-zA-Z]+", raw)]
+    if not words:
+        return False
+    if all(word in _GAMING_LATIN_ALLOW for word in words):
+        return False
+    if _matches_blocklist(text, _DEFAULT_BLOCKLIST):
+        return True
+    if len(words) >= 2:
+        return True
+    return len(words[0]) >= 5 and words[0] not in _GAMING_LATIN_ALLOW
+
+
+def is_hallucination_text(
+    text: str,
+    *,
+    blocklist: Sequence[str] | None = None,
+    language: str | None = None,
+) -> bool:
     raw = _normalize_for_match(text)
     if not raw:
         return True
@@ -125,6 +155,8 @@ def is_hallucination_text(text: str, *, blocklist: Sequence[str] | None = None) 
     if _matches_blocklist(text, phrases):
         return True
     if _is_short_latin_noise(text):
+        return True
+    if (language or "zh") == "zh" and _is_zh_stream_latin_hallucination(text):
         return True
     return False
 

@@ -41,6 +41,9 @@ class SttConfig:
     no_speech_threshold: float
     log_prob_threshold: float
     compression_ratio_threshold: float
+    beam_size: int = 1
+    initial_prompt: str = ""
+    carry_prompt: bool = True
     denoise_enabled: bool = True
     denoise_hp_cutoff_hz: float = 80.0
     denoise_gate_ratio: float = 0.08
@@ -67,6 +70,9 @@ class SttConfig:
             no_speech_threshold=_env_float("STT_NO_SPEECH_THRESHOLD", 0.85),
             log_prob_threshold=_env_float("STT_LOG_PROB_THRESHOLD", -1.0),
             compression_ratio_threshold=_env_float("STT_COMPRESSION_RATIO_THRESHOLD", 2.4),
+            beam_size=int(os.environ.get("STT_BEAM_SIZE", "1")),
+            initial_prompt=os.environ.get("STT_INITIAL_PROMPT", "").strip(),
+            carry_prompt=_env_bool("STT_CARRY_PROMPT", True),
             denoise_enabled=_env_bool("STT_DENOISE", True),
             denoise_hp_cutoff_hz=_env_float("STT_DENOISE_HP_HZ", 80.0),
             denoise_gate_ratio=_env_float("STT_DENOISE_GATE_RATIO", 0.08),

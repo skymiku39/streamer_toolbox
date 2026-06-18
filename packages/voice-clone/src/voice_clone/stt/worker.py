@@ -6,7 +6,13 @@ import numpy as np
 from scipy.signal import resample_poly
 
 from stt_core import BaseSTTWorker, TranscriptSegment, pcm_to_float32
-from voice_clone.stt.denoise import suppress_noise_for_stt
+from stt_core.denoise import suppress_noise_for_stt
+from stt_core.transcribe_helpers import (
+    build_whisper_kwargs,
+    collect_whisper_texts,
+    merge_confidence,
+    resolve_initial_prompt,
+)
 
 STT_SAMPLE_RATE = 16000
 
@@ -20,7 +26,7 @@ def _to_stt_audio(audio: np.ndarray, sample_rate: int) -> np.ndarray:
     return mono
 
 
-class STTWorker(BaseSTTWorker):
+class OfflineSTTWorker(BaseSTTWorker):
     def transcribe_audio(
         self,
         audio: np.ndarray,
@@ -41,32 +47,19 @@ class STTWorker(BaseSTTWorker):
 
         try:
             model = self._ensure_model()
+            prompt = resolve_initial_prompt(self._config)
             segments, _info = model.transcribe(
                 stt_audio,
-                language=self._config.language or None,
-                vad_filter=self._config.vad_filter,
-                beam_size=1,
-                condition_on_previous_text=self._config.condition_on_previous_text,
-                no_speech_threshold=self._config.no_speech_threshold,
-                log_prob_threshold=self._config.log_prob_threshold,
-                compression_ratio_threshold=self._config.compression_ratio_threshold,
-                temperature=0.0,
+                **build_whisper_kwargs(self._config, initial_prompt=prompt),
             )
-            texts: list[str] = []
             apply_hallucination_filter = (
                 self._input_filter.should_apply_hallucination_filter_audio(stt_audio)
             )
-            for seg in segments:
-                if apply_hallucination_filter and not self._input_filter.accept_segment(
-                    seg,
-                ):
-                    continue
-                text = (seg.text or "").strip()
-                if not text:
-                    continue
-                if apply_hallucination_filter and not self._input_filter.accept_text(text):
-                    continue
-                texts.append(text)
+            texts, confidences = collect_whisper_texts(
+                segments,
+                self._input_filter,
+                apply_hallucination_filter=apply_hallucination_filter,
+            )
             if not texts:
                 return None
 
@@ -78,7 +71,7 @@ class STTWorker(BaseSTTWorker):
                 text=merged,
                 start_sec=start_sec,
                 end_sec=start_sec + duration,
-                confidence=0.0,
+                confidence=merge_confidence(confidences),
             )
             if self._on_segment:
                 self._on_segment(out)

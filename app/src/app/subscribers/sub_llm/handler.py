@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import threading
 import time
@@ -51,6 +52,16 @@ DEGRADED_REPLY = "⚠️ AI 暫時無法回應，請稍後再試。"
 NAMESPACE_CHAT_TRIGGER = "sub_llm.chat.trigger"
 
 
+def _resolve_stt_min_confidence() -> float:
+    raw = os.environ.get("STT_MIN_CONFIDENCE", "").strip()
+    if not raw:
+        return 0.0
+    try:
+        return max(0.0, min(1.0, float(raw)))
+    except ValueError:
+        return 0.0
+
+
 def _is_skipped_trigger_author(
     event: ChatMessageEvent,
     skip_author_ids: frozenset[str],
@@ -85,6 +96,7 @@ class LlmSubscriber:
         circuit_breaker: CircuitBreaker | None = None,
         flow_guard: AskFlowGuard | None = None,
         short_term_rag: ShortTermRagStore | None = None,
+        stt_min_confidence: float | None = None,
     ) -> None:
         self._config = config
         self._llm = llm
@@ -100,6 +112,11 @@ class LlmSubscriber:
         self._circuit = circuit_breaker or CircuitBreaker.from_env()
         self._flow_guard = flow_guard
         self._short_term_rag = short_term_rag
+        self._stt_min_confidence = (
+            stt_min_confidence
+            if stt_min_confidence is not None
+            else _resolve_stt_min_confidence()
+        )
         self._triggers = TriggerMatcher(tuple(config.trigger_prefixes))
         self._busy = threading.Lock()
 
@@ -163,7 +180,9 @@ class LlmSubscriber:
 
     def _handle_stt_segment(self, payload: dict[str, Any]) -> None:
         event = SttSegmentEvent.from_dict(payload)
-        if is_hallucination_text(event.text):
+        if is_hallucination_text(event.text, language=event.language):
+            return
+        if self._stt_min_confidence > 0 and (event.confidence or 0.0) < self._stt_min_confidence:
             return
         filtered = self._safety.filter_input(event.text)
         if filtered is None:

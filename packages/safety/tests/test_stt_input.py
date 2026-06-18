@@ -74,6 +74,22 @@ def test_repeated_filler_still_rejected(text: str) -> None:
     assert is_hallucination_text(text) is True
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Now time",
+        "thank you for watching",
+    ],
+)
+def test_zh_stream_latin_hallucination_rejected(text: str) -> None:
+    assert is_hallucination_text(text) is True
+
+
+def test_gaming_latin_shortcut_allowed() -> None:
+    assert is_hallucination_text("gg") is False
+    assert is_hallucination_text("OK") is False
+
+
 def test_stt_input_filter_silence_gate() -> None:
     gate = SttInputFilter(rms_gate=0.05)
     assert gate.is_silent(_pcm_from_amplitude(0.01)) is True
