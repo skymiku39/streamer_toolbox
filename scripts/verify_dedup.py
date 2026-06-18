@@ -7,18 +7,13 @@
 
 from __future__ import annotations
 
-import json
-import os
 import subprocess
 import sys
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LOG = Path(os.environ.get("DEBUG_LOG_PATH", "debug-babd47.log"))
 DB = ROOT / "data" / "_verify_dedup.db"
-SESSION = "babd47"
 MSG = "a07e5748-test-dedup"
 
 CLAIM_SNIPPET = """
@@ -31,18 +26,8 @@ sys.stdout.write("1" if ok else "0")
 """
 
 
-def log(hypothesis_id: str, message: str, data: dict, *, run_id: str = "post-fix") -> None:
-    entry = {
-        "sessionId": SESSION,
-        "hypothesisId": hypothesis_id,
-        "location": "scripts/verify_dedup.py",
-        "message": message,
-        "data": data,
-        "timestamp": int(time.time() * 1000),
-        "runId": run_id,
-    }
-    with LOG.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+def log(message: str, data: dict) -> None:
+    print(f"  {message}: {data}", file=sys.stderr)
 
 
 def spawn_claim(namespace: str, key: str) -> bool:
@@ -59,35 +44,31 @@ def spawn_claim(namespace: str, key: str) -> bool:
     return result.stdout.strip() == "1"
 
 
-def verify_layer(name: str, namespace: str, key: str, hypothesis_id: str, workers: int = 3) -> int:
+def verify_layer(name: str, namespace: str, key: str, workers: int = 3) -> int:
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = [pool.submit(spawn_claim, namespace, key) for _ in range(workers)]
         results = [future.result() for future in as_completed(futures)]
     wins = sum(1 for item in results if item)
-    log(hypothesis_id, f"{name} parallel claim", {"results": results, "wins": wins})
+    log(f"{name} parallel claim", {"results": results, "wins": wins})
     return wins
 
 
 def main() -> int:
-    if LOG.exists():
-        LOG.unlink()
     if DB.exists():
         DB.unlink()
 
     layers = [
-        ("ingress", "ingress.chat.message", MSG, "H1-ingress"),
-        ("sub_llm", "sub_llm.chat.trigger", MSG, "H2-sub-llm"),
-        ("connector", "twitch_connector.chat.reply", f"logic-llm:{MSG}", "H3-connector"),
+        ("ingress", "ingress.chat.message", MSG),
+        ("sub_llm", "sub_llm.chat.trigger", MSG),
+        ("connector", "twitch_connector.chat.reply", f"logic-llm:{MSG}"),
     ]
 
-    for name, namespace, key, hyp in layers:
-        wins = verify_layer(name, namespace, key, hyp)
+    for name, namespace, key in layers:
+        wins = verify_layer(name, namespace, key)
         if wins != 1:
-            log("H4-summary", "verification failed", {"layer": name, "wins": wins})
             print(f"VERIFICATION_FAIL layer={name} wins={wins}", file=sys.stderr)
             return 1
 
-    log("H4-summary", "all layers dedup verified", {"status": "pass"})
     print("VERIFICATION_PASS wins_per_layer=1")
     return 0
 

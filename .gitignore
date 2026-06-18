@@ -28,10 +28,14 @@ htmlcov/
 
 # Runtime logs
 logs/
-debug-*.log
+
+# Debug / benchmark artifacts (repo root)
+debug-*
 
 # Runtime data (SQLite, exports)
 data/
+*.db-wal
+*.db-shm
 
 # voice-clone runtime artifacts
 packages/voice-clone/models/
