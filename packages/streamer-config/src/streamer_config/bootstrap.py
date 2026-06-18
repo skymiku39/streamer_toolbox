@@ -59,6 +59,11 @@ def ensure_layout(
     )
     _copy_if_missing(config_dir / "llm_subscriber.json", paths.llm_subscriber, result)
     _copy_if_missing(config_dir / "sub_visual.json", paths.sub_visual, result)
+    _copy_if_missing(
+        examples / "character_brain.example.json",
+        paths.character_brain,
+        result,
+    )
 
     channel_name = str(channel or "").strip().lower()
     if channel_name:

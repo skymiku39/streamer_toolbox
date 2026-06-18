@@ -74,6 +74,30 @@ def test_bootstrap_creates_files_without_overwrite(tmp_path):
     assert str(target / "bot_responses.json") in second.skipped
 
 
+def test_bootstrap_copies_character_brain(tmp_path):
+    root = tmp_path / "repo"
+    examples = root / "config" / "examples"
+    examples.mkdir(parents=True)
+    (examples / "character_brain.example.json").write_text(
+        '{"character_name": "Miko"}', encoding="utf-8"
+    )
+
+    target = tmp_path / "user-config"
+    result = ensure_layout(target, examples_root=root)
+    assert (target / "character_brain.json").is_file()
+    assert str(target / "character_brain.json") in result.created
+
+
+def test_resolve_path_character_brain(tmp_path, monkeypatch):
+    monkeypatch.delenv("CHARACTER_BRAIN_CONFIG", raising=False)
+    monkeypatch.setenv("STREAMER_CONFIG_DIR", str(tmp_path))
+    resolved = resolve_path(
+        "character_brain",
+        legacy_default=Path("legacy.json"),
+    )
+    assert resolved == tmp_path / "character_brain.json"
+
+
 def test_validate_bot_responses_rejects_invalid_keyword():
     payload = {
         "schema_version": 2,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -18,12 +17,13 @@ from bus.rabbitmq import (
 )
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_CHARACTER_BRAIN_CHAT_MESSAGE
 from safety import BlocklistSafetyFilter
+from streamer_config.paths import repo_root, resolve_path
 from sub_character_brain.brain import CharacterBrain
 from sub_character_brain.config import CharacterConfig
 from sub_character_brain.llm import RuleBasedCharacterLlm
 
 PROCESS_NAME = "sub-character-brain"
-DEFAULT_CONFIG_PATH = "config/character_brain.json"
+DEFAULT_CONFIG_PATH = repo_root() / "config" / "character_brain.json"
 
 
 @register_subscriber(
@@ -39,7 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--config",
-        default=os.environ.get("CHARACTER_BRAIN_CONFIG", DEFAULT_CONFIG_PATH),
+        default=str(
+            resolve_path("character_brain", legacy_default=DEFAULT_CONFIG_PATH)
+        ),
         help="角色人設與觸發設定 JSON 路徑",
     )
     args = parser.parse_args(argv)

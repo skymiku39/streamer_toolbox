@@ -32,6 +32,8 @@ copy .env.example .env
 
 編輯 `.env`：至少設定 `TWITCH_CHANNEL`（要收聽的 Twitch 頻道，不含 `#`）。
 
+設定分三層（`.env` / `STREAMER_CONFIG_DIR` / repo `config/`），完整說明見 [configuration.md](configuration.md)。
+
 ## RabbitMQ
 
 ```powershell

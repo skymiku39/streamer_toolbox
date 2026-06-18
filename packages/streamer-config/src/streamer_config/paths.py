@@ -13,6 +13,7 @@ BOT_RESPONSES_NAME = "bot_responses.json"
 REDEMPTION_RESPONSES_NAME = "redemption_responses.json"
 LLM_SUBSCRIBER_NAME = "llm_subscriber.json"
 SUB_VISUAL_NAME = "sub_visual.json"
+CHARACTER_BRAIN_NAME = "character_brain.json"
 KNOWLEDGE_DIR_NAME = "knowledge"
 
 PATH_ENV_KEYS: dict[str, str] = {
@@ -20,6 +21,7 @@ PATH_ENV_KEYS: dict[str, str] = {
     "redemption_responses": "BOT_REDEMPTIONS_PATH",
     "llm_subscriber": "LLM_SUBSCRIBER_CONFIG",
     "sub_visual": "VISUAL_CONFIG_PATH",
+    "character_brain": "CHARACTER_BRAIN_CONFIG",
     "knowledge_dir": "LLM_KNOWLEDGE_PATH",
 }
 
@@ -64,6 +66,10 @@ class ConfigPaths:
         return self.root / SUB_VISUAL_NAME
 
     @property
+    def character_brain(self) -> Path:
+        return self.root / CHARACTER_BRAIN_NAME
+
+    @property
     def knowledge_dir(self) -> Path:
         return self.root / KNOWLEDGE_DIR_NAME
 
@@ -92,6 +98,7 @@ class ConfigPaths:
             "redemption_responses": str(self.redemption_responses),
             "llm_subscriber": str(self.llm_subscriber),
             "sub_visual": str(self.sub_visual),
+            "character_brain": str(self.character_brain),
             "knowledge_dir": str(self.knowledge_dir),
         }
 
