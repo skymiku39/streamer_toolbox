@@ -12,7 +12,7 @@ from app.processes.registry import register_subscriber
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_blocking, consume_messages, setup_subscriber_queue
 from bus.topology import DEFAULT_EXCHANGE, QUEUE_TTS_CHAT_MESSAGE
-from sub_tts.filter import MessageFilter, MessageFilterConfig
+from sub_tts.filter import TtsMessageFilter, TtsMessageFilterConfig
 from sub_tts.queue_worker import TtsPlaybackQueue
 from sub_tts.subscriber import ChatTtsSubscriber
 from tts import create_tts_engine
@@ -34,15 +34,15 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes"}
 
 
-def build_filter_from_env(args: argparse.Namespace) -> MessageFilter:
-    config = MessageFilterConfig(
+def build_filter_from_env(args: argparse.Namespace) -> TtsMessageFilter:
+    config = TtsMessageFilterConfig(
         skip_commands=args.skip_commands,
         skip_urls=args.skip_urls,
         blacklist=_parse_blacklist(args.blacklist),
         max_length=args.max_length,
         template=args.template,
     )
-    return MessageFilter(config)
+    return TtsMessageFilter(config)
 
 
 @register_subscriber(

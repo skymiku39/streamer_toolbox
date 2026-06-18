@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from events import ChatMessageEvent
 
-from sub_tts.filter import MessageFilter, MessageFilterConfig
+from sub_tts.filter import TtsMessageFilter, TtsMessageFilterConfig
 
 
 def _event(content: str, *, author: str = "viewer1") -> ChatMessageEvent:
@@ -19,20 +19,20 @@ def _event(content: str, *, author: str = "viewer1") -> ChatMessageEvent:
 
 
 def test_skip_command_messages() -> None:
-    filt = MessageFilter(MessageFilterConfig(skip_commands=True))
+    filt = TtsMessageFilter(TtsMessageFilterConfig(skip_commands=True))
     assert filt.should_speak(_event("!hello")) is False
     assert filt.should_speak(_event("一般訊息")) is True
 
 
 def test_skip_urls() -> None:
-    filt = MessageFilter(MessageFilterConfig(skip_urls=True))
+    filt = TtsMessageFilter(TtsMessageFilterConfig(skip_urls=True))
     assert filt.should_speak(_event("看這個 https://example.com")) is False
     assert filt.should_speak(_event("沒有連結")) is True
 
 
 def test_blacklist_and_max_length() -> None:
-    filt = MessageFilter(
-        MessageFilterConfig(
+    filt = TtsMessageFilter(
+        TtsMessageFilterConfig(
             blacklist=frozenset({"spam"}),
             max_length=10,
         )
@@ -43,5 +43,5 @@ def test_blacklist_and_max_length() -> None:
 
 
 def test_format_text_uses_template() -> None:
-    filt = MessageFilter(MessageFilterConfig(template="{author_name}:{content}"))
+    filt = TtsMessageFilter(TtsMessageFilterConfig(template="{author_name}:{content}"))
     assert filt.format_text(_event("嗨")) == "viewer1:嗨"

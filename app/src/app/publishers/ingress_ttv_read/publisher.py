@@ -9,7 +9,7 @@ from typing import Any
 
 from emotes import EmoteRegistry
 from ingress_ttv_read.mapper import map_chat_message
-from ttvchat_lens import ChatMessage, LiveChatReader, normalize_channel
+from ttvchat_lens import ChatMessage, LiveChatReader, parse_twitch_channel
 
 PublishPayload = Callable[[dict[str, Any]], Awaitable[None]]
 
@@ -64,7 +64,7 @@ async def run_publisher(
     emote_registry: EmoteRegistry | None = None,
 ) -> None:
     """包裝 LiveChatReader：handler 僅入隊，async 迴圈負責 publish。"""
-    normalized = normalize_channel(channel)
+    normalized = parse_twitch_channel(channel)
     out_queue: queue.Queue[ChatMessage | None] = queue.Queue(maxsize=queue_size)
     stop_event = threading.Event()
 

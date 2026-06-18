@@ -81,3 +81,20 @@ safety = { workspace = true }
 stream-store = { workspace = true }
 tts = { workspace = true }
 ```
+
+## 規則五：跨模組命名以避免 import 混淆
+
+跨 package／跨 subscriber 的**公開符號**（class、函式）若職責不同，應加領域前綴區分，
+避免出現多條 import 路徑指向同名但不同實作的情況（高 wrong-import 風險）。
+
+- ✅ `StreamingSTTWorker`（PCM 串流）vs `OfflineSTTWorker`（離線去噪），而非兩個 `STTWorker`
+- ✅ `TtsMessageFilter` vs `SubtitleMessageFilter`，而非兩個 `MessageFilter`
+- ✅ app 包裝函式 `resolve_record_session_id`，與 `stream_store.resolve_session_id` 區分
+- ✅ `ttvchat_lens.parse_twitch_channel`（解析 URL/IRC）vs `stream_store.normalize_channel`（小寫去 #）
+
+共用型別與基礎設施應有**單一 canonical 來源**；其餘位置僅作 deprecated re-export 並於 docstring 標註。
+例如 `SttConfig` / `TranscriptSegment` / `StreamingSTTWorker` 一律以 `from stt_core import ...` 為準。
+
+刻意的平行套件設計（如 `ttvchat-lens` ↔ `tubechat-lens` 的 `ChatMessage`、`LiveChatReader`）
+屬例外，需登記於 `scripts/audit_project.py` 的 `INTENTIONAL_PARALLEL_CLASSES` 白名單。
+`audit_project.py` 的 `cross_package_duplicate_class` 檢查會在 CI 阻擋未預期的跨 package 同名類別。

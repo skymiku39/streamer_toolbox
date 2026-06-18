@@ -42,6 +42,35 @@ def test_packages_no_app_import_ignores_lookalike(tmp_path: Path) -> None:
     assert result.ok is True
 
 
+def _write_pkg_class(root: Path, package: str, name: str) -> None:
+    pkg = root / "packages" / package / "src" / package.replace("-", "_")
+    pkg.mkdir(parents=True, exist_ok=True)
+    (pkg / f"{name.lower()}.py").write_text(f"class {name}:\n    pass\n", encoding="utf-8")
+
+
+def test_cross_package_duplicate_class_clean(tmp_path: Path) -> None:
+    _write_pkg_class(tmp_path, "alpha", "Widget")
+    _write_pkg_class(tmp_path, "beta", "Gadget")
+    result = _mod.check_cross_package_duplicate_class(tmp_path)
+    assert result.ok is True
+
+
+def test_cross_package_duplicate_class_detects_collision(tmp_path: Path) -> None:
+    _write_pkg_class(tmp_path, "alpha", "Worker")
+    _write_pkg_class(tmp_path, "beta", "Worker")
+    result = _mod.check_cross_package_duplicate_class(tmp_path)
+    assert result.ok is False
+    assert "Worker" in result.detail
+
+
+def test_cross_package_duplicate_class_allows_whitelisted_twins(tmp_path: Path) -> None:
+    name = next(iter(_mod.INTENTIONAL_PARALLEL_CLASSES))
+    for package in _mod.INTENTIONAL_PARALLEL_CLASSES[name]:
+        _write_pkg_class(tmp_path, package, name)
+    result = _mod.check_cross_package_duplicate_class(tmp_path)
+    assert result.ok is True
+
+
 def test_testpaths_complete_passes_when_listed(tmp_path: Path) -> None:
     (tmp_path / "packages" / "demo" / "tests").mkdir(parents=True)
     (tmp_path / "pyproject.toml").write_text(
@@ -163,6 +192,7 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
         return lambda *_a, **_k: _mod.CheckResult(name, True, "")
 
     monkeypatch.setattr(_mod, "check_packages_no_app_import", _ok("a"))
+    monkeypatch.setattr(_mod, "check_cross_package_duplicate_class", _ok("dup"))
     monkeypatch.setattr(_mod, "check_testpaths_complete", _ok("b"))
     monkeypatch.setattr(_mod, "check_topic_magic_strings", _ok("c"))
     monkeypatch.setattr(_mod, "check_events_exports", _ok("d"))
@@ -180,5 +210,5 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "load_verify_setup", lambda *_a, **_k: calls.append("verify"))
 
     results = _mod.run_checks(ci=True)
-    assert [r.name for r in results] == ["a", "b", "c", "d", "e", "f", "g", "h"]
+    assert [r.name for r in results] == ["a", "dup", "b", "c", "d", "e", "f", "g", "h"]
     assert calls == []

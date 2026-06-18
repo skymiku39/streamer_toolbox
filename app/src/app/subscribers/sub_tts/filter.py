@@ -9,7 +9,7 @@ _URL_PATTERN = re.compile(r"(https?://|www\.)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
-class MessageFilterConfig:
+class TtsMessageFilterConfig:
     skip_commands: bool = True
     skip_urls: bool = True
     blacklist: frozenset[str] = frozenset()
@@ -17,14 +17,14 @@ class MessageFilterConfig:
     template: str = "{author_name} 說 {content}"
 
 
-class MessageFilter:
+class TtsMessageFilter:
     """決定哪些 chat.message 應朗讀，以及朗讀文字格式。"""
 
-    def __init__(self, config: MessageFilterConfig) -> None:
+    def __init__(self, config: TtsMessageFilterConfig) -> None:
         self._config = config
 
     @property
-    def config(self) -> MessageFilterConfig:
+    def config(self) -> TtsMessageFilterConfig:
         return self._config
 
     def should_speak(self, event: ChatMessageEvent) -> bool:

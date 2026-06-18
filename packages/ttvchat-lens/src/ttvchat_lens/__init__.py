@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from .reader import ChatMessage, LiveChatReader, channel_url, normalize_channel
+from .reader import ChatMessage, LiveChatReader, channel_url, parse_twitch_channel
 
 __all__ = [
     "ChatMessage",
     "LiveChatReader",
-    "normalize_channel",
+    "parse_twitch_channel",
     "channel_url",
     "main",
 ]

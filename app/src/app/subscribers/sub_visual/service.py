@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from events import ChatMessageEvent
 
 from sub_visual.config import SubtitleConfig
-from sub_visual.filter import MessageFilter
+from sub_visual.filter import SubtitleMessageFilter
 from sub_visual.sender import SubtitleSender, build_sender
 
 
@@ -25,7 +25,7 @@ class SubtitleService:
     def __init__(self, config: SubtitleConfig) -> None:
         self.config = config
         self.last_line = ""
-        self._filter = MessageFilter(config.filter)
+        self._filter = SubtitleMessageFilter(config.filter)
         self._sender, fallback_reason = build_sender(
             backend=config.backend,
             sender_name=config.sender_name,
@@ -46,7 +46,7 @@ class SubtitleService:
     def reload_config(self, config: SubtitleConfig) -> None:
         self._sender.close()
         self.config = config
-        self._filter = MessageFilter(config.filter)
+        self._filter = SubtitleMessageFilter(config.filter)
         self._sender, fallback_reason = build_sender(
             backend=config.backend,
             sender_name=config.sender_name,

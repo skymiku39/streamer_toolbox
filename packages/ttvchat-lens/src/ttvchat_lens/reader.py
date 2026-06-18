@@ -34,7 +34,7 @@ _CHANNEL_PATTERNS = (
 )
 
 
-def normalize_channel(channel: str) -> str:
+def parse_twitch_channel(channel: str) -> str:
     """從輸入抽出 Twitch 頻道名（小寫，不含 # 前綴）。"""
 
     channel = channel.strip()
@@ -47,7 +47,7 @@ def normalize_channel(channel: str) -> str:
 
 def channel_url(channel: str) -> str:
     """以正規化後的頻道名組出 Twitch 觀看網址。"""
-    return f"https://www.twitch.tv/{normalize_channel(channel)}"
+    return f"https://www.twitch.tv/{parse_twitch_channel(channel)}"
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +267,7 @@ class LiveChatReader:
         token: str = "SCHMOOPIIE",
         queue_size: int = 1024,
     ) -> None:
-        self.channel = normalize_channel(channel)
+        self.channel = parse_twitch_channel(channel)
         self.url = channel_url(self.channel)
         self.nick = nick or f"justinfan{random.randint(10000, 99999)}"
         self.token = token

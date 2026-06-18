@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from events import ChatMessageEvent
 
-from sub_tts.filter import MessageFilter, MessageFilterConfig
+from sub_tts.filter import TtsMessageFilter, TtsMessageFilterConfig
 from sub_tts.queue_worker import TtsPlaybackQueue
 from sub_tts.subscriber import ChatTtsSubscriber
 from tts.noop import NoOpTtsEngine
@@ -25,7 +25,7 @@ def test_subscriber_skips_commands_and_enqueues_speech() -> None:
     engine = NoOpTtsEngine(record=True)
     playback = TtsPlaybackQueue(engine, cooldown_seconds=0, max_queue_size=10)
     subscriber = ChatTtsSubscriber(
-        message_filter=MessageFilter(MessageFilterConfig()),
+        message_filter=TtsMessageFilter(TtsMessageFilterConfig()),
         playback=playback,
     )
 

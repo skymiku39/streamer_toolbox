@@ -6,14 +6,14 @@ from typing import Any
 
 from events import ChatMessageEvent
 
-from sub_tts.filter import MessageFilter
+from sub_tts.filter import TtsMessageFilter
 from sub_tts.queue_worker import TtsPlaybackQueue
 
 
 class ChatTtsSubscriber:
     """處理 chat.message payload，過濾後送入 TTS 佇列。"""
 
-    def __init__(self, message_filter: MessageFilter, playback: TtsPlaybackQueue) -> None:
+    def __init__(self, message_filter: TtsMessageFilter, playback: TtsPlaybackQueue) -> None:
         self._filter = message_filter
         self._playback = playback
         self._received = 0

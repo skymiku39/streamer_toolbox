@@ -30,6 +30,14 @@ EVENTS_INIT = ROOT / "packages" / "events" / "src" / "events" / "__init__.py"
 MONOREPO_RULE = ".cursor/rules/monorepo-architecture.mdc"
 
 REQUIRED_CONTROL_MODULES = ("rule-bot", "llm-bot", "show-overlay", "visual-egress")
+
+# 跨 package 同名 public class 的白名單：刻意的平行套件設計（如 lens 雙生）。
+# key 為類別名稱，value 為允許同時定義該類別的 package 目錄名集合。
+INTENTIONAL_PARALLEL_CLASSES: dict[str, frozenset[str]] = {
+    "ChatMessage": frozenset({"ttvchat-lens", "tubechat-lens"}),
+    "ChatSession": frozenset({"ttvchat-lens", "tubechat-lens"}),
+    "LiveChatReader": frozenset({"ttvchat-lens", "tubechat-lens"}),
+}
 REQUIRED_EVENTS_EXPORTS = (
     "ConfigChangedEvent",
     "TOPIC_CONFIG_CHANGED",
@@ -66,6 +74,43 @@ def check_packages_no_app_import(root: Path = ROOT) -> CheckResult:
         detail = f"違規 {len(offenders)} 處：{', '.join(offenders[:5])}"
         hint = f"packages/ 為基礎設施層，禁止依賴 app/（見 {MONOREPO_RULE}）"
     return CheckResult("packages_no_app_import", ok, detail, hint)
+
+
+# --- 架構：跨 package 同名 public class -----------------------------------
+
+_CLASS_DEF_RE = re.compile(r"^class\s+([A-Z]\w*)", re.MULTILINE)
+
+
+def collect_package_class_defs(root: Path = ROOT) -> dict[str, set[str]]:
+    """回傳 {類別名稱: {定義該類別的 package 目錄名}}（僅掃描 packages/*/src）。"""
+    defs: dict[str, set[str]] = {}
+    for path in sorted((root / "packages").glob("*/src/**/*.py")):
+        package = path.relative_to(root / "packages").parts[0]
+        for match in _CLASS_DEF_RE.finditer(path.read_text(encoding="utf-8")):
+            defs.setdefault(match.group(1), set()).add(package)
+    return defs
+
+
+def check_cross_package_duplicate_class(root: Path = ROOT) -> CheckResult:
+    offenders: list[str] = []
+    for name, packages in sorted(collect_package_class_defs(root).items()):
+        if len(packages) < 2:
+            continue
+        allowed = INTENTIONAL_PARALLEL_CLASSES.get(name)
+        if allowed is not None and packages <= allowed:
+            continue
+        offenders.append(f"{name}（{', '.join(sorted(packages))}）")
+    ok = not offenders
+    if ok:
+        detail = "跨 package 無未預期的同名 public class"
+        hint = ""
+    else:
+        detail = f"同名 public class {len(offenders)} 組：{'; '.join(offenders[:5])}"
+        hint = (
+            "跨 package 公開類別請加領域前綴以避免 import 混淆"
+            f"（見 {MONOREPO_RULE}）；刻意的平行設計請加入 INTENTIONAL_PARALLEL_CLASSES 白名單"
+        )
+    return CheckResult("cross_package_duplicate_class", ok, detail, hint)
 
 
 # --- 測試：testpaths 完整性 ----------------------------------------------
@@ -354,6 +399,7 @@ def run_checks(
 ) -> list[CheckResult]:
     checks = [
         check_packages_no_app_import(root),
+        check_cross_package_duplicate_class(root),
         check_testpaths_complete(root),
         check_topic_magic_strings(root),
         check_events_exports(),

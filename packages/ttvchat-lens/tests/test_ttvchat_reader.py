@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from ttvchat_lens.reader import ChatMessage, channel_url, normalize_channel, parse_irc_line
+from ttvchat_lens.reader import ChatMessage, channel_url, parse_irc_line, parse_twitch_channel
 
 _PRIVMSG = (
     "@badge-info=;badges=moderator/1;client-nonce=nonce;color=#FF0000;"
@@ -15,19 +15,19 @@ _PRIVMSG = (
 )
 
 
-class TestNormalizeChannel:
+class TestParseTwitchChannel:
     def test_bare_channel(self) -> None:
-        assert normalize_channel("Skymiku39") == "skymiku39"
+        assert parse_twitch_channel("Skymiku39") == "skymiku39"
 
     def test_hash_prefix(self) -> None:
-        assert normalize_channel("#skymiku39") == "skymiku39"
+        assert parse_twitch_channel("#skymiku39") == "skymiku39"
 
     def test_twitch_url(self) -> None:
-        assert normalize_channel("https://www.twitch.tv/skymiku39") == "skymiku39"
+        assert parse_twitch_channel("https://www.twitch.tv/skymiku39") == "skymiku39"
 
     def test_invalid_raises(self) -> None:
         with pytest.raises(ValueError, match="無法從輸入解析"):
-            normalize_channel("not a channel")
+            parse_twitch_channel("not a channel")
 
 
 def test_channel_url() -> None:

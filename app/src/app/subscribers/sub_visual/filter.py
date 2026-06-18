@@ -14,7 +14,7 @@ class FilterResult:
     reason: str | None = None
 
 
-class MessageFilter:
+class SubtitleMessageFilter:
     def __init__(self, config: FilterConfig) -> None:
         self._config = config
         self._blocked = [kw.lower() for kw in config.blocked_keywords if kw]
