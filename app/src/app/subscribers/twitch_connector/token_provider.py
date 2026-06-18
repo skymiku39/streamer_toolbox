@@ -10,7 +10,7 @@ from identity_oauth import SyncEnvTokenProvider
 EnvTokenProvider = SyncEnvTokenProvider
 
 
-class TokenProvider(Protocol):
+class ConnectorTokenProvider(Protocol):
     def client_id(self) -> str: ...
 
     def access_token(self) -> str: ...

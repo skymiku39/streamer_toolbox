@@ -9,7 +9,7 @@ import urllib.request
 from typing import Any
 
 from twitch_connector.throttle import MessageThrottle
-from twitch_connector.token_provider import TokenProvider
+from twitch_connector.token_provider import ConnectorTokenProvider
 
 HELIX_BASE = "https://api.twitch.tv/helix"
 
@@ -21,7 +21,7 @@ class TwitchSendError(RuntimeError):
 class TwitchChatSender:
     def __init__(
         self,
-        token_provider: TokenProvider,
+        token_provider: ConnectorTokenProvider,
         throttle: MessageThrottle | None = None,
     ) -> None:
         self._token_provider = token_provider
