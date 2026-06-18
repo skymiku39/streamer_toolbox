@@ -8,6 +8,7 @@ import typer
 from bus import LocalEventBus
 from voice_clone.audio.preprocess import preprocess_sample_audio
 from voice_clone.config import get_settings
+from voice_clone.events.topics import TOPIC_SYNTHESIS_COMPLETED
 from voice_clone.inference.checkpoints import resolve_model_bundle
 from voice_clone.inference.engine import InferenceEngine
 from voice_clone.inference.sample_ref import resolve_sample_reference
@@ -26,7 +27,7 @@ def _bus() -> LocalEventBus:
     def log_event(payload: dict) -> None:
         typer.echo(str(payload))
 
-    bus.subscribe("synthesis.completed", log_event)
+    bus.subscribe(TOPIC_SYNTHESIS_COMPLETED, log_event)
     return bus
 
 
