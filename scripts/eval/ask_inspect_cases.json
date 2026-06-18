@@ -1,0 +1,33 @@
+[
+  {
+    "label": "靜態知識庫",
+    "question": "777 幸運數字",
+    "expect_layers": ["static_kb"],
+    "any_of": true
+  },
+  {
+    "label": "長期摘要記憶",
+    "question": "主播在玩什麼",
+    "expect_layers": ["memory"],
+    "any_of": true
+  },
+  {
+    "label": "混合檢索",
+    "question": "誰是 LNG",
+    "expect": ["LNG"],
+    "expect_layers": ["static_kb"],
+    "any_of": true
+  },
+  {
+    "label": "當下實況（需 sample 或 from-db context）",
+    "question": "主播現在在幹嘛",
+    "expect_layers": ["stt"],
+    "any_of": true
+  },
+  {
+    "label": "本場進度",
+    "question": "今天直播做了什麼",
+    "expect_layers": ["session_recap"],
+    "any_of": true
+  }
+]

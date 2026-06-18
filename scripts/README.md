@@ -28,7 +28,8 @@
 | `verify_setup.py` / `verify_setup.ps1` | 環境就緒檢查（`.env`、RabbitMQ） |
 | `verify_dedup.py` | 跨 process 冪等去重 smoke test |
 | `verify_chroma_knowledge.py` | Chroma 知識庫驗證 |
-| `verify_llm_prompt.py` | LLM prompt 組裝驗證 |
+| `verify_llm_prompt.py` | LLM prompt 組裝驗證（固定三題煙霧測試） |
+| `ask_inspect.py` | !ask 乾跑：組裝 prompt 並分析記憶／RAG，不呼叫 LLM |
 | `first_time_auth.py` | Twitch OAuth 首次授權 |
 | `probe_eventsub.py` | EventSub 訂閱探測 |
 | `show_summaries.py` | `app.memory_view` 薄包裝（瀏覽 L2 摘要） |
@@ -38,7 +39,9 @@
 | 腳本 | 用途 |
 |------|------|
 | `eval_memory_retrieval.py` | 記憶 recall@K 評測；可接 CI `--min-recall` |
+| `ask_inspect.py` | !ask 乾跑 prompt 品質檢視；可接 CI `--min-pass-rate` |
 | `eval/memory_retrieval_cases.json` | 評測案例 |
+| `eval/ask_inspect_cases.json` | ask 乾跑案例（含 expect_layers） |
 
 ## Benchmark / 一次性分析（`benchmark/`，不納入 CI）
 
