@@ -34,6 +34,7 @@ uv run python scripts/audit_project.py --smoke-dedup
 - [ ] ✅ `ruff` 靜態分析無錯：`uv run ruff check .`
 - [ ] ✅ 全 workspace 測試通過：`uv run pytest -q`
 - [ ] ✅ 單向依賴：`packages/` 不得 `import app` / `from app`
+- [ ] ✅ 命名風險（規則五）：`scripts/naming_audit.py` 三項檢查 — 跨 package 同名 class／函式、app↔package 同名 class（白名單見該模組常數）
 - [ ] ✅ `testpaths` 完整：每個有 `tests/` 的 package 都列入根 [pyproject.toml](../../pyproject.toml)
 - [ ] ✅ 程序註冊無漂移：`app.main list` 與 [pub-sub-writing.md](pub-sub-writing.md) 速查總表一致
 - [ ] ✅ Topic 契約集中：`app/` 內不得散落 topic 字面量（須引用 `events.topics` 常數）

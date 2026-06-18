@@ -256,6 +256,22 @@ streamer_toolbox/
   以 `@register_subscriber` 註冊）。跨 subscriber 共用的純函式 helper（如 `qa_memory_mode.py`）
   才以扁平模組存在於 `app/subscribers/` 下。
 
+### 命名風險稽核
+
+跨 package 或 app↔package 的同名公開 class／函式易造成 wrong-import。規則與範例見
+[monorepo 規則五](../.cursor/rules/monorepo-architecture.mdc)。自動化檢查由
+[`scripts/naming_audit.py`](../scripts/naming_audit.py) 定義白名單與掃描邏輯，並由
+`uv run python scripts/audit_project.py --ci` 執行下列三項：
+
+| 檢查項 | 說明 |
+|--------|------|
+| `naming_cross_package_class` | `packages/` 內跨 package 同名 public class |
+| `naming_app_package_class` | `app/` 與 `packages/` 同名 public class |
+| `naming_cross_package_function` | `packages/` 內跨 package 同名 public 函式（排除樣板函式） |
+
+新增刻意的平行設計時，須在 `naming_audit.py` 的 `INTENTIONAL_PARALLEL_CLASSES` 或
+`INTENTIONAL_PARALLEL_FUNCTIONS` 登記；app↔package 極少數例外用 `INTENTIONAL_APP_PACKAGE_CLASSES`。
+
 ## 設計約束
 
 實作須遵守 [solid.md](solid.md) 與 [events.md](events.md)。契約變更先改文件，再改 `packages/events`。

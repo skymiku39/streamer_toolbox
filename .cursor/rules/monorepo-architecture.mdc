@@ -96,5 +96,6 @@ tts = { workspace = true }
 例如 `SttConfig` / `TranscriptSegment` / `StreamingSTTWorker` 一律以 `from stt_core import ...` 為準。
 
 刻意的平行套件設計（如 `ttvchat-lens` ↔ `tubechat-lens` 的 `ChatMessage`、`LiveChatReader`）
-屬例外，需登記於 `scripts/audit_project.py` 的 `INTENTIONAL_PARALLEL_CLASSES` 白名單。
-`audit_project.py` 的 `cross_package_duplicate_class` 檢查會在 CI 阻擋未預期的跨 package 同名類別。
+屬例外，須登記於 [`scripts/naming_audit.py`](../../scripts/naming_audit.py) 的白名單常數。
+`audit_project.py` 執行三項命名檢查（`naming_cross_package_class`、`naming_app_package_class`、
+`naming_cross_package_function`），CI 會阻擋未預期的同名符號。

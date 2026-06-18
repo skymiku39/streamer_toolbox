@@ -8,6 +8,7 @@
 | 腳本 | 用途 |
 |------|------|
 | `audit_project.py` | 全專案系統性稽核（架構／契約／衛生）；CI 以 `--ci` 執行 |
+| `naming_audit.py` | 命名風險稽核（規則五）：跨 package／app↔package 同名符號與白名單定義 |
 | `pre_commit_block_runtime.py` | pre-commit：攔截 runtime 資料、secret、根目錄 `debug-*` |
 | `pre_commit_forbidden_strings.py` | pre-commit：攔截已停用的舊式 commit 前綴 |
 | `pre_commit_commit_msg.py` | pre-commit：強制 `type: emoji [AI] subject` 格式 |

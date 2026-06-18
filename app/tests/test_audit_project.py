@@ -53,6 +53,7 @@ def test_cross_package_duplicate_class_clean(tmp_path: Path) -> None:
     _write_pkg_class(tmp_path, "beta", "Gadget")
     result = _mod.check_cross_package_duplicate_class(tmp_path)
     assert result.ok is True
+    assert result.name == "naming_cross_package_class"
 
 
 def test_cross_package_duplicate_class_detects_collision(tmp_path: Path) -> None:
@@ -60,7 +61,28 @@ def test_cross_package_duplicate_class_detects_collision(tmp_path: Path) -> None
     _write_pkg_class(tmp_path, "beta", "Worker")
     result = _mod.check_cross_package_duplicate_class(tmp_path)
     assert result.ok is False
+    assert result.name == "naming_cross_package_class"
     assert "Worker" in result.detail
+
+
+def test_app_package_duplicate_class_detects_collision(tmp_path: Path) -> None:
+    _write_pkg_class(tmp_path, "alpha", "DupClass")
+    app_mod = tmp_path / "app" / "src" / "app" / "demo"
+    app_mod.mkdir(parents=True)
+    (app_mod / "mod.py").write_text("class DupClass:\n    pass\n", encoding="utf-8")
+    result = _mod.check_app_package_duplicate_class(tmp_path)
+    assert result.ok is False
+    assert "DupClass" in result.detail
+
+
+def test_cross_package_duplicate_function_detects_collision(tmp_path: Path) -> None:
+    for package in ("alpha", "beta"):
+        pkg = tmp_path / "packages" / package / "src" / package
+        pkg.mkdir(parents=True)
+        (pkg / "fn.py").write_text("def unique_helper():\n    return 1\n", encoding="utf-8")
+    result = _mod.check_cross_package_duplicate_function(tmp_path)
+    assert result.ok is False
+    assert "unique_helper" in result.detail
 
 
 def test_cross_package_duplicate_class_allows_whitelisted_twins(tmp_path: Path) -> None:
@@ -192,7 +214,9 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
         return lambda *_a, **_k: _mod.CheckResult(name, True, "")
 
     monkeypatch.setattr(_mod, "check_packages_no_app_import", _ok("a"))
-    monkeypatch.setattr(_mod, "check_cross_package_duplicate_class", _ok("dup"))
+    monkeypatch.setattr(_mod, "check_cross_package_duplicate_class", _ok("naming_pkg"))
+    monkeypatch.setattr(_mod, "check_app_package_duplicate_class", _ok("naming_app"))
+    monkeypatch.setattr(_mod, "check_cross_package_duplicate_function", _ok("naming_fn"))
     monkeypatch.setattr(_mod, "check_testpaths_complete", _ok("b"))
     monkeypatch.setattr(_mod, "check_topic_magic_strings", _ok("c"))
     monkeypatch.setattr(_mod, "check_events_exports", _ok("d"))
@@ -210,5 +234,17 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "load_verify_setup", lambda *_a, **_k: calls.append("verify"))
 
     results = _mod.run_checks(ci=True)
-    assert [r.name for r in results] == ["a", "dup", "b", "c", "d", "e", "f", "g", "h"]
+    assert [r.name for r in results] == [
+        "a",
+        "naming_pkg",
+        "naming_app",
+        "naming_fn",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g",
+        "h",
+    ]
     assert calls == []
