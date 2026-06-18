@@ -20,7 +20,11 @@ dev = [
 ]
 stt = [
     "faster-whisper>=1.1.0",
+    "safety",
 ]
+
+[tool.uv.sources]
+safety = { workspace = true }
 
 [project.scripts]
 voice-clone = "voice_clone.cli:app"

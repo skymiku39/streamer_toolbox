@@ -10,7 +10,7 @@ import struct
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from safety.audio_spectrum import lacks_clear_speech, lacks_clear_speech_audio
+from safety.audio_spectrum import float32_rms, lacks_clear_speech, lacks_clear_speech_audio
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -164,6 +164,10 @@ class SttInputFilter:
 
     def is_silent(self, pcm: bytes) -> bool:
         return pcm_rms(pcm) < self.rms_gate
+
+    def is_silent_audio(self, audio) -> bool:
+        """float32 音訊的靜音判斷（供已解碼為 numpy 波形的呼叫端使用）。"""
+        return float32_rms(audio) < self.rms_gate
 
     def should_apply_hallucination_filter(self, pcm: bytes) -> bool:
         """FFT 頻譜 + RMS：chunk 不像語音時才套用幻覺過濾。"""

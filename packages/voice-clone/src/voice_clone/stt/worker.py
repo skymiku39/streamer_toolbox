@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from scipy.signal import resample_poly
 
+from safety import SttInputFilter
 from voice_clone.stt.config import SttConfig
 from voice_clone.stt.denoise import suppress_noise_for_stt
-from voice_clone.stt.filter import SttInputFilter
 from voice_clone.stt.segment import TranscriptSegment
 
 if TYPE_CHECKING:
@@ -209,7 +209,7 @@ class STTWorker:
     def transcribe_chunk(
         self, pcm: bytes, *, stream_offset: float = 0.0
     ) -> TranscriptSegment | None:
-        if self._input_filter.is_silent_pcm(pcm):
+        if self._input_filter.is_silent(pcm):
             return None
         audio = _pcm_to_float32(pcm)
         segment = self.transcribe_audio(
