@@ -59,6 +59,7 @@ pythonpath = [
     "packages/emotes/src",
     "packages/streamer-config/src",
     "packages/control/src",
+    "packages/stt-core/src",
     "packages/voice-clone/src",
     "tools/streamer-config-gui/src",
 ]

@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 
 class LocalEventBus:
-    """程序內記憶體 Event Bus，用於模組間解耦通訊。"""
+    """程序內記憶體 Event Bus，用於模組間解耦通訊（不經 RabbitMQ）。"""
 
     def __init__(self) -> None:
         self._handlers: dict[str, list[Callable[[dict], None]]] = defaultdict(list)

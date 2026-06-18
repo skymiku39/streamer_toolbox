@@ -3282,6 +3282,7 @@ name = "stt-core"
 version = "0.1.0"
 source = { editable = "packages/stt-core" }
 dependencies = [
+    { name = "events" },
     { name = "numpy" },
     { name = "safety" },
 ]
@@ -3293,6 +3294,7 @@ stt = [
 
 [package.metadata]
 requires-dist = [
+    { name = "events", editable = "packages/events" },
     { name = "faster-whisper", marker = "extra == 'stt'", specifier = ">=1.1.0" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "safety", editable = "packages/safety" },
@@ -3621,6 +3623,7 @@ name = "voice-clone"
 version = "0.5.0"
 source = { editable = "packages/voice-clone" }
 dependencies = [
+    { name = "bus" },
     { name = "numpy" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -3642,6 +3645,7 @@ stt = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bus", editable = "packages/bus" },
     { name = "faster-whisper", marker = "extra == 'stt'", specifier = ">=1.1.0" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pydantic", specifier = ">=2.0" },

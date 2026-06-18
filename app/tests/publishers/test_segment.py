@@ -1,6 +1,7 @@
 from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
-from ingress_twitch_audio.segment import TranscriptSegment, build_stt_segment_event
+from ingress_twitch_audio.segment import build_stt_segment_event
+from stt_core import TranscriptSegment
 
 
 def test_build_stt_segment_event_matches_contract() -> None:

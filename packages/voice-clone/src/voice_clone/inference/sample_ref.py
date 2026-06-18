@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from voice_clone.audio.preprocess import load_sample_audio
 
 if TYPE_CHECKING:
-    from voice_clone.stt.worker import STTWorker
+    from voice_clone.stt.worker import OfflineSTTWorker
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ def resolve_sample_reference(
     sample_path: Path,
     *,
     sample_text: str | None = None,
-    stt_worker: STTWorker | None = None,
+    stt_worker: OfflineSTTWorker | None = None,
 ) -> SampleReference:
     """從樣本音檔取得推理所需的參考音訊與對應文字。"""
     resolved = sample_path.resolve()

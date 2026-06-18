@@ -15,9 +15,9 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env", override=True)
 
-from ingress_twitch_audio.config import SttConfig  # noqa: E402
-from ingress_twitch_audio.stt_worker import STTWorker  # noqa: E402
+from ingress_twitch_audio.stt_worker import StreamingSTTWorker  # noqa: E402
 from safety import SttInputFilter  # noqa: E402
+from stt_core import SttConfig  # noqa: E402
 
 from stt_params import (  # noqa: E402
     cer,
@@ -56,7 +56,7 @@ def verify_whisper(audio_dir: Path, config: SttConfig, *, limit: int = 0) -> dic
     files = sorted(audio_dir.glob("*.mp3"))
     if limit > 0:
         files = files[:limit]
-    worker = STTWorker(config)
+    worker = StreamingSTTWorker(config)
     worker._ensure_model()  # noqa: SLF001
     labeled = 0
     exact = 0

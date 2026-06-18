@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from voice_clone.bus.protocol import EventBus
+from bus import EventBus
 from voice_clone.config import Settings, get_settings
 from voice_clone.events.payloads import SynthesisCompletedPayload
 from voice_clone.events.topics import TOPIC_SYNTHESIS_COMPLETED

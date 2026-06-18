@@ -5,8 +5,8 @@ from typing import Annotated
 
 import typer
 
+from bus import LocalEventBus
 from voice_clone.audio.preprocess import preprocess_sample_audio
-from voice_clone.bus.local import LocalEventBus
 from voice_clone.config import get_settings
 from voice_clone.inference.checkpoints import resolve_model_bundle
 from voice_clone.inference.engine import InferenceEngine
@@ -90,9 +90,9 @@ def clone(
     if not ref_text and stt:
         _require_stt_extra()
         from voice_clone.stt.config import SttConfig
-        from voice_clone.stt.worker import STTWorker
+        from voice_clone.stt.worker import OfflineSTTWorker
 
-        stt_worker = STTWorker(SttConfig.from_env())
+        stt_worker = OfflineSTTWorker(SttConfig.from_env())
         stt_worker.preload_in_background()
         if not stt_worker.wait_until_ready(timeout=120.0):
             raise typer.BadParameter("STT 模型載入失敗，請確認 faster-whisper 已安裝")

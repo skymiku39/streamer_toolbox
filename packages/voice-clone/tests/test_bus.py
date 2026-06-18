@@ -1,4 +1,4 @@
-from voice_clone.bus.local import LocalEventBus
+from bus import LocalEventBus
 from voice_clone.events.topics import TOPIC_SYNTHESIS_COMPLETED
 
 

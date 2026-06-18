@@ -22,8 +22,8 @@ for rel in ("app/src", "app/src/app/publishers"):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
-from ingress_twitch_audio.config import SttConfig  # noqa: E402
-from ingress_twitch_audio.stt_worker import STTWorker  # noqa: E402
+from ingress_twitch_audio.stt_worker import StreamingSTTWorker  # noqa: E402
+from stt_core import SttConfig  # noqa: E402
 
 SAMPLE_RATE = 16000
 BYTES_PER_SAMPLE = 2
@@ -106,7 +106,7 @@ def iter_pcm_chunks(pcm: bytes, chunk_seconds: float) -> list[bytes]:
     return [pcm[i : i + chunk_bytes] for i in range(0, len(pcm), chunk_bytes)]
 
 
-def transcribe_file(worker: STTWorker, pcm: bytes, chunk_seconds: float) -> tuple[str, dict]:
+def transcribe_file(worker: StreamingSTTWorker, pcm: bytes, chunk_seconds: float) -> tuple[str, dict]:
     chunks = iter_pcm_chunks(pcm, chunk_seconds)
     texts: list[str] = []
     stats = {
@@ -248,7 +248,7 @@ def evaluate_preset(
 ) -> tuple[PresetSummary, list[FileResult]]:
     config = SttConfig(**preset.kwargs)
     loader = (lambda: shared_model) if shared_model is not None else None
-    worker = STTWorker(config, model_loader=loader)
+    worker = StreamingSTTWorker(config, model_loader=loader)
     worker._ensure_model()  # noqa: SLF001
 
     results: list[FileResult] = []
@@ -322,7 +322,7 @@ def main() -> int:
             return 1
 
     warm_config = SttConfig(**presets[0].kwargs)
-    warm_worker = STTWorker(warm_config)
+    warm_worker = StreamingSTTWorker(warm_config)
     shared_model = warm_worker._ensure_model()  # noqa: SLF001
 
     summaries: list[PresetSummary] = []

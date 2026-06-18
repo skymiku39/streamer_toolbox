@@ -15,8 +15,7 @@ from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from bus.topology import DEFAULT_EXCHANGE
 from ingress_local_audio.config import LocalAudioConfig
 from ingress_local_audio.local_audio import MicAudioCapture
-from ingress_twitch_audio.segment import build_stt_segment_event
-from ingress_twitch_audio.stt_worker import STTWorker
+from stt_core import StreamingSTTWorker, build_stt_segment_event
 
 PROCESS_NAME = "ingress-local-audio"
 
@@ -53,7 +52,7 @@ async def run(channel: str, config: LocalAudioConfig) -> None:
         on_chunk=on_chunk,
         on_error=on_capture_error,
     )
-    worker = STTWorker(
+    worker = StreamingSTTWorker(
         stt_config,
         on_status=on_status,
         on_error=on_stt_error,

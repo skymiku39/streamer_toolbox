@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from ingress_twitch_audio.config import SttConfig
+from stt_core import SttConfig
 
 
 def _parse_audio_device(raw: str) -> int | str | None:

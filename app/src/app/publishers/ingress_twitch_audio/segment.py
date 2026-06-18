@@ -1,34 +1,11 @@
+"""Deprecated re-export shim：請改用 `from stt_core import ...`。
+
+`TranscriptSegment` 與 `build_stt_segment_event` 已集中於 `stt_core`，
+此處僅為向後相容保留別名；新程式碼應直接依賴 `stt_core`。
+"""
+
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from uuid import uuid4
-
-from events import TOPIC_STT_SEGMENT, SttSegmentEvent
-
-from stt_core import TranscriptSegment
+from stt_core import TranscriptSegment, build_stt_segment_event
 
 __all__ = ["TranscriptSegment", "build_stt_segment_event"]
-
-
-def build_stt_segment_event(
-    channel: str,
-    segment: TranscriptSegment,
-    *,
-    language: str | None = None,
-    segment_id: str | None = None,
-    timestamp: str | None = None,
-) -> SttSegmentEvent:
-    return SttSegmentEvent(
-        schema_version=1,
-        topic=TOPIC_STT_SEGMENT,
-        platform="twitch",
-        channel=channel.lstrip("#").lower(),
-        segment_id=segment_id or str(uuid4()),
-        text=segment.text,
-        start_sec=segment.start_sec,
-        end_sec=segment.end_sec,
-        language=language,
-        confidence=segment.confidence,
-        highlight_score=0.0,
-        timestamp=timestamp or datetime.now(UTC).isoformat(),
-    )

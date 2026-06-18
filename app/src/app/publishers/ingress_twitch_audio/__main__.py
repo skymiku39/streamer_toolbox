@@ -13,10 +13,8 @@ from app.processes.registry import register_publisher
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import connect_async, declare_topic_exchange, publish_topic
 from bus.topology import DEFAULT_EXCHANGE
-from ingress_twitch_audio.config import SttConfig
 from ingress_twitch_audio.live_audio import LiveAudioCapture
-from ingress_twitch_audio.segment import build_stt_segment_event
-from ingress_twitch_audio.stt_worker import STTWorker
+from stt_core import StreamingSTTWorker, SttConfig, build_stt_segment_event
 
 PROCESS_NAME = "ingress-twitch-audio"
 
@@ -52,7 +50,7 @@ async def run(channel: str, config: SttConfig) -> None:
         on_chunk=on_chunk,
         on_error=on_capture_error,
     )
-    worker = STTWorker(
+    worker = StreamingSTTWorker(
         config,
         on_status=on_status,
         on_error=on_stt_error,

@@ -1,3 +1,4 @@
+from safety.audio_spectrum import pcm_to_float32
 from safety.blocklist import BlocklistSafetyFilter
 from safety.composite import CompositeSafetyFilter
 from safety.injection import PromptInjectionFilter, looks_like_injection
@@ -16,4 +17,5 @@ __all__ = [
     "is_hallucination_text",
     "looks_like_injection",
     "pcm_rms",
+    "pcm_to_float32",
 ]
