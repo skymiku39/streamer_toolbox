@@ -38,6 +38,7 @@ def test_transcribe_chunk_skips_silent_audio() -> None:
         cpu_threads=1,
         rms_gate=0.05,
         filter_hallucinations=True,
+        hallucination_rms_gate=0.02,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -63,6 +64,7 @@ def test_transcribe_chunk_publishes_segment() -> None:
         cpu_threads=1,
         rms_gate=0.01,
         filter_hallucinations=True,
+        hallucination_rms_gate=0.02,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -86,7 +88,32 @@ def test_transcribe_chunk_publishes_segment() -> None:
     assert segments == ["今天天氣真好"]
 
 
-def test_transcribe_chunk_filters_hallucination() -> None:
+def test_transcribe_chunk_filters_hallucination_on_quiet_audio() -> None:
+    config = SttConfig(
+        model_size="tiny",
+        chunk_seconds=1.0,
+        language="zh",
+        device="cpu",
+        compute_type="int8",
+        cpu_threads=1,
+        rms_gate=0.001,
+        filter_hallucinations=True,
+        hallucination_rms_gate=0.02,
+        vad_filter=False,
+        condition_on_previous_text=False,
+        no_speech_threshold=0.6,
+        log_prob_threshold=-1.0,
+        compression_ratio_threshold=2.4,
+    )
+    worker = STTWorker(
+        config,
+        model_loader=lambda: _mock_model("thanks for watching"),
+    )
+    pcm = _pcm_from_amplitude(0.008, sample_count=int(16000 * config.chunk_seconds))
+    assert worker.transcribe_chunk(pcm) is None
+
+
+def test_transcribe_chunk_keeps_speech_on_loud_audio_without_hallucination_filter() -> None:
     config = SttConfig(
         model_size="tiny",
         chunk_seconds=1.0,
@@ -96,6 +123,7 @@ def test_transcribe_chunk_filters_hallucination() -> None:
         cpu_threads=1,
         rms_gate=0.01,
         filter_hallucinations=True,
+        hallucination_rms_gate=0.02,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -107,4 +135,6 @@ def test_transcribe_chunk_filters_hallucination() -> None:
         model_loader=lambda: _mock_model("thanks for watching"),
     )
     pcm = _pcm_from_amplitude(0.3, sample_count=int(16000 * config.chunk_seconds))
-    assert worker.transcribe_chunk(pcm) is None
+    result = worker.transcribe_chunk(pcm)
+    assert result is not None
+    assert result.text == "thanks for watching"

@@ -39,6 +39,7 @@ class STTWorker:
         self._input_filter = input_filter or SttInputFilter(
             rms_gate=config.rms_gate,
             filter_hallucinations=config.filter_hallucinations,
+            hallucination_rms_gate=config.hallucination_rms_gate,
             no_speech_threshold=config.no_speech_threshold,
             log_prob_threshold=config.log_prob_threshold,
         )
@@ -156,14 +157,20 @@ class STTWorker:
                 temperature=0.0,
             )
             texts: list[str] = []
+            apply_hallucination_filter = self._input_filter.should_apply_hallucination_filter(
+                pcm,
+            )
             for seg in segments:
-                if self._config.filter_hallucinations and not self._input_filter.accept_segment(
+                if apply_hallucination_filter and not self._input_filter.accept_segment(
                     seg,
                 ):
                     continue
                 text = (seg.text or "").strip()
-                if text and self._input_filter.accept_text(text):
-                    texts.append(text)
+                if not text:
+                    continue
+                if apply_hallucination_filter and not self._input_filter.accept_text(text):
+                    continue
+                texts.append(text)
             if not texts:
                 self._stream_offset += self._chunk_seconds
                 return None
@@ -173,7 +180,7 @@ class STTWorker:
             end = start + self._chunk_seconds
             self._stream_offset += self._chunk_seconds
             merged = " ".join(texts)
-            if not self._input_filter.accept_text(merged):
+            if apply_hallucination_filter and not self._input_filter.accept_text(merged):
                 return None
             out = TranscriptSegment(text=merged, start_sec=start, end_sec=end, confidence=0.0)
             if self._on_segment:

@@ -152,12 +152,19 @@ class SttInputFilter:
 
     rms_gate: float = 0.01
     filter_hallucinations: bool = True
+    hallucination_rms_gate: float = 0.02
     no_speech_threshold: float = 0.6
     log_prob_threshold: float = -1.0
     blocklist: tuple[str, ...] = _DEFAULT_BLOCKLIST
 
     def is_silent(self, pcm: bytes) -> bool:
         return pcm_rms(pcm) < self.rms_gate
+
+    def should_apply_hallucination_filter(self, pcm: bytes) -> bool:
+        """僅在 chunk 音量偏低（底噪／近靜音）時套用幻覺過濾，避免誤殺正常語音。"""
+        if not self.filter_hallucinations:
+            return False
+        return pcm_rms(pcm) < self.hallucination_rms_gate
 
     def accept_text(self, text: str) -> bool:
         if not self.filter_hallucinations:

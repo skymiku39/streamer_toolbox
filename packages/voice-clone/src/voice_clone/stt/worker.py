@@ -51,6 +51,7 @@ class STTWorker:
         self._input_filter = input_filter or SttInputFilter(
             rms_gate=config.rms_gate,
             filter_hallucinations=config.filter_hallucinations,
+            hallucination_rms_gate=config.hallucination_rms_gate,
             no_speech_threshold=config.no_speech_threshold,
             log_prob_threshold=config.log_prob_threshold,
         )
@@ -169,20 +170,25 @@ class STTWorker:
                 temperature=0.0,
             )
             texts: list[str] = []
+            apply_hallucination_filter = (
+                self._input_filter.should_apply_hallucination_filter_audio(stt_audio)
+            )
             for seg in segments:
-                if (
-                    self._config.filter_hallucinations
-                    and not self._input_filter.accept_segment(seg)
+                if apply_hallucination_filter and not self._input_filter.accept_segment(
+                    seg,
                 ):
                     continue
                 text = (seg.text or "").strip()
-                if text and self._input_filter.accept_text(text):
-                    texts.append(text)
+                if not text:
+                    continue
+                if apply_hallucination_filter and not self._input_filter.accept_text(text):
+                    continue
+                texts.append(text)
             if not texts:
                 return None
 
             merged = " ".join(texts)
-            if not self._input_filter.accept_text(merged):
+            if apply_hallucination_filter and not self._input_filter.accept_text(merged):
                 return None
             duration = len(stt_audio) / STT_SAMPLE_RATE
             out = TranscriptSegment(

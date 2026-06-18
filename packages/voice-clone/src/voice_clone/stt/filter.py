@@ -148,6 +148,7 @@ def accept_whisper_segment(
 class SttInputFilter:
     rms_gate: float = 0.01
     filter_hallucinations: bool = True
+    hallucination_rms_gate: float = 0.02
     no_speech_threshold: float = 0.6
     log_prob_threshold: float = -1.0
     blocklist: tuple[str, ...] = _DEFAULT_BLOCKLIST
@@ -157,6 +158,16 @@ class SttInputFilter:
 
     def is_silent_audio(self, audio) -> bool:
         return float32_rms(audio) < self.rms_gate
+
+    def should_apply_hallucination_filter_pcm(self, pcm: bytes) -> bool:
+        if not self.filter_hallucinations:
+            return False
+        return pcm_rms(pcm) < self.hallucination_rms_gate
+
+    def should_apply_hallucination_filter_audio(self, audio) -> bool:
+        if not self.filter_hallucinations:
+            return False
+        return float32_rms(audio) < self.hallucination_rms_gate
 
     def accept_text(self, text: str) -> bool:
         if not self.filter_hallucinations:

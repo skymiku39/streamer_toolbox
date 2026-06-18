@@ -70,3 +70,15 @@ def test_stt_input_filter_silence_gate() -> None:
     gate = SttInputFilter(rms_gate=0.05)
     assert gate.is_silent(_pcm_from_amplitude(0.01)) is True
     assert gate.is_silent(_pcm_from_amplitude(0.2)) is False
+
+
+def test_hallucination_filter_only_on_quiet_chunks() -> None:
+    gate = SttInputFilter(
+        rms_gate=0.004,
+        filter_hallucinations=True,
+        hallucination_rms_gate=0.02,
+    )
+    quiet = _pcm_from_amplitude(0.008)
+    loud = _pcm_from_amplitude(0.2)
+    assert gate.should_apply_hallucination_filter(quiet) is True
+    assert gate.should_apply_hallucination_filter(loud) is False
