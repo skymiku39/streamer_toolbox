@@ -14,8 +14,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env", override=True)
 
-from ingress_twitch_audio.config import SttConfig  # noqa: E402
-from ingress_twitch_audio.stt_worker import StreamingSTTWorker  # noqa: E402
+from stt_core import SttConfig, StreamingSTTWorker  # noqa: E402
 from stt_params import cer, load_pcm, normalize_text, parse_ground_truth, transcribe_file  # noqa: E402
 
 

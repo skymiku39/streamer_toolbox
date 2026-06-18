@@ -22,8 +22,7 @@ for rel in ("app/src", "app/src/app/publishers"):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
-from ingress_twitch_audio.stt_worker import StreamingSTTWorker  # noqa: E402
-from stt_core import SttConfig  # noqa: E402
+from stt_core import SttConfig, StreamingSTTWorker  # noqa: E402
 
 SAMPLE_RATE = 16000
 BYTES_PER_SAMPLE = 2
