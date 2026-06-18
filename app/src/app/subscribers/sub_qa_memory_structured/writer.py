@@ -37,6 +37,7 @@ class StructuredQaMemoryWriter:
             source="qa",
             content=content,
             record_count=1,
+            category=event.category,
         )
         print(
             f"[sub-qa-memory-structured] saved summary id={summary.id} "

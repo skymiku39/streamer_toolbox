@@ -24,11 +24,18 @@ def test_ask_tier_falls_back_to_llm_model(monkeypatch: pytest.MonkeyPatch) -> No
     assert tier.model == "gemini-2.5-flash"
 
 
-def test_memory_tier_defaults_to_pro_for_gemini(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_memory_tier_defaults_to_flash_for_gemini(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MEMORY_LLM_BACKEND", "gemini")
     monkeypatch.delenv("MEMORY_LLM_MODEL", raising=False)
     monkeypatch.delenv("GOOGLE_AI_MEMORY_MODEL", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
+    tier = resolve_tier(LlmTier.MEMORY, memory_backend="gemini")
+    assert tier.model == "gemini-2.5-flash"
+
+
+def test_memory_tier_pro_via_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MEMORY_LLM_BACKEND", "gemini")
+    monkeypatch.setenv("MEMORY_LLM_MODEL", "gemini-2.5-pro")
     tier = resolve_tier(LlmTier.MEMORY, memory_backend="gemini")
     assert tier.model == "gemini-2.5-pro"
 

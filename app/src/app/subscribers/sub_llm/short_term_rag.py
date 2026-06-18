@@ -88,10 +88,17 @@ class ShortTermRagStore:
                 return
             self._prune_locked(channel)
 
-    def query(self, channel: str, question: str) -> str:
+    def query(
+        self,
+        channel: str,
+        question: str,
+        *,
+        exclude_questions: set[str] | None = None,
+    ) -> str:
         normalized_question = question.strip()
         if not normalized_question:
             return ""
+        exclude = {q.strip().casefold() for q in (exclude_questions or set())}
         with self._lock:
             self._ensure_chroma()
             if self._collection is None:
@@ -117,6 +124,8 @@ class ShortTermRagStore:
             stored_question = str(meta.get("question", "")).strip()
             stored_reply = str(meta.get("reply", "")).strip()
             if stored_question and stored_reply:
+                if stored_question.casefold() in exclude:
+                    continue
                 pairs.append((stored_question, stored_reply))
         if not pairs:
             return ""

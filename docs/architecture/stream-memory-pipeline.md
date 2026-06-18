@@ -136,7 +136,7 @@ L2 記憶層的作法：
 | `MEMORY_PUBLISH_READY` | `true` | 摘要完成後 publish `memory.summary.ready` |
 | `MEMORY_BOARD_PORT` | `8765` | Memory Board HTTP 埠 |
 | `MEMORY_LLM_BACKEND` | `template` | `template` 或 `openai`/`gemini` |
-| `MEMORY_LLM_MODEL` | gemini 時 `gemini-2.5-pro` | L2 定時摘要專用模型（與 `LLM_ASK_MODEL` 分層） |
+| `MEMORY_LLM_MODEL` | gemini 時 `gemini-2.5-flash` | L2 定時摘要專用模型（與 `LLM_ASK_MODEL` 分層）；免費層預設 Flash，需高品質可設 `gemini-2.5-pro`（每日僅 50 RPD，建議僅用於收台/手動摘要） |
 | `LLM_ASK_MODEL` | 沿用 `LLM_MODEL` | 即時 `!ask` 主模型 |
 | `LLM_AGENT_MODEL` | `gemini-2.0-flash-lite` | Hybrid 前置路由（僅 `LLM_BACKEND=hybrid`） |
 | `STT_*` | 見 `.env.example` | `ingress-twitch-audio` 用 |

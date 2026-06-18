@@ -36,6 +36,7 @@ def _structured_gemini_response(*, reply: str) -> bytes:
 
 def test_gemini_grounded_ask_uses_google_search_tool(monkeypatch) -> None:
     monkeypatch.setenv("QA_MEMORY_MODE", "structured")
+    monkeypatch.setenv("LLM_WEB_SEARCH", "true")
     client = GeminiGroundedLlmClient(
         api_key="test-key",
         model="gemini-2.5-flash",
@@ -63,7 +64,8 @@ def test_gemini_grounded_ask_uses_google_search_tool(monkeypatch) -> None:
     assert "蒜頭王八" in payload["contents"][0]["parts"][0]["text"]
 
 
-def test_gemini_grounded_ask_falls_back_on_grounding_error() -> None:
+def test_gemini_grounded_ask_falls_back_on_grounding_error(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_WEB_SEARCH", "true")
     client = GeminiGroundedLlmClient(
         api_key="test-key",
         model="gemini-2.5-flash",
@@ -95,3 +97,26 @@ def test_gemini_grounded_ask_falls_back_on_grounding_error() -> None:
         game_reference="",
         session_recap_reference="",
     )
+
+
+def test_gemini_grounded_ask_auto_skips_grounding_without_signal(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_WEB_SEARCH", "auto")
+    client = GeminiGroundedLlmClient(
+        api_key="test-key",
+        model="gemini-2.5-flash",
+        system_prompt="system",
+    )
+    fallback_response = AskResponse(reply="一般回覆")
+
+    with patch("urllib.request.urlopen") as urlopen:
+        with patch.object(client._fallback, "ask", return_value=fallback_response) as fallback_ask:
+            result = client.ask(
+                "你喜歡什麼顏色",
+                context="【直播狀態】直播中",
+                knowledge="",
+                game_reference="",
+            )
+
+    assert result.reply == "一般回覆"
+    urlopen.assert_not_called()
+    fallback_ask.assert_called_once()

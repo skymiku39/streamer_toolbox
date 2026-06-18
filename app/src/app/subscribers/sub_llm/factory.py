@@ -4,6 +4,7 @@ import os
 
 from stream_store import StreamTextStore
 from sub_llm.chroma_store import ChromaKnowledgeStore, ChromaSummaryKnowledgeStore
+from sub_llm.grounding_policy import grounding_client_enabled
 from sub_llm.knowledge import (
     CompositeKnowledgeStore,
     EmptyKnowledgeStore,
@@ -46,7 +47,7 @@ def create_llm_client(backend: str | None = None) -> LlmClient:
         from sub_llm.hybrid_client import HybridGeminiLlmClient
 
         return HybridGeminiLlmClient.from_env()
-    if selected == "gemini" and _env_bool("LLM_WEB_SEARCH", True):
+    if selected == "gemini" and grounding_client_enabled():
         from sub_llm.gemini_grounded import GeminiGroundedLlmClient
 
         return GeminiGroundedLlmClient.from_env()
@@ -59,18 +60,42 @@ def _chroma_dir() -> str:
     return (os.environ.get("LLM_CHROMA_DIR", "data/chroma") or "data/chroma").strip()
 
 
+# Chroma 摘要同步視窗預設值；與 query top-K 解耦，可放大以涵蓋早段記憶。
+_DEFAULT_MEMORY_SYNC_LIMIT = 50
+
+
+def _memory_sync_limit() -> int:
+    """索引進 Chroma 的摘要筆數（同步視窗）。
+
+    與 query top-K（LLM_CHROMA_MEMORY_QUERY_LIMIT）解耦：視窗可放大讓早段記憶
+    仍能被語意召回，查詢時仍只取最相關的 top-K。優先讀 LLM_MEMORY_SYNC_LIMIT，
+    向後相容舊的 LLM_MEMORY_SUMMARY_LIMIT；皆未設時用較大的預設值。
+    """
+    for name in ("LLM_MEMORY_SYNC_LIMIT", "LLM_MEMORY_SUMMARY_LIMIT"):
+        raw = (os.environ.get(name) or "").strip()
+        if not raw:
+            continue
+        try:
+            value = int(raw)
+        except ValueError:
+            continue
+        if value > 0:
+            return value
+    return _DEFAULT_MEMORY_SYNC_LIMIT
+
+
 def _create_summary_store() -> KnowledgeStore:
     _knowledge_backend()
     db_path = os.environ.get("STREAM_DB_PATH", "data/stream_text.db")
     session_id = (os.environ.get("STREAM_SESSION_ID") or "").strip() or None
-    limit = int(os.environ.get("LLM_MEMORY_SUMMARY_LIMIT", "10"))
+    sync_limit = _memory_sync_limit()
     memory_query_limit = int(os.environ.get("LLM_CHROMA_MEMORY_QUERY_LIMIT", "5"))
     store = StreamTextStore(db_path)
     return ChromaSummaryKnowledgeStore(
         store,
         session_id,
         chroma_dir=_chroma_dir(),
-        limit=limit,
+        limit=sync_limit,
         max_results=memory_query_limit,
     )
 

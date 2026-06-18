@@ -1,0 +1,14 @@
+[
+  {
+    "question": "主播用什麼麥克風？",
+    "channel": "demo",
+    "expect": ["麥克風"],
+    "any_of": true
+  },
+  {
+    "question": "今天直播在玩什麼遊戲？",
+    "channel": "demo",
+    "expect": ["遊戲"],
+    "any_of": true
+  }
+]

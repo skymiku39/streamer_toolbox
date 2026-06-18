@@ -678,7 +678,14 @@ class _RecordingShortTermRag:
         self.indexed: list[tuple[str, str, str]] = []
         self._query_result = query_result
 
-    def query(self, channel: str, question: str) -> str:
+    def query(
+        self,
+        channel: str,
+        question: str,
+        *,
+        exclude_questions: set[str] | None = None,
+    ) -> str:
+        self.last_exclude_questions = exclude_questions
         return self._query_result
 
     def index(

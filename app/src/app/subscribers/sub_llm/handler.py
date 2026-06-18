@@ -12,12 +12,14 @@ from events import (
     TOPIC_CHAT_REPLY,
     TOPIC_CONFIG_CHANGED,
     TOPIC_MEMORY_QA_RECORD,
+    TOPIC_MEMORY_SUMMARY_READY,
     TOPIC_STREAM_METADATA,
     TOPIC_STT_SEGMENT,
     ChatMessageEvent,
     ChatReplyEvent,
     ConfigChangedEvent,
     MemoryQaRecordEvent,
+    MemorySummaryReadyEvent,
     StreamMetadataEvent,
     SttSegmentEvent,
 )
@@ -106,12 +108,45 @@ class LlmSubscriber:
         if topic == TOPIC_CONFIG_CHANGED:
             self._handle_config_changed(payload)
             return
+        if topic == TOPIC_MEMORY_SUMMARY_READY:
+            self._handle_memory_summary_ready(payload)
+            return
         if topic == TOPIC_STT_SEGMENT:
             self._handle_stt_segment(payload)
         elif topic == TOPIC_STREAM_METADATA:
             self._handle_stream_metadata(payload)
         elif topic == TOPIC_CHAT_MESSAGE:
             self._handle_chat_message(payload)
+
+    def _handle_memory_summary_ready(self, payload: dict[str, Any]) -> None:
+        """摘要就緒時主動索引到 Chroma，讓 !ask 查詢路徑不必負擔同步延遲。"""
+        sync = getattr(self._knowledge, "sync", None)
+        if not callable(sync):
+            return
+        try:
+            event = MemorySummaryReadyEvent.from_dict(payload)
+        except (KeyError, ValueError) as exc:
+            print(
+                f"[sub-llm] skip invalid memory.summary.ready: {exc}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return
+        try:
+            sync(event.session_id)
+        except Exception as exc:  # noqa: BLE001 - 索引失敗不應中斷訂閱
+            print(
+                f"[sub-llm] memory index failed session={event.session_id}: {exc}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return
+        print(
+            f"[sub-llm] memory indexed session={event.session_id} "
+            f"source={event.source} summary_id={event.summary_id}",
+            file=sys.stderr,
+            flush=True,
+        )
 
     def _handle_stream_metadata(self, payload: dict[str, Any]) -> None:
         event = StreamMetadataEvent.from_dict(payload)
@@ -231,8 +266,12 @@ class LlmSubscriber:
                 )
             knowledge = self._knowledge.query(filtered_question, channel=channel)
             short_term_hit = False
-            if self._short_term_rag is not None and bot_reply_count == 0:
-                short_term = self._short_term_rag.query(channel, filtered_question)
+            if self._short_term_rag is not None:
+                short_term = self._short_term_rag.query(
+                    channel,
+                    filtered_question,
+                    exclude_questions=self._context_buffer.recent_bot_questions(channel),
+                )
                 if short_term:
                     short_term_hit = True
                     knowledge = f"{short_term}\n{knowledge}" if knowledge else short_term

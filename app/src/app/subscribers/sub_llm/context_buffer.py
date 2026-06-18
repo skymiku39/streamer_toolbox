@@ -91,6 +91,17 @@ class BotReplyContextBuffer:
         with self._lock:
             return len(self._replies_by_channel.get(key, []))
 
+    def recent_questions(self, channel: str) -> set[str]:
+        """目前緩衝中的問句（casefold 後），供短期 RAG 去重避免重複注入。"""
+        key = normalize_channel(channel)
+        with self._lock:
+            replies = list(self._replies_by_channel.get(key, []))
+        return {
+            reply.question.strip().casefold()
+            for reply in replies
+            if reply.question.strip()
+        }
+
     def _prune_locked(self, channel: str) -> None:
         replies = self._replies_by_channel.get(channel)
         if not replies:
@@ -348,6 +359,9 @@ class LiveContextBuffer:
 
     def live_game_name(self, channel: str) -> str | None:
         return self._stream.live_game_name(channel)
+
+    def recent_bot_questions(self, channel: str) -> set[str]:
+        return self._bot_replies.recent_questions(channel)
 
     def reconfigure(
         self,

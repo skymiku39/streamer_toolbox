@@ -10,7 +10,9 @@ _OPENAI_BASE = "https://api.openai.com/v1"
 DEFAULT_ASK_MODEL_GEMINI = "gemini-2.5-flash"
 DEFAULT_ASK_MODEL_OPENAI = "gpt-4o-mini"
 DEFAULT_AGENT_MODEL_GEMINI = "gemini-2.0-flash-lite"
-DEFAULT_MEMORY_MODEL_GEMINI = "gemini-2.5-pro"
+# 免費層：日常 L2 摘要預設用 Flash（Pro 每日僅 50 RPD，保留給收台深度摘要）。
+# 需高品質推理時，設 MEMORY_LLM_MODEL=gemini-2.5-pro 即可手動切回 Pro。
+DEFAULT_MEMORY_MODEL_GEMINI = "gemini-2.5-flash"
 DEFAULT_MEMORY_MODEL_OPENAI = "gpt-4o"
 
 

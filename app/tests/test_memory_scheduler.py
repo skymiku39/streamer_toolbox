@@ -30,3 +30,16 @@ def test_trigger_handle_passes_session_id() -> None:
     handle.signal(session_id="sess-1")
     assert handle.consume_session_id() == "sess-1"
     assert handle.consume_session_id() is None
+
+
+def test_trigger_handle_carries_deep_flag() -> None:
+    handle = MemoryTriggerHandle()
+    handle.signal(session_id="sess-1", deep=True)
+    assert handle.consume_deep() is True
+    assert handle.consume_deep() is False
+
+
+def test_trigger_handle_deep_defaults_false() -> None:
+    handle = MemoryTriggerHandle()
+    handle.signal(session_id="sess-1")
+    assert handle.consume_deep() is False

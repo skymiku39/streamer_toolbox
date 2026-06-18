@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS summaries (
     content TEXT NOT NULL,
     created_at TEXT NOT NULL,
     record_count INTEGER NOT NULL DEFAULT 0,
+    category TEXT NOT NULL DEFAULT '',
     FOREIGN KEY (session_id) REFERENCES stream_sessions(id)
 );
 
@@ -59,7 +60,19 @@ class StreamTextStore:
         self._conn = sqlite3.connect(self._path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(_SCHEMA)
+        self._migrate_summary_columns()
         self._conn.commit()
+
+    def _migrate_summary_columns(self) -> None:
+        """為既有 DB 的 summaries 補上後加欄位（向後相容）。"""
+        existing = {
+            str(row["name"])
+            for row in self._conn.execute("PRAGMA table_info(summaries)").fetchall()
+        }
+        if "category" not in existing:
+            self._conn.execute(
+                "ALTER TABLE summaries ADD COLUMN category TEXT NOT NULL DEFAULT ''"
+            )
 
     @property
     def path(self) -> Path:
@@ -249,15 +262,26 @@ class StreamTextStore:
         source: str,
         content: str,
         record_count: int,
+        category: str = "",
     ) -> Summary:
         created_at = datetime.now(UTC).isoformat()
         cursor = self._conn.execute(
             """
             INSERT INTO summaries
-                (session_id, period_start, period_end, source, content, created_at, record_count)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (session_id, period_start, period_end, source, content,
+                 created_at, record_count, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (session_id, period_start, period_end, source, content, created_at, record_count),
+            (
+                session_id,
+                period_start,
+                period_end,
+                source,
+                content,
+                created_at,
+                record_count,
+                category,
+            ),
         )
         self._conn.commit()
         summary_id = int(cursor.lastrowid)
@@ -270,6 +294,7 @@ class StreamTextStore:
             content=content,
             created_at=created_at,
             record_count=record_count,
+            category=category,
         )
 
     def list_summaries(
@@ -283,7 +308,7 @@ class StreamTextStore:
         rows = self._conn.execute(
             f"""
             SELECT id, session_id, period_start, period_end,
-                   source, content, created_at, record_count
+                   source, content, created_at, record_count, category
             FROM summaries
             WHERE session_id = ?
             ORDER BY created_at {order}
@@ -412,4 +437,5 @@ def _row_to_summary(row: sqlite3.Row) -> Summary:
         content=str(row["content"]),
         created_at=str(row["created_at"]),
         record_count=int(row["record_count"]),
+        category=str(row["category"]) if "category" in row.keys() else "",
     )

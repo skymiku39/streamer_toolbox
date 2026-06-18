@@ -8,6 +8,7 @@ import threading
 from pathlib import Path
 from typing import Any, Protocol
 
+from stream_store.session import normalize_channel
 from sub_llm.embedding import resolve_embedding_function
 from sub_llm.knowledge import iter_text_documents
 from sub_llm.live_activity import is_current_activity_question
@@ -36,11 +37,35 @@ _MEMORY_INDEX_SCHEMA = "2"
 _CROSS_SESSION_CATEGORIES = (CATEGORY_FACT, CATEGORY_LORE)
 
 
+def _first_distances(raw: Any, count: int) -> list[float | None]:
+    """從 Chroma 查詢結果取出第一組 distances，並對齊文件數量（不足補 None）。"""
+    rows = raw or [[]]
+    values = list(rows[0]) if rows else []
+    aligned: list[float | None] = []
+    for index in range(count):
+        if index < len(values) and values[index] is not None:
+            try:
+                aligned.append(float(values[index]))
+            except (TypeError, ValueError):
+                aligned.append(None)
+        else:
+            aligned.append(None)
+    return aligned
+
+
 def _collection_embedding_kwargs() -> dict[str, Any]:
     embedding_function = resolve_embedding_function()
     if embedding_function is None:
         return {}
     return {"embedding_function": embedding_function}
+
+
+def _channel_from_session(session_id: str) -> str:
+    """從 session_id（{channel}_{YYYYMMDD}）回推 normalized channel；無法判斷時回傳空字串。"""
+    prefix, _, suffix = session_id.rpartition("_")
+    if prefix and len(suffix) == 8 and suffix.isdigit():
+        return prefix
+    return ""
 
 
 class PreloadableKnowledgeStore(Protocol):
@@ -221,6 +246,7 @@ class ChromaSummaryKnowledgeStore:
         max_results: int = 5,
         max_snippet_chars: int = 4000,
         include_qa_memory: bool | None = None,
+        cross_session_lore: bool = True,
     ) -> None:
         from app.subscribers.qa_memory_mode import qa_memory_read_enabled
 
@@ -233,6 +259,7 @@ class ChromaSummaryKnowledgeStore:
         self._include_qa_memory = (
             qa_memory_read_enabled() if include_qa_memory is None else include_qa_memory
         )
+        self._cross_session_lore = cross_session_lore
         self._collection: Any | None = None
         self._client: Any | None = None
         self._preload_lock = threading.Lock()
@@ -291,7 +318,29 @@ class ChromaSummaryKnowledgeStore:
             encoding="utf-8",
         )
 
-    def _sync_session_summaries(self, session_id: str) -> None:
+    def sync(self, session_id: str, *, channel: str = "") -> None:
+        """主動為指定 session 索引摘要；可由事件驅動（memory.summary.ready）呼叫。"""
+        if not self._preloaded:
+            self.preload()
+        self._sync_session_summaries(session_id, channel=channel)
+
+    def _purge_stale_summaries(self, session_id: str, keep_ids: set[str]) -> None:
+        """刪除已跌出同步視窗（或來源被過濾）的舊向量，避免檢索到過期片段。"""
+        if self._collection is None:
+            return
+        try:
+            existing = self._collection.get(where={"session_id": session_id})
+            existing_ids = list(existing.get("ids") or [])
+            stale = [doc_id for doc_id in existing_ids if doc_id not in keep_ids]
+            if stale:
+                self._collection.delete(ids=stale)
+                logger.info(
+                    "Chroma 記憶庫清除過期向量 session=%s 共 %d 筆", session_id, len(stale)
+                )
+        except Exception as exc:
+            logger.debug("Chroma 記憶清除過期向量失敗: %s", exc)
+
+    def _sync_session_summaries(self, session_id: str, *, channel: str = "") -> None:
         if self._collection is None:
             return
 
@@ -302,8 +351,10 @@ class ChromaSummaryKnowledgeStore:
         fingerprint = _fingerprint_summaries(chronological)
         if self._read_memory_fingerprints().get(session_id) == fingerprint:
             return
-        if not chronological:
-            return
+
+        normalized_channel = (
+            normalize_channel(channel) if channel else _channel_from_session(session_id)
+        )
 
         ids: list[str] = []
         documents: list[str] = []
@@ -324,16 +375,17 @@ class ChromaSummaryKnowledgeStore:
             metadatas.append(
                 {
                     "session_id": session_id,
+                    "channel": normalized_channel,
                     "source": summary.source,
                     "period_end": summary.period_end,
                     "category": category,
                 }
             )
 
-        if not ids:
-            return
-
-        self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        # 即使本次無摘要（例如 qa 全被過濾）仍要清除既有過期向量並落地 fingerprint。
+        self._purge_stale_summaries(session_id, set(ids))
+        if ids:
+            self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
         self._write_memory_fingerprint(session_id, fingerprint)
         logger.info("Chroma 記憶庫已同步 session=%s 共 %d 筆摘要", session_id, len(chronological))
 
@@ -355,18 +407,26 @@ class ChromaSummaryKnowledgeStore:
         if session_id is None:
             return ""
 
-        self._sync_session_summaries(session_id)
+        self._sync_session_summaries(session_id, channel=channel)
         try:
             result = self._collection.query(
                 query_texts=[question],
                 n_results=self._max_results,
                 where={"session_id": session_id},
             )
-            documents = (result.get("documents") or [[]])[0]
-            metadatas = (result.get("metadatas") or [[]])[0]
+            documents = list((result.get("documents") or [[]])[0])
+            metadatas = list((result.get("metadatas") or [[]])[0])
+            distances = _first_distances(result.get("distances"), len(documents))
         except Exception as exc:
             logger.debug("Chroma 記憶查詢失敗: %s", exc)
             return ""
+
+        cross_docs, cross_metas, cross_dists = self._query_cross_session_lore(
+            question, channel=channel, exclude_session_id=session_id
+        )
+        documents.extend(cross_docs)
+        metadatas.extend(cross_metas)
+        distances.extend(cross_dists)
 
         exclude_qa_memory = (
             not self._include_qa_memory
@@ -376,15 +436,18 @@ class ChromaSummaryKnowledgeStore:
         if exclude_qa_memory:
             filtered_docs: list[str] = []
             filtered_metas: list[dict[str, str]] = []
-            for doc, meta in zip(documents, metadatas, strict=False):
+            filtered_dists: list[float | None] = []
+            for doc, meta, dist in zip(documents, metadatas, distances, strict=False):
                 if (meta or {}).get("source") == "qa":
                     continue
                 filtered_docs.append(doc)
                 filtered_metas.append(meta or {})
+                filtered_dists.append(dist)
             documents = filtered_docs
             metadatas = filtered_metas
+            distances = filtered_dists
 
-        unique = rank_memory_snippets(documents, metadatas)
+        unique = rank_memory_snippets(documents, metadatas, distances)
         if not unique:
             return ""
         snippets = [format_memory_snippet_for_prompt(doc) for doc in unique]
@@ -392,3 +455,46 @@ class ChromaSummaryKnowledgeStore:
         if len(text) <= self._max_snippet_chars:
             return text
         return text[: self._max_snippet_chars - 3] + "..."
+
+    def _query_cross_session_lore(
+        self,
+        question: str,
+        *,
+        channel: str,
+        exclude_session_id: str,
+    ) -> tuple[list[str], list[dict[str, str]], list[float | None]]:
+        """跨 session 檢索同頻道高可信度記憶（事實／固定梗），不受當前 session 限制。"""
+        if self._collection is None or not self._cross_session_lore:
+            return [], [], []
+        normalized_channel = normalize_channel(channel) if channel else ""
+        if not normalized_channel:
+            return [], [], []
+        try:
+            result = self._collection.query(
+                query_texts=[question],
+                n_results=self._max_results,
+                where={
+                    "$and": [
+                        {"channel": normalized_channel},
+                        {"category": {"$in": list(_CROSS_SESSION_CATEGORIES)}},
+                    ]
+                },
+            )
+            documents = list((result.get("documents") or [[]])[0])
+            metadatas = list((result.get("metadatas") or [[]])[0])
+            distances = _first_distances(result.get("distances"), len(documents))
+        except Exception as exc:
+            logger.debug("Chroma 跨 session 記憶查詢失敗: %s", exc)
+            return [], [], []
+
+        kept_docs: list[str] = []
+        kept_metas: list[dict[str, str]] = []
+        kept_dists: list[float | None] = []
+        for doc, meta, dist in zip(documents, metadatas, distances, strict=False):
+            meta = meta or {}
+            if meta.get("session_id") == exclude_session_id:
+                continue
+            kept_docs.append(doc)
+            kept_metas.append(meta)
+            kept_dists.append(dist)
+        return kept_docs, kept_metas, kept_dists

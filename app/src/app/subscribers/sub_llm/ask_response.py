@@ -13,6 +13,7 @@ class AskResponse:
     store_worthy: bool = False
     memory_value: int = 0
     memory_note: str = ""
+    category: str = ""
 
 
 def structured_output_guidance(max_content_chars: int | None = None) -> str:
@@ -25,14 +26,18 @@ def structured_output_guidance(max_content_chars: int | None = None) -> str:
     )
     if limit <= 0:
         limit = DEFAULT_REPLY_MAX_LENGTH
+    from sub_llm.memory_category import classification_guidance
+
     return (
         "【輸出格式】僅回傳 JSON（勿 Markdown code fence），欄位："
         '{"reply":"給觀眾的繁體回覆","store_worthy":true/false,'
-        '"memory_value":1-5,"memory_note":"供日後 RAG 的精簡摘要（繁體）"}。'
+        '"memory_value":1-5,"memory_note":"供日後 RAG 的精簡摘要（繁體）",'
+        '"category":"fact|decision|progress|lore|gossip|discussion|chore"}。'
         f"reply 正文不超過 {limit} 字（不含 @ 與標點），語意須完整收尾。"
         "store_worthy 僅在對本頻道後續有幫助時為 true（遊戲進度、頻道梗、主播決策）；"
         "通用百科、一次性測試、價值低者設 false 且 memory_value≤2。"
         "store_worthy 為 false 時 memory_note 可留空字串。"
+        + classification_guidance()
     )
 
 
@@ -44,8 +49,15 @@ def gemini_ask_response_schema() -> dict:
             "store_worthy": {"type": "boolean"},
             "memory_value": {"type": "integer"},
             "memory_note": {"type": "string"},
+            "category": {"type": "string"},
         },
-        "required": ["reply", "store_worthy", "memory_value", "memory_note"],
+        "required": [
+            "reply",
+            "store_worthy",
+            "memory_value",
+            "memory_note",
+            "category",
+        ],
     }
 
 
@@ -96,11 +108,14 @@ def parse_ask_response(raw: str) -> AskResponse:
         if isinstance(data, dict):
             reply = _extract_plain_text_from_json_dict(data)
             if reply:
+                from sub_llm.memory_category import normalize_category
+
                 return AskResponse(
                     reply=reply,
                     store_worthy=bool(data.get("store_worthy", False)),
                     memory_value=max(0, int(data.get("memory_value", 0))),
                     memory_note=str(data.get("memory_note", "")).strip(),
+                    category=normalize_category(data.get("category")),
                 )
 
     return AskResponse(reply=text)

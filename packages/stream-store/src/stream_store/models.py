@@ -25,6 +25,7 @@ class Summary:
     content: str
     created_at: str
     record_count: int
+    category: str = ""
 
 
 @dataclass(frozen=True)

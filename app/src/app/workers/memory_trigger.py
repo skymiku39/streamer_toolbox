@@ -4,7 +4,7 @@ import sys
 import threading
 from dataclasses import dataclass, field
 
-from events import TOPIC_MEMORY_SUMMARIZE_REQUEST, MemorySummarizeRequestEvent
+from events import DEPTH_PRO, TOPIC_MEMORY_SUMMARIZE_REQUEST, MemorySummarizeRequestEvent
 
 from bus.config import rabbitmq_url, stream_exchange
 from bus.rabbitmq import (
@@ -23,11 +23,13 @@ class MemoryTriggerHandle:
     _event: threading.Event = field(default_factory=threading.Event)
     _lock: threading.Lock = field(default_factory=threading.Lock)
     _pending_session_id: str | None = None
+    _pending_deep: bool = False
 
-    def signal(self, *, session_id: str | None = None) -> None:
+    def signal(self, *, session_id: str | None = None, deep: bool = False) -> None:
         with self._lock:
             if session_id:
                 self._pending_session_id = session_id
+            self._pending_deep = self._pending_deep or deep
             self._event.set()
 
     def wait(self, timeout: float) -> bool:
@@ -41,6 +43,12 @@ class MemoryTriggerHandle:
             session_id = self._pending_session_id
             self._pending_session_id = None
         return session_id
+
+    def consume_deep(self) -> bool:
+        with self._lock:
+            deep = self._pending_deep
+            self._pending_deep = False
+        return deep
 
 
 class MemoryTriggerListener:
@@ -91,11 +99,14 @@ class MemoryTriggerListener:
             session_hint = event.session_id or "(auto)"
             print(
                 f"[memory-worker] trigger received source={event.source!r} "
-                f"reason={event.reason!r} session={session_hint}",
+                f"reason={event.reason!r} depth={event.depth!r} session={session_hint}",
                 file=sys.stderr,
                 flush=True,
             )
-            self._handle.signal(session_id=event.session_id)
+            self._handle.signal(
+                session_id=event.session_id,
+                deep=event.depth == DEPTH_PRO,
+            )
 
         print(
             f"[memory-worker] listening for {TOPIC_MEMORY_SUMMARIZE_REQUEST}",
@@ -120,11 +131,13 @@ def publish_memory_summarize_trigger(
     session_id: str | None = None,
     reason: str = "manual",
     source: str = "cli",
+    depth: str = "normal",
 ) -> None:
     event = MemorySummarizeRequestEvent.build(
         session_id=session_id,
         reason=reason,
         source=source,
+        depth=depth,
     )
     connection = connect_blocking(rabbitmq_url())
     channel = connection.channel()

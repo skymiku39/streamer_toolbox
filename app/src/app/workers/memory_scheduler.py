@@ -27,4 +27,5 @@ def run_scheduled_worker(
     while True:
         wait_for_interval_or_trigger(handle, interval_sec)
         session_id = handle.consume_session_id()
-        worker.run_once(session_id=session_id)
+        deep = handle.consume_deep()
+        worker.run_once(session_id=session_id, deep=deep)

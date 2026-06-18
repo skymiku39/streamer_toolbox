@@ -26,6 +26,25 @@ def test_build_defaults() -> None:
     assert event.session_id is None
     assert event.reason == "manual"
     assert event.source == "cli"
+    assert event.depth == "normal"
+
+
+def test_depth_defaults_to_normal_when_absent() -> None:
+    event = MemorySummarizeRequestEvent.from_dict(_sample_payload())
+    assert event.depth == "normal"
+
+
+def test_depth_pro_round_trip() -> None:
+    event = MemorySummarizeRequestEvent.build(depth="pro")
+    restored = MemorySummarizeRequestEvent.from_json(event.to_json())
+    assert restored.depth == "pro"
+
+
+def test_invalid_depth_rejected() -> None:
+    payload = _sample_payload()
+    payload["depth"] = "ultra"
+    with pytest.raises(ValueError):
+        MemorySummarizeRequestEvent.from_dict(payload)
 
 
 @pytest.mark.parametrize("field_name", ["timestamp", "reason", "source"])

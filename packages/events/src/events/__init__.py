@@ -6,7 +6,11 @@ from events.chat_reply import ChatReplyEvent
 from events.config_changed import ConfigChangedEvent
 from events.eventsub_event import EVENTSUB_EVENT_TYPES, EventSubEvent, eventsub_topic
 from events.memory_qa_record import MemoryQaRecordEvent
-from events.memory_summarize_request import MemorySummarizeRequestEvent
+from events.memory_summarize_request import (
+    DEPTH_NORMAL,
+    DEPTH_PRO,
+    MemorySummarizeRequestEvent,
+)
 from events.memory_summary_ready import MemorySummaryReadyEvent
 from events.stream_metadata import StreamMetadataEvent
 from events.stt_segment import SttSegmentEvent
@@ -58,6 +62,8 @@ __all__ = [
     "SOURCE_LOGIC_STATUS",
     "MemoryQaRecordEvent",
     "MemorySummarizeRequestEvent",
+    "DEPTH_NORMAL",
+    "DEPTH_PRO",
     "MemorySummaryReadyEvent",
     "SttSegmentEvent",
     "StreamMetadataEvent",

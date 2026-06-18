@@ -19,7 +19,7 @@ from app.llm_tiers import LlmTier, resolve_tier
 from app.publishing.summary_publisher import create_summary_publisher
 from app.workers.memory_config import DEFAULT_MEMORY_INTERVAL_MINUTES, MemoryWorkerConfig
 from app.workers.memory_scheduler import run_scheduled_worker
-from app.workers.memory_summarizer import create_summarizer
+from app.workers.memory_summarizer import create_deep_summarizer, create_summarizer
 from app.workers.memory_trigger import (
     MemoryTriggerHandle,
     MemoryTriggerListener,
@@ -132,6 +132,16 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.add_argument(
 
+        "--deep",
+
+        action="store_true",
+
+        help="搭配 --trigger：請求一次 Pro 深度摘要（depth=pro，使用 MEMORY_DEEP_MODEL）",
+
+    )
+
+    parser.add_argument(
+
         "--no-trigger-listen",
 
         action="store_true",
@@ -164,7 +174,11 @@ def main(argv: list[str] | None = None) -> int:
 
         try:
 
-            publish_memory_summarize_trigger(session_id=session_id, source="cli")
+            publish_memory_summarize_trigger(
+                session_id=session_id,
+                source="cli",
+                depth="pro" if args.deep else "normal",
+            )
 
         except Exception as exc:
 
@@ -187,10 +201,12 @@ def main(argv: list[str] | None = None) -> int:
             llm_backend=args.llm_backend,
             batch_limit=config.batch_limit,
             record_mode=config.record_mode,
+            merge_summary=config.merge_summary,
         )
 
         try:
             summarizer = create_summarizer(config.llm_backend)
+            deep_summarizer = create_deep_summarizer(config.llm_backend)
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1
@@ -199,6 +215,9 @@ def main(argv: list[str] | None = None) -> int:
         if config.llm_backend in {"openai", "gemini"}:
             tier = resolve_tier(LlmTier.MEMORY, memory_backend=config.llm_backend)
             tier_log = f" {tier.log_label()}"
+            if deep_summarizer is not None:
+                deep_model = os.environ.get("MEMORY_DEEP_MODEL", "").strip()
+                tier_log = f"{tier_log} deep_model={deep_model}"
 
         store = StreamTextStore(config.db_path)
         worker = MemoryWorker(
@@ -206,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
             config,
             summarizer,
             summary_publisher=create_summary_publisher(),
+            deep_summarizer=deep_summarizer,
         )
         trigger_listen = not args.no_trigger_listen and _env_bool("MEMORY_TRIGGER_LISTEN", True)
 

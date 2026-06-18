@@ -42,6 +42,20 @@ def test_create_llm_client_gemini_without_web_search_uses_openai_compat(monkeypa
     assert isinstance(client, OpenAiCompatibleLlmClient)
 
 
+def test_create_llm_client_gemini_auto_uses_grounded_client(monkeypatch) -> None:
+    monkeypatch.setenv("GOOGLE_AI_API_KEY", "google-key")
+    monkeypatch.setenv("LLM_WEB_SEARCH", "auto")
+    client = create_llm_client("gemini")
+    assert isinstance(client, GeminiGroundedLlmClient)
+
+
+def test_create_llm_client_gemini_unset_web_search_uses_openai_compat(monkeypatch) -> None:
+    monkeypatch.setenv("GOOGLE_AI_API_KEY", "google-key")
+    monkeypatch.delenv("LLM_WEB_SEARCH", raising=False)
+    client = create_llm_client("gemini")
+    assert isinstance(client, OpenAiCompatibleLlmClient)
+
+
 def test_create_knowledge_store_db_only_uses_chroma_rag(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("STREAM_DB_PATH", str(tmp_path / "test.db"))
     monkeypatch.setenv("LLM_MEMORY_FROM_DB", "true")

@@ -6,7 +6,7 @@ from functools import partial
 
 from app.publishing.summary_publisher import NoOpSummaryPublisher, SummaryPublisher
 from app.workers.memory_config import MemoryWorkerConfig
-from app.workers.memory_summarizer import Summarizer
+from app.workers.memory_summarizer import Summarizer, SummaryDraft
 from stream_store import StreamTextStore, resolve_session_for_channel
 from stream_store.models import TextRecord
 
@@ -19,20 +19,31 @@ class MemoryWorker:
         summarizer: Summarizer,
         *,
         summary_publisher: SummaryPublisher | None = None,
+        deep_summarizer: Summarizer | None = None,
     ) -> None:
         self._store = store
         self._config = config
         self._summarizer = summarizer
+        self._deep_summarizer = deep_summarizer
         self._summary_publisher = summary_publisher or NoOpSummaryPublisher()
 
-    def run_once(self, *, session_id: str | None = None) -> int:
+    def _select_summarizer(self, deep: bool) -> Summarizer:
+        if deep and self._deep_summarizer is not None:
+            return self._deep_summarizer
+        return self._summarizer
+
+    def run_once(self, *, session_id: str | None = None, deep: bool = False) -> int:
         resolved_session_id = session_id or self._resolve_session_id()
         if resolved_session_id is None:
             print("[memory-worker] no session yet; waiting for records", file=sys.stderr)
             return 0
 
+        summarizer = self._select_summarizer(deep)
+        if deep and self._deep_summarizer is not None:
+            print("[memory-worker] deep summary cycle (pro tier)", file=sys.stderr, flush=True)
+
         if self._config.record_mode == "both":
-            return self._summarize_both_aligned(resolved_session_id)
+            return self._summarize_both_aligned(resolved_session_id, summarizer)
 
         processed = 0
         if self._config.include_chat:
@@ -40,18 +51,18 @@ class MemoryWorker:
                 resolved_session_id,
                 source="chat",
                 fetch=partial(self._store.fetch_unsummarized_chat, channel=self._config.channel),
-                summarize=self._summarizer.summarize_chat,
+                summarize=summarizer.summarize_chat,
             )
         if self._config.include_stt:
             processed += self._summarize_source(
                 resolved_session_id,
                 source="stt",
                 fetch=partial(self._store.fetch_unsummarized_stt, channel=self._config.channel),
-                summarize=self._summarizer.summarize_stt,
+                summarize=summarizer.summarize_stt,
             )
         return processed
 
-    def _summarize_both_aligned(self, session_id: str) -> int:
+    def _summarize_both_aligned(self, session_id: str, summarizer: Summarizer) -> int:
         """依合併時間軸取一批紀錄，chat / stt 分開摘要但共用同一 period。"""
         batch = self._store.fetch_unsummarized_merged(
             session_id,
@@ -68,24 +79,49 @@ class MemoryWorker:
         stt_records = [record for record in batch if record.source == "stt"]
 
         processed = 0
-        if chat_records:
-            processed += self._save_summary(
+        if self._config.merge_summary and chat_records and stt_records:
+            chat_draft, stt_draft = summarizer.summarize_both(chat_records, stt_records)
+            print(
+                f"[memory-worker] merged summary chat={len(chat_records)} "
+                f"stt={len(stt_records)} (single LLM call)",
+                file=sys.stderr,
+                flush=True,
+            )
+            processed += self._persist_summary(
                 session_id,
                 source="chat",
                 records=chat_records,
                 period_start=period_start,
                 period_end=period_end,
-                summarize=self._summarizer.summarize_chat,
+                draft=chat_draft,
             )
-        if stt_records:
-            processed += self._save_summary(
+            processed += self._persist_summary(
                 session_id,
                 source="stt",
                 records=stt_records,
                 period_start=period_start,
                 period_end=period_end,
-                summarize=self._summarizer.summarize_stt,
+                draft=stt_draft,
             )
+        else:
+            if chat_records:
+                processed += self._save_summary(
+                    session_id,
+                    source="chat",
+                    records=chat_records,
+                    period_start=period_start,
+                    period_end=period_end,
+                    summarize=summarizer.summarize_chat,
+                )
+            if stt_records:
+                processed += self._save_summary(
+                    session_id,
+                    source="stt",
+                    records=stt_records,
+                    period_start=period_start,
+                    period_end=period_end,
+                    summarize=summarizer.summarize_stt,
+                )
 
         self._store.mark_summarized([record.id for record in batch])
         return processed
@@ -96,7 +132,7 @@ class MemoryWorker:
         *,
         source: str,
         fetch: Callable[..., list[TextRecord]],
-        summarize: Callable[[list[TextRecord]], str],
+        summarize: Callable[[list[TextRecord]], SummaryDraft],
     ) -> int:
         records = fetch(session_id, limit=self._config.batch_limit)
         if not records:
@@ -123,22 +159,42 @@ class MemoryWorker:
         records: list[TextRecord],
         period_start: str,
         period_end: str,
-        summarize: Callable[[list[TextRecord]], str],
+        summarize: Callable[[list[TextRecord]], SummaryDraft],
     ) -> int:
-        content = summarize(records)
+        return self._persist_summary(
+            session_id,
+            source=source,
+            records=records,
+            period_start=period_start,
+            period_end=period_end,
+            draft=summarize(records),
+        )
+
+    def _persist_summary(
+        self,
+        session_id: str,
+        *,
+        source: str,
+        records: list[TextRecord],
+        period_start: str,
+        period_end: str,
+        draft: SummaryDraft,
+    ) -> int:
         summary = self._store.save_summary(
             session_id=session_id,
             period_start=period_start,
             period_end=period_end,
             source=source,
-            content=content,
+            content=draft.content,
             record_count=len(records),
+            category=draft.category,
         )
         self._summary_publisher.publish(summary)
         channel_hint = self._config.channel or records[0].channel
         print(
             f"[memory-worker] summary id={summary.id} session={session_id} channel={channel_hint} "
-            f"source={source} records={len(records)} period={period_start}..{period_end}",
+            f"source={source} records={len(records)} category={draft.category or '-'} "
+            f"period={period_start}..{period_end}",
             file=sys.stderr,
             flush=True,
         )

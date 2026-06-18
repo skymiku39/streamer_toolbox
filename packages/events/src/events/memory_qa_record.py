@@ -25,6 +25,7 @@ class MemoryQaRecordEvent:
     store_worthy: bool
     ask_author: str = ""
     session_id: str | None = None
+    category: str = ""
 
     def __post_init__(self) -> None:
         if self.schema_version != SCHEMA_VERSION:
@@ -70,6 +71,7 @@ class MemoryQaRecordEvent:
         store_worthy: bool,
         ask_author: str = "",
         session_id: str | None = None,
+        category: str = "",
     ) -> MemoryQaRecordEvent:
         return cls(
             schema_version=SCHEMA_VERSION,
@@ -85,6 +87,7 @@ class MemoryQaRecordEvent:
             store_worthy=store_worthy,
             ask_author=ask_author.strip(),
             session_id=session_id,
+            category=category.strip(),
         )
 
     @classmethod
@@ -103,6 +106,7 @@ class MemoryQaRecordEvent:
             store_worthy=bool(payload.get("store_worthy", True)),
             ask_author=str(payload.get("ask_author", "")),
             session_id=payload.get("session_id"),
+            category=str(payload.get("category", "")),
         )
 
     @classmethod

@@ -60,7 +60,7 @@ def test_chroma_summary_store_queries_by_session(
     mock_collection.upsert.assert_called_once()
     upsert_metas = mock_collection.upsert.call_args.kwargs["metadatas"]
     assert upsert_metas[0]["period_end"] == "2026-06-12T10:05:00+00:00"
-    mock_collection.query.assert_called_once()
-    where = mock_collection.query.call_args.kwargs["where"]
-    assert where == {"session_id": "room_a_20260612"}
+    # 主查詢以當前 session 為範圍；其後另有跨 session 的事實/梗檢索（B3）。
+    primary_where = mock_collection.query.call_args_list[0].kwargs["where"]
+    assert primary_where == {"session_id": "room_a_20260612"}
     store.close()

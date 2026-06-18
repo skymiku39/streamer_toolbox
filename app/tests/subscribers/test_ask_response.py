@@ -11,6 +11,7 @@ def test_parse_ask_response_from_json() -> None:
             "store_worthy": True,
             "memory_value": 4,
             "memory_note": "精簡記憶",
+            "category": "progress",
         },
         ensure_ascii=False,
     )
@@ -20,7 +21,30 @@ def test_parse_ask_response_from_json() -> None:
         store_worthy=True,
         memory_value=4,
         memory_note="精簡記憶",
+        category="progress",
     )
+
+
+def test_parse_ask_response_missing_category_defaults_to_low_trust() -> None:
+    # 未分類時正規化為最低可信度 discussion，避免被當事實。
+    raw = json.dumps(
+        {
+            "reply": "這是回覆",
+            "store_worthy": True,
+            "memory_value": 4,
+            "memory_note": "精簡記憶",
+        },
+        ensure_ascii=False,
+    )
+    assert parse_ask_response(raw).category == "discussion"
+
+
+def test_parse_ask_response_unknown_category_falls_back() -> None:
+    raw = json.dumps(
+        {"reply": "嗨", "category": "not_a_real_category"},
+        ensure_ascii=False,
+    )
+    assert parse_ask_response(raw).category == "discussion"
 
 
 def test_parse_ask_response_plain_text_fallback() -> None:

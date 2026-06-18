@@ -212,6 +212,37 @@ bash deploy/up.sh
 
 OAuth token 過期：在本機重跑 `first_time_auth.py`，更新 Secret 後 `bash deploy/up.sh`。
 
+## 6.1 免費層 Gemini 配額（重要）
+
+免費層額度跟著 **GCP 專案** 走（非單一 API Key），同專案多把 Key 共用同一配額池。限制有三個維度，任一達標即回 `429`：
+
+| 維度 | 說明 |
+|------|------|
+| RPM | 每分鐘請求次數 |
+| TPM | 每分鐘 Token 數（輸入＋輸出） |
+| RPD | 每日請求次數 |
+
+各模型概略額度（依官方調整，僅供規劃）：
+
+| 模型 | RPM | RPD | 備註 |
+|------|-----|-----|------|
+| `gemini-2.5-flash` / `flash-lite` | 約 10–15 | 約 1,000–1,500 | 主力；Flash 與 Flash-Lite **RPD 共用、RPM 獨立** |
+| `gemini-2.5-pro` | 約 5 | **50** | 配額池**獨立**於 Flash；僅適合低頻高價值任務 |
+| Google Search grounding（2.x） | — | 約 **500 query/月** | 按 AI 實際搜尋的 query 數扣，**非** API 呼叫次數 |
+
+重置：
+
+- RPM / TPM：滾動視窗，暫停約 60 秒即釋放。
+- RPD：太平洋時間午夜（00:00 PT）重置，換算台灣約 **下午 3 點（夏令）/ 下午 4 點（冬令）**。
+
+本專案的免費層對策（見 [.env.example](../.env.example) 免費層區塊）：
+
+- 日常 `!ask` 與定時 L2 摘要一律用 **Flash**；`MEMORY_LLM_MODEL` 預設 Flash。
+- **Pro 保留**給收台/手動深度摘要（`memory.summarize.request` 帶 `depth=pro`），不跑定時迴圈。
+- `LLM_WEB_SEARCH=auto`：僅即時事實類問題才開 grounding，省每月搜尋額度。
+- `LLM_BACKEND=hybrid`：lite agent 命中短期記憶即不打主模型，省 RPD。
+- `RECORD_MODE=both` 時 memory worker **合併 chat/stt 為單次** LLM 呼叫。
+
 ## 7. 成本與監控（建議）
 
 - **Compute**：單台 `e2-standard-2` 常駐即可（純文字）；依直播時數評估是否排程開關機。

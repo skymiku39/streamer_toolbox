@@ -9,7 +9,8 @@ from typing import Any
 
 from app.llm_tiers import LlmTier, require_api_key, resolve_tier
 from sub_llm.ask_response import AskResponse, parse_ask_response
-from sub_llm.observability import log_llm_messages
+from sub_llm.grounding_policy import should_use_grounding
+from sub_llm.observability import log_event, log_llm_messages
 from sub_llm.openai_client import LlmApiError, OpenAiCompatibleLlmClient
 from sub_llm.prompt_assembly import build_ask_messages
 from sub_llm.prompts import resolve_system_prompt
@@ -66,20 +67,33 @@ class GeminiGroundedLlmClient:
             system_prompt=self._system_prompt,
         )
         log_llm_messages(messages, purpose="ask")
+        use_grounding, reason = should_use_grounding(
+            question,
+            knowledge=knowledge,
+            game_reference=game_reference,
+        )
+        log_event("grounding_decision", used=use_grounding, reason=reason)
+        if not use_grounding:
+            return self._fallback.ask(
+                question,
+                context=context,
+                knowledge=knowledge,
+                game_reference=game_reference,
+                session_recap_reference=session_recap_reference,
+            )
+
         user_content = next(m["content"] for m in messages if m["role"] == "user")
         system_content = next(
             (m["content"] for m in messages if m["role"] == "system"),
             self._system_prompt,
         )
         try:
-            raw = self._generate_with_google_search(
+            raw, query_count = self._generate_with_google_search(
                 system_content,
                 user_content,
             )
-            print(
-                "[sub-llm] gemini google_search grounding used",
-                file=sys.stderr,
-                flush=True,
+            log_event(
+                "grounding_used", reason=reason, grounding_queries=query_count
             )
             parsed = parse_ask_response(raw)
             return parsed
@@ -108,7 +122,7 @@ class GeminiGroundedLlmClient:
             trigger_prefixes=trigger_prefixes,
         )
 
-    def _generate_with_google_search(self, system: str, user: str) -> str:
+    def _generate_with_google_search(self, system: str, user: str) -> tuple[str, int]:
         # Google Search 工具與 responseMimeType=application/json 不相容；
         # structured 模式改由 prompt 要求 JSON，再由 parse_ask_response 解析。
         generation_config: dict[str, Any] = {"temperature": 0.7}
@@ -157,4 +171,7 @@ class GeminiGroundedLlmClient:
         content = "\n".join(text for text in texts if text).strip()
         if not content:
             raise LlmApiError("Gemini grounding response missing text")
-        return content
+        metadata = candidates[0].get("groundingMetadata", {})
+        queries = metadata.get("webSearchQueries", []) if isinstance(metadata, dict) else []
+        query_count = len(queries) if isinstance(queries, list) else 0
+        return content, query_count

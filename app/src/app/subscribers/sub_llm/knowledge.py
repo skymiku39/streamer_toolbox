@@ -47,6 +47,12 @@ class CompositeKnowledgeStore:
         parts = [store.query(question, channel=channel).strip() for store in self._stores]
         return GROUP_SEP.join(part for part in parts if part)
 
+    def sync(self, session_id: str, *, channel: str = "") -> None:
+        for store in self._stores:
+            sync = getattr(store, "sync", None)
+            if callable(sync):
+                sync(session_id, channel=channel)
+
 
 class SummaryKnowledgeStore:
     """從 L2 summaries 表讀取同 channel 對應 session 的 chat/stt 摘要（非 RAG，僅供測試）。"""

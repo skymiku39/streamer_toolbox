@@ -180,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     backend_info = resolve_backend_info(args.llm_backend)
-    web_search = (os.environ.get("LLM_WEB_SEARCH", "true") or "true").strip().lower()
+    web_search = (os.environ.get("LLM_WEB_SEARCH", "false") or "false").strip().lower()
     print(
         f"[sub-llm] mode={format_backend_log_tag(args.llm_backend)} "
         f"llm_client={type(llm).__name__} "
