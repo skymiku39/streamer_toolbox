@@ -152,6 +152,33 @@ def check_events_exports(events_init: Path = EVENTS_INIT) -> CheckResult:
     return CheckResult("events_exports", ok, detail, hint)
 
 
+# --- 衛生：根目錄 debug 產物與 scripts agent log 殘留 -------------------
+
+
+# 以拼接構成，避免本檔自身被掃描誤判。
+_AGENT_LOG_MARKER = "#region" + " agent log"
+
+
+def check_repo_hygiene(root: Path = ROOT) -> CheckResult:
+    offenders: list[str] = []
+    offenders.extend(
+        f"{p.name}（根目錄 debug 產物）"
+        for p in root.glob("debug-*")
+        if p.is_file()
+    )
+    for path in sorted((root / "scripts").glob("**/*.py")):
+        if _AGENT_LOG_MARKER in path.read_text(encoding="utf-8"):
+            offenders.append(f"{path.relative_to(root).as_posix()}（agent log 殘留）")
+    ok = not offenders
+    if ok:
+        detail = "無根目錄 debug 產物或 scripts agent log 殘留"
+        hint = ""
+    else:
+        detail = f"發現 {len(offenders)} 處：{', '.join(offenders[:5])}"
+        hint = "請刪除根目錄 debug-* 並移除 scripts/ 內 agent log 偵錯區塊"
+    return CheckResult("repo_hygiene", ok, detail, hint)
+
+
 # --- 契約：控制面 builtin registry ---------------------------------------
 
 
@@ -298,6 +325,7 @@ def run_checks(
         check_events_exports(),
         check_control_builtins(),
         check_registry_drift(root),
+        check_repo_hygiene(root),
     ]
     if not ci:
         checks.append(run_ruff(root))

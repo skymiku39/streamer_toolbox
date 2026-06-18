@@ -1,7 +1,10 @@
-"""分析阿吉語音 ground truth 被 hallucination filter 擋下的原因。"""
+"""分析語音 ground truth（檔名）被 hallucination filter 擋下的原因。
+
+開發用一次性分析，不納入 CI。音檔目錄以 ``--audio-dir`` 指定。
+"""
 from __future__ import annotations
 
-from collections import Counter
+import argparse
 from pathlib import Path
 
 from safety.stt_input import (
@@ -50,7 +53,11 @@ def classify_intent(text: str, reasons: list[str]) -> str:
 
 
 def main() -> None:
-    audio_dir = Path(r"C:\Users\User\Music\阿吉聲音")
+    parser = argparse.ArgumentParser(description="分析檔名 ground truth 被 STT filter 擋下的原因")
+    parser.add_argument("--audio-dir", required=True, help="含 mp3 的音檔目錄")
+    args = parser.parse_args()
+
+    audio_dir = Path(args.audio_dir)
     blocked_rows: list[tuple[str, list[str], str]] = []
     passed: list[str] = []
 
