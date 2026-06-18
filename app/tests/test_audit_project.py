@@ -156,6 +156,7 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "check_events_exports", _ok("d"))
     monkeypatch.setattr(_mod, "check_control_builtins", _ok("e"))
     monkeypatch.setattr(_mod, "check_registry_drift", _ok("f"))
+    monkeypatch.setattr(_mod, "check_repo_hygiene", _ok("g"))
 
     def _record_tool(*_a: object, **_k: object) -> _mod.CheckResult:
         calls.append("tool")
@@ -166,5 +167,5 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "load_verify_setup", lambda *_a, **_k: calls.append("verify"))
 
     results = _mod.run_checks(ci=True)
-    assert [r.name for r in results] == ["a", "b", "c", "d", "e", "f"]
+    assert [r.name for r in results] == ["a", "b", "c", "d", "e", "f", "g"]
     assert calls == []
