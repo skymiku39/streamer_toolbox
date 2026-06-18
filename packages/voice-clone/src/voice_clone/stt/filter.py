@@ -26,8 +26,10 @@ _STRUCTURE_PATTERNS = re.compile(
 )
 
 _FILLER_ONLY = re.compile(
-    r"^(嗯+|啊+|呃+|哦+|噢+|额+|額+|恩+)[\s\.。,，!！?？…]*$",
+    r"^(嗯+|啊{2,}|呃{2,}|哦{2,}|噢{2,}|额{2,}|額{2,}|恩{2,})[\s\.。,，!！?？…]*$",
 )
+
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 
 _DEFAULT_BLOCKLIST = (
     "請訂閱",
@@ -61,6 +63,18 @@ def _normalize_for_match(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip())
 
 
+def _contains_cjk(text: str) -> bool:
+    return _CJK_RE.search(text) is not None
+
+
+def _is_short_latin_noise(text: str) -> bool:
+    raw = _normalize_for_match(text)
+    if len(raw) > 6 or _contains_cjk(raw):
+        return False
+    letters = sum(1 for char in raw if char.isalnum())
+    return letters <= 2
+
+
 def _is_repetitive_hallucination(text: str) -> bool:
     normalized = _normalize_for_match(text)
     if len(normalized) < 12:
@@ -91,7 +105,11 @@ def _matches_blocklist(text: str, phrases: tuple[str, ...]) -> bool:
 
 def is_hallucination_text(text: str, *, blocklist: tuple[str, ...] | None = None) -> bool:
     raw = _normalize_for_match(text)
-    if not raw or len(raw) < 2:
+    if not raw:
+        return True
+    if len(raw) < 2:
+        if len(raw) == 1 and _contains_cjk(raw) and raw != "嗯":
+            return False
         return True
     if _FILLER_ONLY.match(raw):
         return True
@@ -102,8 +120,7 @@ def is_hallucination_text(text: str, *, blocklist: tuple[str, ...] | None = None
     phrases = blocklist if blocklist is not None else _DEFAULT_BLOCKLIST
     if _matches_blocklist(text, phrases):
         return True
-    letters = sum(1 for char in raw if char.isalnum())
-    if len(raw) <= 6 and letters <= 2:
+    if _is_short_latin_noise(text):
         return True
     return False
 

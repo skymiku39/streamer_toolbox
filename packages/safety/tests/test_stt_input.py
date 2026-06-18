@@ -38,6 +38,34 @@ def test_valid_speech_accepted() -> None:
     assert is_hallucination_text("今天天氣真好") is False
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "呵呵",
+        "然後",
+        "神人",
+        "腦殘",
+        "啊",
+        "呃",
+        "欸_",
+        "根本神人",
+    ],
+)
+def test_short_cjk_speech_not_rejected(text: str) -> None:
+    assert is_hallucination_text(text) is False
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "啊啊",
+        "嗯嗯",
+    ],
+)
+def test_repeated_filler_still_rejected(text: str) -> None:
+    assert is_hallucination_text(text) is True
+
+
 def test_stt_input_filter_silence_gate() -> None:
     gate = SttInputFilter(rms_gate=0.05)
     assert gate.is_silent(_pcm_from_amplitude(0.01)) is True
