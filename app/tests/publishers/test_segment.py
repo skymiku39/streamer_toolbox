@@ -1,6 +1,6 @@
 from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
-from ingress_twitch_audio.segment import build_stt_segment_event
+from stt_core import build_stt_segment_event
 from stt_core import TranscriptSegment
 
 

@@ -93,7 +93,7 @@ tts = { workspace = true }
 - ✅ `ttvchat_lens.parse_twitch_channel`（解析 URL/IRC）vs `stream_store.normalize_channel`（小寫去 #）
 
 共用型別與基礎設施應有**單一 canonical 來源**；其餘位置僅作 deprecated re-export 並於 docstring 標註。
-例如 `SttConfig` / `TranscriptSegment` / `StreamingSTTWorker` 一律以 `from stt_core import ...` 為準。
+例如 `SttConfig` / `TranscriptSegment` / `StreamingSTTWorker` 一律以 `from stt_core import ...` 為準（**Sunset Date：2026-06-18**，舊路徑 shim 已移除，見 `packages/stt-core/README.md`）。
 
 刻意的平行套件設計（如 `ttvchat-lens` ↔ `tubechat-lens` 的 `ChatMessage`、`LiveChatReader`）
 屬例外，須登記於 [`scripts/naming_audit.py`](../../scripts/naming_audit.py) 的白名單常數。

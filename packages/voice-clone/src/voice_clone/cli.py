@@ -90,7 +90,7 @@ def clone(
     ref_text: str | None = sample_text
     if not ref_text and stt:
         _require_stt_extra()
-        from voice_clone.stt.config import SttConfig
+        from stt_core import SttConfig
         from voice_clone.stt.worker import OfflineSTTWorker
 
         stt_worker = OfflineSTTWorker(SttConfig.from_env())

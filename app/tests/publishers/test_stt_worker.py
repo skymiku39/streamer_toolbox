@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from ingress_twitch_audio.stt_worker import StreamingSTTWorker
+from stt_core import StreamingSTTWorker
 from safety import SttInputFilter
 from stt_core import SttConfig
 

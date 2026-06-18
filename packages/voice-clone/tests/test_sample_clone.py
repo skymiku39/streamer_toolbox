@@ -7,7 +7,7 @@ import pytest
 from voice_clone.config import Settings
 from voice_clone.inference.checkpoints import resolve_model_bundle
 from voice_clone.inference.sample_ref import resolve_sample_reference
-from voice_clone.stt.segment import TranscriptSegment
+from stt_core import TranscriptSegment
 
 
 def test_resolve_model_bundle_default_name(tmp_path: Path) -> None:
