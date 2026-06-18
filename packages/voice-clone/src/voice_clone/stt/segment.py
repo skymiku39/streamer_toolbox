@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from stt_core import TranscriptSegment
 
-
-@dataclass(frozen=True)
-class TranscriptSegment:
-    text: str
-    start_sec: float
-    end_sec: float
-    confidence: float = 0.0
+__all__ = ["TranscriptSegment"]

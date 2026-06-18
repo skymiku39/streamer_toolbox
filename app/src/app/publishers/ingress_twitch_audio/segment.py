@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from events import TOPIC_STT_SEGMENT, SttSegmentEvent
 
+from stt_core import TranscriptSegment
 
-@dataclass(frozen=True)
-class TranscriptSegment:
-    text: str
-    start_sec: float
-    end_sec: float
-    confidence: float = 0.0
+__all__ = ["TranscriptSegment", "build_stt_segment_event"]
 
 
 def build_stt_segment_event(

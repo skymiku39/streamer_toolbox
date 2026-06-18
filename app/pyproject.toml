@@ -20,6 +20,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "safety",
     "sounddevice>=0.5.0",
+    "stt-core",
     "stream-store",
     "streamer-config",
     "streamlink>=7.0.0",
@@ -45,6 +46,7 @@ events = { workspace = true }
 game-info = { workspace = true }
 identity-oauth = { workspace = true }
 safety = { workspace = true }
+stt-core = { workspace = true }
 stream-store = { workspace = true }
 streamer-config = { workspace = true }
 tts = { workspace = true }
