@@ -112,6 +112,5 @@ def test_chroma_summary_store_excludes_qa_for_current_activity_question(
     )
     snippet = knowledge.query("主播剛剛在幹嘛", channel="room_a")
 
-    assert "777" in snippet or "梗" in snippet
-    assert "蒜頭王八" not in snippet
+    assert snippet == ""
     store.close()

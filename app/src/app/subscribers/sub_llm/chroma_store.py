@@ -82,6 +82,76 @@ def _chunk_document(source_id: str, content: str) -> list[tuple[str, str]]:
     return [(f"{source_id}#{index}", section) for index, section in enumerate(sections)]
 
 
+_QUERY_TOKEN_RE = re.compile(r"[\u4e00-\u9fff]{2,}|[a-zA-Z0-9]{2,}")
+
+
+def _query_tokens(question: str) -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(token.casefold() for token in _QUERY_TOKEN_RE.findall(question))
+    )
+
+
+def _keyword_overlap_score(question: str, document: str) -> int:
+    haystack = document.casefold()
+    return sum(1 for token in _query_tokens(question) if token in haystack)
+
+
+def _rerank_by_keyword_overlap(question: str, documents: list[str]) -> list[str]:
+    if len(documents) <= 1:
+        return documents
+    scored = [(doc, _keyword_overlap_score(question, doc)) for doc in documents]
+    if max(score for _, score in scored) <= 0:
+        return documents
+    return [
+        doc
+        for doc, _ in sorted(
+            scored,
+            key=lambda item: (-item[1], documents.index(item[0])),
+        )
+    ]
+
+
+def _usable_knowledge_chunks(documents: list[str]) -> list[str]:
+    """剔除 chunk 內的模板占位行，保留可用片段（避免整段因一行 placeholder 被丟棄）。"""
+    usable: list[str] = []
+    for document in documents:
+        kept: list[str] = []
+        for line in document.splitlines():
+            stripped = line.strip()
+            if not stripped or is_placeholder_knowledge(stripped):
+                continue
+            kept.append(stripped)
+        if not kept:
+            continue
+        text = compact_markdown("\n".join(kept))
+        if text:
+            usable.append(text)
+    return usable
+
+
+def _lexical_chunk_matches(question: str, root: Path, *, limit: int) -> list[str]:
+    """向量未命中時，以關鍵字比對本地知識庫 chunk（適用梗語、數字等短查詢）。"""
+    tokens = _query_tokens(question)
+    if not tokens or not root.exists():
+        return []
+    scored: list[tuple[str, int]] = []
+    for source_id, content in iter_text_documents(root):
+        for _, chunk in _chunk_document(source_id, content):
+            score = _keyword_overlap_score(question, chunk)
+            if score > 0:
+                scored.append((chunk, score))
+    if not scored:
+        return []
+    scored.sort(key=lambda item: (-item[1], item[0]))
+    unique: list[str] = []
+    for chunk, _ in scored:
+        if chunk not in unique:
+            unique.append(chunk)
+        if len(unique) >= limit:
+            break
+    return unique
+
+
 def _fingerprint_documents(documents: list[tuple[str, str]]) -> str:
     digest = hashlib.sha256()
     for source_id, content in sorted(documents):
@@ -196,9 +266,14 @@ class ChromaKnowledgeStore:
             return ""
 
         try:
+            total = int(self._collection.count())
+        except (TypeError, ValueError):
+            total = 0
+        n_results = min(total, max(self._max_results, 10)) if total else self._max_results
+        try:
             result = self._collection.query(
                 query_texts=[question],
-                n_results=self._max_results,
+                n_results=n_results,
             )
             documents = (result.get("documents") or [[]])[0]
         except Exception as exc:
@@ -206,11 +281,16 @@ class ChromaKnowledgeStore:
             return ""
 
         unique = list(dict.fromkeys(doc.strip() for doc in documents if doc and doc.strip()))
-        usable = [
-            compact_markdown(doc)
-            for doc in unique
-            if not is_placeholder_knowledge(doc)
-        ]
+        if not unique or _keyword_overlap_score(question, unique[0]) == 0:
+            lexical = _lexical_chunk_matches(
+                question,
+                self._root,
+                limit=self._max_results,
+            )
+            if lexical:
+                unique = list(dict.fromkeys(lexical + unique))
+        unique = _rerank_by_keyword_overlap(question, unique)[: self._max_results]
+        usable = _usable_knowledge_chunks(unique)
         if not usable:
             return ""
         text = "知識:" + INTRA_SEP.join(usable)
@@ -408,6 +488,9 @@ class ChromaSummaryKnowledgeStore:
             return ""
 
         self._sync_session_summaries(session_id, channel=channel)
+        if is_current_activity_question(question):
+            return ""
+
         try:
             result = self._collection.query(
                 query_texts=[question],
