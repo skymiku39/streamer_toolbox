@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import queue
 import threading
-import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -14,6 +13,24 @@ from ttvchat_lens import ChatMessage, LiveChatReader, parse_twitch_channel
 PublishPayload = Callable[[dict[str, Any]], Awaitable[None]]
 
 _RECONNECT_DELAY_SEC = 5.0
+
+
+class _CurrentReader:
+    """thread-safe 持有目前運行中的 LiveChatReader，供關閉時主動中斷阻塞迴圈。"""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._reader: LiveChatReader | None = None
+
+    def set(self, reader: LiveChatReader | None) -> None:
+        with self._lock:
+            self._reader = reader
+
+    def stop(self) -> None:
+        with self._lock:
+            reader = self._reader
+        if reader is not None:
+            reader.stop()
 
 
 def _enqueue(out_queue: queue.Queue[ChatMessage | None], message: ChatMessage) -> None:
@@ -34,23 +51,25 @@ def _reader_worker(
     channel: str,
     out_queue: queue.Queue[ChatMessage | None],
     stop_event: threading.Event,
+    current: _CurrentReader,
     *,
     reconnect_delay: float = _RECONNECT_DELAY_SEC,
 ) -> None:
     while not stop_event.is_set():
         reader = LiveChatReader(channel)
         reader.on_message(lambda msg: _enqueue(out_queue, msg))
+        current.set(reader)
         try:
             reader.start()
         except KeyboardInterrupt:
             break
         finally:
+            current.set(None)
             reader.close()
 
-        if stop_event.is_set():
+        # 以 stop_event.wait 取代固定 sleep：關閉時可立即喚醒，不必卡滿 reconnect_delay
+        if stop_event.wait(reconnect_delay):
             break
-
-        time.sleep(reconnect_delay)
 
     out_queue.put(None)
 
@@ -67,10 +86,11 @@ async def run_publisher(
     normalized = parse_twitch_channel(channel)
     out_queue: queue.Queue[ChatMessage | None] = queue.Queue(maxsize=queue_size)
     stop_event = threading.Event()
+    current_reader = _CurrentReader()
 
     thread = threading.Thread(
         target=_reader_worker,
-        args=(normalized, out_queue, stop_event),
+        args=(normalized, out_queue, stop_event, current_reader),
         kwargs={"reconnect_delay": reconnect_delay},
         daemon=True,
         name="ingress-ttv-read",
@@ -93,4 +113,5 @@ async def run_publisher(
             await publish(event.to_dict())
     finally:
         stop_event.set()
+        current_reader.stop()
         thread.join(timeout=5)
