@@ -42,6 +42,7 @@
 | `ask_inspect.py` | !ask 乾跑 prompt 品質檢視；可接 CI `--min-pass-rate` |
 | `eval/memory_retrieval_cases.json` | 評測案例 |
 | `eval/ask_inspect_cases.json` | ask 乾跑案例（含 expect_layers） |
+| `eval/ask_inspect_audit_cases.json` | 含 expected_info 的稽核案例（AI 可讀預期＋驗證） |
 
 ## Benchmark / 一次性分析（`benchmark/`，不納入 CI）
 

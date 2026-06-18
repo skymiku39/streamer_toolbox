@@ -223,9 +223,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         results = evaluate_inspect_cases(inspect_fn, cases)
         if args.json:
+            if hasattr(sys.stdout, "reconfigure"):
+                sys.stdout.reconfigure(encoding="utf-8")
             payload = [
                 {
                     "label": item.case.label,
+                    "expected_info": item.case.expected_info,
                     "question": item.case.question,
                     "passed": item.passed,
                     "found": list(item.found),
@@ -256,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
 
     result = inspect_fn(args.question, channel)
     if args.json:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
         print(json.dumps(_result_to_json(result), ensure_ascii=False, indent=2))
     else:
         print(format_inspection_report(result, include_prompt=args.full))

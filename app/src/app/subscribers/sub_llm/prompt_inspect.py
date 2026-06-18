@@ -70,6 +70,7 @@ class InspectCase:
     expect_layers: tuple[str, ...] = ()
     any_of: bool = False
     label: str = ""
+    expected_info: str = ""
 
 
 @dataclass
@@ -359,6 +360,7 @@ def load_inspect_cases(path: str | Path) -> list[InspectCase]:
                 expect_layers=tuple(str(layer) for layer in (item.get("expect_layers") or [])),
                 any_of=bool(item.get("any_of", False)),
                 label=str(item.get("label", "")),
+                expected_info=str(item.get("expected_info", "")),
             )
         )
     return cases
@@ -410,6 +412,8 @@ def format_case_report(results: list[InspectCaseResult]) -> str:
             f"[{status}] score={item.inspect.score:.2f} "
             f"relevance={item.inspect.relevance:.2f} {label!r}"
         )
+        if item.case.expected_info:
+            lines.append(f"        expect: {item.case.expected_info}")
         if item.missing:
             lines.append(f"        missing_fragments={list(item.missing)}")
         if item.layer_missing:

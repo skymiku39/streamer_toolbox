@@ -1,0 +1,49 @@
+[
+  {
+    "label": "靜態梗語",
+    "question": "777 是什麼意思",
+    "expected_info": "知識庫應含「777：聊天室幸運數字」",
+    "expect": ["777", "幸運"],
+    "expect_layers": ["static_kb"],
+    "any_of": true
+  },
+  {
+    "label": "頻道指令",
+    "question": "!ask 要怎麼用",
+    "expected_info": "知識庫應含 !ask 指令說明與 bot 行為",
+    "expect": ["!ask", "提問"],
+    "expect_layers": ["static_kb"],
+    "any_of": true
+  },
+  {
+    "label": "本場進度",
+    "question": "主播今天玩了什麼",
+    "expected_info": "記憶或本場回顧應含 Potion Craft／本場遊戲或活動",
+    "expect": ["Potion", "遊戲", "藥"],
+    "expect_layers": ["memory"],
+    "any_of": true
+  },
+  {
+    "label": "當下實況",
+    "question": "主播現在在幹嘛",
+    "expected_info": "[直播] 區應有近期逐字稿，而非僅靠記憶摘要",
+    "expect_layers": ["stt"],
+    "any_of": true
+  },
+  {
+    "label": "本場梗事件",
+    "question": "誰是小甜甜",
+    "expected_info": "長期記憶摘要應含小甜甜相關聊天／實況討論",
+    "expect": ["小甜甜"],
+    "expect_layers": ["memory"],
+    "any_of": true
+  },
+  {
+    "label": "通識＋知識缺口",
+    "question": "LNG 是什麼團體",
+    "expected_info": "理想：靜態知識庫有 LNG 事實；次佳：近期聊天曾提及",
+    "expect": ["LNG", "台灣", "實況"],
+    "expect_layers": [],
+    "any_of": true
+  }
+]
