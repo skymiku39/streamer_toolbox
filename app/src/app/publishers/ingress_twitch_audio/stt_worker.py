@@ -40,6 +40,8 @@ class STTWorker:
             rms_gate=config.rms_gate,
             filter_hallucinations=config.filter_hallucinations,
             hallucination_rms_gate=config.hallucination_rms_gate,
+            hallucination_speech_band_min=config.hallucination_speech_band_min,
+            hallucination_spectral_flatness_max=config.hallucination_spectral_flatness_max,
             no_speech_threshold=config.no_speech_threshold,
             log_prob_threshold=config.log_prob_threshold,
         )

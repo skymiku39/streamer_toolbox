@@ -1,4 +1,6 @@
 import struct
+
+import numpy as np
 from types import SimpleNamespace
 
 from ingress_twitch_audio.config import SttConfig
@@ -9,6 +11,13 @@ from safety import SttInputFilter
 def _pcm_from_amplitude(amplitude: float, sample_count: int = 16000) -> bytes:
     value = int(amplitude * 32767)
     return struct.pack(f"<{sample_count}h", *([value] * sample_count))
+
+
+def _pcm_from_sine(amplitude: float, sample_count: int = 16000, freq_hz: float = 440.0) -> bytes:
+    t = np.arange(sample_count, dtype=np.float64) / 16000.0
+    wave = (amplitude * np.sin(2.0 * np.pi * freq_hz * t)).astype(np.float32)
+    samples = np.clip(wave * 32767.0, -32768, 32767).astype(np.int16)
+    return struct.pack(f"<{sample_count}h", *samples.tolist())
 
 
 def _mock_model(text: str):
@@ -39,6 +48,8 @@ def test_transcribe_chunk_skips_silent_audio() -> None:
         rms_gate=0.05,
         filter_hallucinations=True,
         hallucination_rms_gate=0.02,
+        hallucination_speech_band_min=0.25,
+        hallucination_spectral_flatness_max=0.35,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -65,6 +76,8 @@ def test_transcribe_chunk_publishes_segment() -> None:
         rms_gate=0.01,
         filter_hallucinations=True,
         hallucination_rms_gate=0.02,
+        hallucination_speech_band_min=0.25,
+        hallucination_spectral_flatness_max=0.35,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -78,7 +91,7 @@ def test_transcribe_chunk_publishes_segment() -> None:
         model_loader=lambda: _mock_model("今天天氣真好"),
         on_segment=lambda seg: segments.append(seg.text),
     )
-    pcm = _pcm_from_amplitude(0.3, sample_count=int(16000 * config.chunk_seconds))
+    pcm = _pcm_from_sine(0.3, sample_count=int(16000 * config.chunk_seconds))
     result = worker.transcribe_chunk(pcm)
 
     assert result is not None
@@ -99,6 +112,8 @@ def test_transcribe_chunk_filters_hallucination_on_quiet_audio() -> None:
         rms_gate=0.001,
         filter_hallucinations=True,
         hallucination_rms_gate=0.02,
+        hallucination_speech_band_min=0.25,
+        hallucination_spectral_flatness_max=0.35,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -124,6 +139,8 @@ def test_transcribe_chunk_keeps_speech_on_loud_audio_without_hallucination_filte
         rms_gate=0.01,
         filter_hallucinations=True,
         hallucination_rms_gate=0.02,
+        hallucination_speech_band_min=0.25,
+        hallucination_spectral_flatness_max=0.35,
         vad_filter=False,
         condition_on_previous_text=False,
         no_speech_threshold=0.6,
@@ -134,7 +151,7 @@ def test_transcribe_chunk_keeps_speech_on_loud_audio_without_hallucination_filte
         config,
         model_loader=lambda: _mock_model("thanks for watching"),
     )
-    pcm = _pcm_from_amplitude(0.3, sample_count=int(16000 * config.chunk_seconds))
+    pcm = _pcm_from_sine(0.3, sample_count=int(16000 * config.chunk_seconds))
     result = worker.transcribe_chunk(pcm)
     assert result is not None
     assert result.text == "thanks for watching"

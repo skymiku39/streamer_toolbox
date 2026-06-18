@@ -29,6 +29,8 @@ class SttConfig:
     rms_gate: float
     filter_hallucinations: bool
     hallucination_rms_gate: float
+    hallucination_speech_band_min: float
+    hallucination_spectral_flatness_max: float
     vad_filter: bool
     condition_on_previous_text: bool
     no_speech_threshold: float
@@ -50,6 +52,11 @@ class SttConfig:
             rms_gate=_env_float("STT_RMS_GATE", 0.004),
             filter_hallucinations=_env_bool("STT_FILTER_HALLUCINATIONS", True),
             hallucination_rms_gate=_env_float("STT_HALLUCINATION_RMS_GATE", 0.02),
+            hallucination_speech_band_min=_env_float("STT_HALLUCINATION_SPEECH_BAND_MIN", 0.25),
+            hallucination_spectral_flatness_max=_env_float(
+                "STT_HALLUCINATION_SPECTRAL_FLATNESS_MAX",
+                0.35,
+            ),
             vad_filter=_env_bool("STT_VAD_FILTER", False),
             condition_on_previous_text=_env_bool("STT_CONDITION_ON_PREVIOUS_TEXT", True),
             no_speech_threshold=_env_float("STT_NO_SPEECH_THRESHOLD", 0.85),

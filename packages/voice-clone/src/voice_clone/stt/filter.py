@@ -40,6 +40,9 @@ _DEFAULT_BLOCKLIST = (
 )
 
 
+from voice_clone.stt.audio_spectrum import lacks_clear_speech, lacks_clear_speech_audio
+
+
 def pcm_rms(pcm: bytes) -> float:
     if len(pcm) < 2:
         return 0.0
@@ -149,6 +152,9 @@ class SttInputFilter:
     rms_gate: float = 0.01
     filter_hallucinations: bool = True
     hallucination_rms_gate: float = 0.02
+    hallucination_speech_band_min: float = 0.25
+    hallucination_spectral_flatness_max: float = 0.35
+    sample_rate: int = 16000
     no_speech_threshold: float = 0.6
     log_prob_threshold: float = -1.0
     blocklist: tuple[str, ...] = _DEFAULT_BLOCKLIST
@@ -162,12 +168,24 @@ class SttInputFilter:
     def should_apply_hallucination_filter_pcm(self, pcm: bytes) -> bool:
         if not self.filter_hallucinations:
             return False
-        return pcm_rms(pcm) < self.hallucination_rms_gate
+        return lacks_clear_speech(
+            pcm,
+            sample_rate=self.sample_rate,
+            rms_gate=self.hallucination_rms_gate,
+            max_spectral_flatness=self.hallucination_spectral_flatness_max,
+            min_speech_band_ratio=self.hallucination_speech_band_min,
+        )
 
     def should_apply_hallucination_filter_audio(self, audio) -> bool:
         if not self.filter_hallucinations:
             return False
-        return float32_rms(audio) < self.hallucination_rms_gate
+        return lacks_clear_speech_audio(
+            audio,
+            sample_rate=self.sample_rate,
+            rms_gate=self.hallucination_rms_gate,
+            max_spectral_flatness=self.hallucination_spectral_flatness_max,
+            min_speech_band_ratio=self.hallucination_speech_band_min,
+        )
 
     def accept_text(self, text: str) -> bool:
         if not self.filter_hallucinations:
