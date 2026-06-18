@@ -239,6 +239,23 @@ streamer_toolbox/
 └── ...
 ```
 
+## 命名慣例
+
+模組命名刻意在兩種風格間切換，新增 process 時請對齊：
+
+| 對象 | 風格 | 範例 |
+|------|------|------|
+| Process 名（CLI、`app.main list`、PID 鎖） | kebab-case | `ingress-twitch-audio`、`sub-character-brain` |
+| Python 套件目錄／import | snake_case | `ingress_twitch_audio`、`sub_character_brain` |
+
+其他約定：
+
+- **`sub_` 前綴**：消費事件並產生業務結果的 subscriber 才加 `sub_`。`twitch_connector` 是
+  egress 連接器（將 `chat.reply` 送回 Twitch），非業務 sub，因此**不加** `sub_` 前綴。
+- **Legacy 扁平模組**：多數 subscriber 已收斂為 `sub_<name>/` 子目錄；`sub-stream-record`
+  仍為扁平三檔（`stream_record.py`、`stream_record_config.py`、`stream_record_writer.py`），
+  屬已知歷史例外，待後續再目錄化，process 名 `sub-stream-record` 不變。
+
 ## 設計約束
 
 實作須遵守 [solid.md](solid.md) 與 [events.md](events.md)。契約變更先改文件，再改 `packages/events`。
