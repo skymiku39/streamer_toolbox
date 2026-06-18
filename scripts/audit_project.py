@@ -225,6 +225,40 @@ def parse_documented_processes(markdown: str) -> set[str]:
     return names
 
 
+def parse_stack_keys(stacks_src: str) -> set[str]:
+    keys: set[str] = set()
+    in_dict = False
+    for line in stacks_src.splitlines():
+        if "PROCESS_STACKS" in line and "{" in line:
+            in_dict = True
+            continue
+        if in_dict:
+            if "}" in line:
+                break
+            match = re.match(r'\s*"([a-z][a-z0-9-]*)":', line)
+            if match:
+                keys.add(match.group(1))
+    return keys
+
+
+def check_stack_docs_drift(root: Path = ROOT) -> CheckResult:
+    stacks_file = root / "app" / "src" / "app" / "processes" / "stacks.py"
+    stack_keys = parse_stack_keys(stacks_file.read_text(encoding="utf-8"))
+    docs_text = "\n".join(
+        (root / rel).read_text(encoding="utf-8")
+        for rel in ("docs/modules.md", "docs/getting-started.md")
+    )
+    undocumented = sorted(key for key in stack_keys if f"--stack {key}" not in docs_text)
+    ok = not undocumented
+    if ok:
+        detail = f"{len(stack_keys)} 個 stack 皆在 modules.md / getting-started.md 出現"
+        hint = ""
+    else:
+        detail = f"stack 未列入文件：{', '.join(undocumented)}"
+        hint = "請在 docs/modules.md 或 getting-started.md 補上 --stack <name> 使用說明"
+    return CheckResult("stack_docs_drift", ok, detail, hint)
+
+
 def check_registry_drift(root: Path = ROOT) -> CheckResult:
     result = subprocess.run(
         ["uv", "run", "python", "-m", "app.main", "list"],
@@ -325,6 +359,7 @@ def run_checks(
         check_events_exports(),
         check_control_builtins(),
         check_registry_drift(root),
+        check_stack_docs_drift(root),
         check_repo_hygiene(root),
     ]
     if not ci:

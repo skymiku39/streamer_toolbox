@@ -193,6 +193,15 @@ uv run python -m app.main run --stack llm
 
 **重要**：`--stack llm` **不含**聊天 ingress。只開終端 2 時，`!ask` 不會觸發。
 
+可用的 stack（定義於 `app/processes/stacks.py`）：
+
+| Stack | 內容 | 使用情境 |
+|-------|------|----------|
+| `ingress` | `ingress-ttv-read`、`ingress-twitch-audio`、`ingress-twitch-stream`、`sub-stream-record` | 完整收音＋聊天＋直播 metadata |
+| `ingress-chat` | `ingress-ttv-read`、`ingress-twitch-stream`、`sub-stream-record` | 純文字 AI 問答（GCP；不含 STT） |
+| `llm` | `sub-llm`、`sub-qa-memory-*`、`twitch-connector` | AI 問答＋長期記憶＋發話 |
+| `status` | `sub-live-status`、`twitch-connector` | 僅宣告直播上下線（不含 `!ask`）；需搭配 `--stack ingress` 收 metadata |
+
 可選：常駐記憶摘要 worker（需 `GOOGLE_AI_API_KEY`）：
 
 ```powershell

@@ -124,6 +124,18 @@ def test_parse_main_list_processes() -> None:
     assert _mod.parse_main_list_processes(text) == {"ingress-ttv-read", "sub-llm"}
 
 
+def test_parse_stack_keys() -> None:
+    src = (
+        'PROCESS_STACKS: dict[str, tuple[str, ...]] = {\n'
+        '    "ingress": STACK_INGRESS,\n'
+        '    "ingress-chat": STACK_INGRESS_CHAT,\n'
+        '    "status": STACK_STATUS,\n'
+        "}\n"
+        'TRAILING = {"not-a-stack": 1}\n'
+    )
+    assert _mod.parse_stack_keys(src) == {"ingress", "ingress-chat", "status"}
+
+
 def test_parse_documented_processes() -> None:
     md = "| `ingress-ttv-read` | Pub | ✅ | `chat.message` | — |\n| not-a-row |\n"
     assert _mod.parse_documented_processes(md) == {"ingress-ttv-read"}
@@ -156,7 +168,8 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "check_events_exports", _ok("d"))
     monkeypatch.setattr(_mod, "check_control_builtins", _ok("e"))
     monkeypatch.setattr(_mod, "check_registry_drift", _ok("f"))
-    monkeypatch.setattr(_mod, "check_repo_hygiene", _ok("g"))
+    monkeypatch.setattr(_mod, "check_stack_docs_drift", _ok("g"))
+    monkeypatch.setattr(_mod, "check_repo_hygiene", _ok("h"))
 
     def _record_tool(*_a: object, **_k: object) -> _mod.CheckResult:
         calls.append("tool")
@@ -167,5 +180,5 @@ def test_run_checks_ci_skips_services(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_mod, "load_verify_setup", lambda *_a, **_k: calls.append("verify"))
 
     results = _mod.run_checks(ci=True)
-    assert [r.name for r in results] == ["a", "b", "c", "d", "e", "f", "g"]
+    assert [r.name for r in results] == ["a", "b", "c", "d", "e", "f", "g", "h"]
     assert calls == []

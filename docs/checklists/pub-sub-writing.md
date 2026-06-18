@@ -107,9 +107,9 @@
 
 ---
 
-### `ingress-twitch-chat` ✅
+### `ingress-twitch-chat`（歷史名稱，已併入 `ingress-ttv-read`）✅
 
-Phase 01 Twitch IRC 匿名讀取（本專案已實作，對應設計態 `ingress-ttv-read`）。
+Phase 01 Twitch IRC 匿名讀取。**現況無此程序**：實作為下方的 `ingress-ttv-read`（包 `packages/ttvchat-lens`），請以該節與 [modules.md](../modules.md) 為準。下表保留 Phase 01 歷史紀錄。
 
 | 項目 | 內容 |
 |------|------|

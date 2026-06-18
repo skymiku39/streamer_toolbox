@@ -6,7 +6,8 @@
 |------|------|------|
 | 設計文件 | `docs/` | 契約、模組、部署、使用案例 |
 | 應用層 | `app/` | Pub/Sub 程序編排（`streamer-app`） |
-| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stream-store`、`tts`、`identity-oauth`、`game-info`、`ttvchat-lens`、`tubechat-lens` |
+| 共用套件 | `packages/` | `bus`、`events`、`safety`、`stt-core`、`stream-store`、`tts`、`identity-oauth`、`game-info`、`control`、`emotes`、`streamer-config`、`ttvchat-lens`、`tubechat-lens`、`voice-clone` |
+| 開發工具 | `tools/` | `streamer-config-gui`（設定編輯 GUI） |
 
 ## 使用者分流
 

@@ -11,7 +11,7 @@
 | **職責分離** | `packages/` = 無狀態基礎設施與合約；`app/` = 商業邏輯、Pub/Sub 組裝 |
 | **單向依賴** | `app/` → `packages/` 允許；`packages/` → `app/` **禁止** |
 | **命名** | 套件在 `packages/` 下，不帶 `pkg-` 前綴（`bus`、`events`、`safety`…） |
-| **uv Workspace** | 根 `pyproject.toml`：`members = ["app", "packages/*"]` |
+| **uv Workspace** | 根 `pyproject.toml`：`members = ["app", "packages/*", "tools/streamer-config-gui"]` |
 
 詳見 Cursor 規則 `.cursor/rules/monorepo-architecture.mdc`。
 
@@ -90,15 +90,21 @@ streamer_toolbox/
 │   └── tests/
 ├── packages/
 │   ├── bus/                 # EventBus Protocol + MQ adapter
+│   ├── control/             # 控制面模組 registry 與 builtin descriptor
+│   ├── emotes/              # 平台表情符號查詢
 │   ├── events/              # Topic 常數與 payload schema
 │   ├── game-info/           # IGDB 遊戲評分／簡介查詢
 │   ├── identity-oauth/      # Twitch OAuth token provider
-│   ├── safety/              # SafetyFilter Protocol
+│   ├── safety/              # SafetyFilter Protocol、SttInputFilter
+│   ├── stt-core/            # STT 共用核心（SttConfig、TranscriptSegment、模型生命週期）
 │   ├── stream-store/        # SQLite 記錄/記憶
+│   ├── streamer-config/     # 外部設定目錄（STREAMER_CONFIG_DIR）bootstrap
 │   ├── tts/                 # TtsEngine Protocol
 │   ├── voice-clone/         # 離線語音克隆 CLI（OmniVoice；可選、GPU、不進 app 依賴）
 │   ├── ttvchat-lens/        # Twitch IRC 匿名唯讀（原 ttv_chat）
 │   └── tubechat-lens/       # YouTube 直播聊天唯讀（原 yt_chat）
+├── tools/
+│   └── streamer-config-gui/ # 設定編輯 GUI（dev 工具，不進執行期）
 ├── config/
 ├── docs/
 └── docker-compose.yml
@@ -113,13 +119,17 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `events` | `packages/events/` | Topic 常數、payload dataclass、JSON 驗證 | 無 | 全部 Sub、Ingress |
 | `bus` | `packages/bus/` | `EventBus` Protocol；RabbitMQ adapter | `events` | ingress、所有 sub、app |
 | `tts` | `packages/tts/` | `TtsEngine` Protocol；SAPI5 實作 | 無平台依賴 | `sub-tts`, `sub-character-voice` |
-| `safety` | `packages/safety/` | `SafetyFilter`、`SttInputFilter`；輸入/輸出實作 | `events` | `sub-llm`, `sub-character-brain`, `ingress-twitch-audio`（STT 幻覺過濾） |
+| `safety` | `packages/safety/` | `SafetyFilter`、`SttInputFilter`；輸入/輸出實作 | `events`, numpy | `sub-llm`, `sub-character-brain`, `stt-core`, `ingress-twitch-audio`（STT 幻覺過濾） |
+| `stt-core` | `packages/stt-core/` | STT 共用核心：`SttConfig`、`TranscriptSegment`、`BaseSTTWorker` 模型生命週期 | `safety`, numpy；可選 faster-whisper | `ingress-twitch-audio`, `ingress-local-audio`, `voice-clone` |
 | `stream-store` | `packages/stream-store/` | SQLite 記錄/記憶 CRUD | 無 | `sub-stream-record`, `app.workers`, `sub-llm` RAG |
 | `game-info` | `packages/game-info/` | IGDB 遊戲評分／簡介查詢 | 無 | `sub-llm`（直播中注入 prompt） |
 | `identity-oauth` | `packages/identity-oauth/` | OAuth token provider | httpx | `ingress-twitch-eventsub`, `twitch-connector` |
+| `control` | `packages/control/` | 控制面模組 registry 與 builtin descriptor | `events` | `app`（控制面）、`audit_project` |
+| `emotes` | `packages/emotes/` | 平台表情符號查詢 | 無 | `sub-llm` 等 |
+| `streamer-config` | `packages/streamer-config/` | 外部設定目錄（`STREAMER_CONFIG_DIR`）bootstrap 與路徑解析 | 無 | `app`、`scripts/setup_user_config.ps1` |
 | `ttvchat-lens` | `packages/ttvchat-lens/` | Twitch IRC 匿名唯讀 | websockets | `ingress-ttv-read` |
 | `tubechat-lens` | `packages/tubechat-lens/` | YouTube 直播聊天唯讀 | pytchat | `ingress-yt-read` |
-| `voice-clone` | `packages/voice-clone/` | 離線零樣本語音克隆 CLI（OmniVoice subprocess） | numpy, scipy, soundfile | **獨立 CLI**；不接入 app/MQ（可選 `--group voice-clone`） |
+| `voice-clone` | `packages/voice-clone/` | 離線零樣本語音克隆 CLI（OmniVoice subprocess） | numpy, scipy, soundfile；stt extra: `safety`, `stt-core` | **獨立 CLI**；不接入 app/MQ（可選 `--group voice-clone`） |
 
 設計詳見 [architecture/identity-auth.md](architecture/identity-auth.md)。
 
@@ -163,9 +173,9 @@ Phase 01 已於本專案實作。姊妹專案 [`streamer-toolkit`](../streamer-t
 | `ingress-yt-read` | `chat.message` | `packages/tubechat-lens` |
 | `ingress-ttv-read` | `chat.message` | `packages/ttvchat-lens` |
 | `ingress-twitch-eventsub` | `chat.message`, `eventsub.*` | [`twitch_api`](../twitch_api) `bot/` |
-| `ingress-twitch-audio` | `stt.segment` | [`llm_twitchat`](../llm_twitchat) `ingest/` |
+| `ingress-twitch-audio` | `stt.segment` | [`llm_twitchat`](../llm_twitchat) `ingest/`（STT 核心用 `stt-core`） |
 | `ingress-twitch-stream` | `stream.metadata` | Twitch GQL |
-| `ingress-local-audio` | `stt.segment` | 本機麥克風（開發用） |
+| `ingress-local-audio` | `stt.segment` | 本機麥克風（開發用；STT 核心用 `stt-core`） |
 | `ingress-discord` | `chat.message` | — |
 
 Ingress **只做**：連線 → normalize → `events` 驗證 → publish。

@@ -309,6 +309,8 @@ uv run python -m app.main run ingress-ttv-read  # 終端 2
 | 方案 | 終端指令 | 等價於上表 |
 |------|----------|------------|
 | AI 問答 | `--stack ingress` + `--stack llm` | Ingress 列 + `sub-llm` + connector |
+| 純文字 AI 問答（GCP，不含 STT） | `--stack ingress-chat` + `--stack llm` | 同上但 ingress 不含 STT |
+| 僅直播上下線宣告 | `--stack ingress` + `--stack status` | metadata ingress + `sub-live-status` + connector（不含 `!ask`） |
 | 安裝測試 | `sub-io-log` + `ingress-ttv-read` | 診斷 + 最小 Ingress |
 
 其餘方案需**手動**依上表勾程序名（見各方案章節）。

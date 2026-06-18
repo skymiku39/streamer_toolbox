@@ -7,7 +7,7 @@
 | 對應產品 | 產品 A 的子集（僅 ingress + I/O 檢查，尚無 overlay） |
 | 依據文件 | [events.md](../events.md)、[solid.md](../solid.md)、[packages.md](../packages.md) |
 
-> **命名附註：** 計畫書中的 `pkg-events` / `pkg-bus` / `stream-app` 已實作為 `packages/events`、`packages/bus`、`streamer-app`。下文 §4 等保留歷史用語，現況以 [packages.md](../packages.md) 為準。
+> **命名附註：** 計畫書中的 `pkg-events` / `pkg-bus` / `stream-app` 已實作為 `packages/events`、`packages/bus`、`streamer-app`；Phase 01 的 `ingress-twitch-chat` 已併入設計態 `ingress-ttv-read`（包 `packages/ttvchat-lens`），**現已無 `ingress-twitch-chat` 程序**。下文保留歷史用語，現況以 [modules.md](../modules.md) 與 [packages.md](../packages.md) 為準。
 
 ## 0. 實作狀態
 

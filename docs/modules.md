@@ -32,6 +32,7 @@
 | `character-face` | Egress | 已有 | `sub-character-face` | VTS WebSocket |
 | `character-stage` | LocalPC | 已有 | `sub-character-stage` | OBS WebSocket |
 | `egress-chat-send` | Egress | 已有 | `twitch-connector` | `send_message` |
+| `status-announce` | Egress | 已有 | `sub-live-status` | `stream.metadata` → `chat.reply` 直播狀態宣告（不含 `!ask`） |
 | `egress-tts` | Egress | 已有 | `sub-tts` | `tts/` |
 | `egress-subtitle` | Egress | 已有 | `sub-visual` | `subtitle.py` |
 | `local-dashboard` | Control | 規劃中 | Dashboard Shell | 見 [architecture/control-plane.md](architecture/control-plane.md)；承接 `system.*` 監控與模組分頁，**不作為業務 Sub** |
@@ -138,6 +139,7 @@
 | `sub-character-voice` | `character.turn` | — | — | — | ● |
 | `sub-character-face` | `character.turn` | — | — | — | ● |
 | `sub-character-stage` | `character.audio.ready`, `character.expression.ready` | — | — | — | ● |
+| `sub-live-status` | `stream.metadata` | — | ○ | ○ | — |
 | `twitch-connector` | `chat.reply` | — | ● | ● | ○ |
 | `local-dashboard` | `system.*`（監控） | — | ○ | ○ | ○ |
 
@@ -185,6 +187,13 @@ uv run python -m app.main run ingress-ttv-read
 uv run python -m app.main run --stack ingress
 uv run python -m app.main run --stack llm
 uv run python -m app.workers --llm-backend gemini   # L2 記憶 worker
+
+# 純文字 AI 問答（GCP；不含 STT）：以 ingress-chat 取代 ingress
+uv run python -m app.main run --stack ingress-chat
+uv run python -m app.main run --stack llm
+
+# 僅宣告直播上下線（不含 !ask 問答）：需搭配 --stack ingress 收 metadata
+uv run python -m app.main run --stack status
 
 # 產品 B（手動指定）
 uv run python -m app.main run ingress-twitch-eventsub sub-bot-logic twitch-connector
@@ -270,8 +279,8 @@ subscribers:
 | `chat.message` | ingress-* | show, tts, bot, llm, character-brain, stream-record |
 | `eventsub.*` | ingress-twitch-eventsub | bot-logic |
 | `stt.segment` | ingress-twitch-audio, ingress-local-audio | llm, stream-record |
-| `stream.metadata` | ingress-twitch-stream | llm |
-| `chat.reply` | bot, llm, character-brain | twitch-connector, qa-memory-batch |
+| `stream.metadata` | ingress-twitch-stream | llm, live-status |
+| `chat.reply` | bot, llm, character-brain, live-status | twitch-connector, qa-memory-batch |
 | `memory.qa.record` | llm（structured 模式） | qa-memory-structured |
 | `memory.summary.ready` | qa-memory-structured, workers | memory-board（規劃：notify） |
 | `character.turn` | character-brain | character-voice, character-face |
